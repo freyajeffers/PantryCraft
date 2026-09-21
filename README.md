@@ -1,28 +1,35 @@
 # Pantry-Grocery
 
-Native Android prototype: combined Pantry inventory + Grocery list.
+Native Android app prototype combining pantry inventory and a grocery list.
 
-Features included in this scaffold:
-- Jetpack Compose UI skeleton
-- Room entities & DAOs for PantryItem and GroceryItem
-- MainActivity + Compose screens (Pantry, Grocery)
-- Material3 theming
-- Barcode support left as stretch (ML Kit integration notes in README)
+## Current milestone
 
-How to build
-1. Open this folder in Android Studio (Arctic Fox or later).
-2. Let Android Studio upgrade Gradle/Gradle wrapper if needed and install SDK components.
-3. Run the app on an emulator or device.
+- Kotlin + Jetpack Compose + Material 3 UI
+- Room database entities, DAOs, database singleton, repository, and ViewModels
+- Home screen navigation to Pantry and Grocery screens
+- Add/delete pantry placeholder flow
+- Add/check grocery placeholder flow
+- Low-stock query in the Room DAO (`quantity <= threshold`)
+- Reproducible Gradle wrapper
 
-Notes
-- This is a scaffold with core Kotlin source files and a basic Gradle setup. If you want I can add ML Kit barcode sample integration next.
-- APK build may require adding the Android Gradle Plugin and the correct Gradle wrapper via Android Studio.
+Barcode scanning, restock confirmation, suggestions UI, reminders, export, and sync remain next milestones.
 
-Paths of interest:
-- app/src/main/java/com/freya/pantrygrocery — source code
-- app/src/main/res — resources (theme previews stubbed)
+## Build
 
-Next steps I can take now (pick any):
-- Add ML Kit barcode scanning integration (camera + scanner) and sample UI.
-- Implement Room migrations and sample seed data.
-- Try an automated debug build here (may fail if Android SDK not installed).
+```bash
+./gradlew :app:assembleDebug
+```
+
+The verified APK is written to:
+
+```text
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+Install on a connected Android device:
+
+```bash
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+The project uses the Android SDK configured in `local.properties` on this machine. Do not commit that file; it is ignored by Git.
