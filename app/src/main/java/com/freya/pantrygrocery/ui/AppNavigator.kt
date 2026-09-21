@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun AppNavigator() {
-    // Placeholder navigator. We'll replace with NavHost when screens are added.
-    Text("Pantry & Grocery - Scaffold Placeholder")
+    // Simple manual nav for now
+    // Replace with NavHost if you want full navigation
+    Text("Pantry & Grocery - use HomeScreen / PantryScreen / GroceryScreen from code")
 }
