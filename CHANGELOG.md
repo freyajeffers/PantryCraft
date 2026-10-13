@@ -35,3 +35,4 @@
 - SQLite-full handling now prunes only temporary `cacheDir/vision_scratch` media before reporting the storage error.
 - Added a device instrumentation benchmark for prefix FTS search over 5,000 synthetic pantry rows; the verified warmed run completed in 2.53 ms.
 - Expanded manual pantry entry with category suggestions and shelf-life presets that populate expiration timestamps.
+- Added a negative encrypted-storage instrumentation test proving a random SQLCipher key cannot open the database.
