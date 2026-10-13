@@ -45,6 +45,10 @@ class AppDatabaseMigrationTest {
             assertEquals("Milk", cursor.getString(cursor.getColumnIndexOrThrow("name")))
             assertEquals("PANTRY", cursor.getString(cursor.getColumnIndexOrThrow("storageLocation")))
             assertEquals("OTHER", cursor.getString(cursor.getColumnIndexOrThrow("category")))
+            assertEquals("milk", cursor.getString(cursor.getColumnIndexOrThrow("normalized_name")))
+            assertEquals(1000, cursor.getLong(cursor.getColumnIndexOrThrow("purchase_timestamp")))
+            assertEquals(1000, cursor.getLong(cursor.getColumnIndexOrThrow("created_at")))
+            assertEquals(1000, cursor.getLong(cursor.getColumnIndexOrThrow("updated_at")))
             assertEquals(0, cursor.getInt(cursor.getColumnIndexOrThrow("isOpened")))
         }
         db.close()

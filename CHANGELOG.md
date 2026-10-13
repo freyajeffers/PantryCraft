@@ -12,3 +12,7 @@
 - Added Android KeyStore-derived SQLCipher encryption with WAL, busy timeout, and memory-mapped I/O settings.
 - Added Pantry location filter chips and color-coded expiration status indicators.
 - Added reactive DAO insert/update instrumentation coverage and location-filter unit tests.
+- Added manual SQLite FTS5 indexing with synchronization triggers and prefix search over item names, notes, and categories.
+- Added debounced pantry search UI and an Expiring Soon inventory filter.
+- Added normalized names, unit metadata, purchase/created/updated timestamps, and migration backfill for legacy pantry rows.
+- Added StrongBox-first SQLCipher key generation with TEE fallback and explicit invalidated-key failure handling.

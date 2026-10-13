@@ -9,7 +9,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import java.util.Arrays
 
-@Database(entities = [PantryItem::class, GroceryItem::class], version = 2, exportSchema = false)
+@Database(
+    entities = [PantryItem::class, GroceryItem::class],
+    version = 2,
+    exportSchema = false,
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun pantryDao(): PantryDao
 
@@ -25,11 +29,47 @@ abstract class AppDatabase : RoomDatabase() {
                     db.execSQL("ALTER TABLE pantry_items ADD COLUMN isOpened INTEGER NOT NULL DEFAULT 0")
                     db.execSQL("ALTER TABLE pantry_items ADD COLUMN openedTimestamp INTEGER DEFAULT NULL")
                     db.execSQL("ALTER TABLE pantry_items ADD COLUMN notes TEXT DEFAULT NULL")
-                    db.execSQL("CREATE INDEX IF NOT EXISTS index_pantry_items_location ON pantry_items(storageLocation)")
+                    db.execSQL("ALTER TABLE pantry_items ADD COLUMN normalized_name TEXT NOT NULL DEFAULT ''")
+                    db.execSQL("ALTER TABLE pantry_items ADD COLUMN custom_unit_name TEXT DEFAULT NULL")
+                    db.execSQL("ALTER TABLE pantry_items ADD COLUMN purchase_timestamp INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("ALTER TABLE pantry_items ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("ALTER TABLE pantry_items ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL(
+                        "UPDATE pantry_items SET normalized_name = lower(trim(name)), " +
+                            "purchase_timestamp = lastUpdated, created_at = lastUpdated, " +
+                            "updated_at = lastUpdated",
+                    )
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_pantry_items_normalized_name ON pantry_items(normalized_name)")
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_pantry_items_expiration ON pantry_items(expirationTimestamp)")
                     db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_pantry_items_barcode ON pantry_items(barcode)")
+                    configureSearchIndex(db)
                 }
             }
+
+        private fun configureSearchIndex(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE VIRTUAL TABLE IF NOT EXISTS PantryItemFts " +
+                    "USING fts5(name, notes, category, content='pantry_items', content_rowid='rowid')",
+            )
+            db.execSQL(
+                "CREATE TRIGGER IF NOT EXISTS pantry_items_fts_ai AFTER INSERT ON pantry_items " +
+                    "BEGIN INSERT INTO PantryItemFts(rowid, name, notes, category) " +
+                    "VALUES (new.rowid, new.name, new.notes, new.category); END",
+            )
+            db.execSQL(
+                "CREATE TRIGGER IF NOT EXISTS pantry_items_fts_ad AFTER DELETE ON pantry_items " +
+                    "BEGIN INSERT INTO PantryItemFts(PantryItemFts, rowid, name, notes, category) " +
+                    "VALUES ('delete', old.rowid, old.name, old.notes, old.category); END",
+            )
+            db.execSQL(
+                "CREATE TRIGGER IF NOT EXISTS pantry_items_fts_au AFTER UPDATE ON pantry_items " +
+                    "BEGIN INSERT INTO PantryItemFts(PantryItemFts, rowid, name, notes, category) " +
+                    "VALUES ('delete', old.rowid, old.name, old.notes, old.category); " +
+                    "INSERT INTO PantryItemFts(rowid, name, notes, category) " +
+                    "VALUES (new.rowid, new.name, new.notes, new.category); END",
+            )
+            db.execSQL("INSERT INTO PantryItemFts(PantryItemFts) VALUES ('rebuild')")
+        }
 
         @Volatile
         private var INSTANCE: AppDatabase? = null
@@ -37,7 +77,7 @@ abstract class AppDatabase : RoomDatabase() {
         fun getDatabase(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
                 val passphrase = DatabaseKeyProvider.getKey()
-                val factory = SupportOpenHelperFactory(passphrase)
+                val factory = SupportOpenHelperFactory(passphrase.copyOf())
                 Arrays.fill(passphrase, 0.toByte())
 
                 INSTANCE ?: Room
@@ -49,7 +89,16 @@ abstract class AppDatabase : RoomDatabase() {
                     .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
                     .addCallback(
                         object : RoomDatabase.Callback() {
+                            override fun onCreate(db: SupportSQLiteDatabase) {
+                                super.onCreate(db)
+                                configureSearchIndex(db)
+                            }
+
                             override fun onOpen(db: SupportSQLiteDatabase) {
+                                configureSearchIndex(db)
+                                db.execSQL("PRAGMA synchronous = NORMAL")
+                                db.execSQL("PRAGMA foreign_keys = ON")
+                                db.execSQL("PRAGMA temp_store = MEMORY")
                                 db.execSQL("PRAGMA busy_timeout = 5000")
                                 db.execSQL("PRAGMA mmap_size = 268435456")
                             }

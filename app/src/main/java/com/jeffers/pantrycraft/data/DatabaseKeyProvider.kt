@@ -1,7 +1,10 @@
 package com.jeffers.pantrycraft.data
 
+import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
+import android.security.keystore.StrongBoxUnavailableException
 import java.nio.charset.StandardCharsets
 import java.security.KeyStore
 import javax.crypto.KeyGenerator
@@ -17,24 +20,49 @@ object DatabaseKeyProvider {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
         val key =
             if (keyStore.containsAlias(KEY_ALIAS)) {
-                keyStore.getKey(KEY_ALIAS, null) as SecretKey
+                try {
+                    keyStore.getKey(KEY_ALIAS, null) as SecretKey
+                } catch (error: KeyPermanentlyInvalidatedException) {
+                    throw DatabaseKeyInvalidatedException(error)
+                }
             } else {
-                KeyGenerator
-                    .getInstance(KeyProperties.KEY_ALGORITHM_HMAC_SHA256, ANDROID_KEYSTORE)
-                    .apply {
-                        init(
-                            KeyGenParameterSpec
-                                .Builder(
-                                    KEY_ALIAS,
-                                    KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY,
-                                ).setDigests(KeyProperties.DIGEST_SHA256)
-                                .build(),
-                        )
-                    }.generateKey()
+                generateKey()
             }
-        return Mac.getInstance("HmacSHA256").run {
-            init(key)
-            doFinal(purpose)
+        return try {
+            Mac.getInstance("HmacSHA256").run {
+                init(key)
+                doFinal(purpose)
+            }
+        } catch (error: KeyPermanentlyInvalidatedException) {
+            throw DatabaseKeyInvalidatedException(error)
         }
     }
+
+    private fun generateKey(): SecretKey {
+        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_HMAC_SHA256, ANDROID_KEYSTORE)
+        return try {
+            generator.init(keySpec(strongBox = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P))
+            generator.generateKey()
+        } catch (_: StrongBoxUnavailableException) {
+            generator.init(keySpec(strongBox = false))
+            generator.generateKey()
+        }
+    }
+
+    private fun keySpec(strongBox: Boolean): KeyGenParameterSpec {
+        val builder =
+            KeyGenParameterSpec
+                .Builder(
+                    KEY_ALIAS,
+                    KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY,
+                ).setDigests(KeyProperties.DIGEST_SHA256)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && strongBox) {
+            builder.setIsStrongBoxBacked(true)
+        }
+        return builder.build()
+    }
 }
+
+class DatabaseKeyInvalidatedException(
+    cause: Throwable,
+) : IllegalStateException("The hardware-backed database key is no longer valid", cause)

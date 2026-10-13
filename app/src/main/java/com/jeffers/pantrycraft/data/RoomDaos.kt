@@ -1,12 +1,16 @@
 package com.jeffers.pantrycraft.data
 
 import androidx.room.*
+import androidx.sqlite.db.SupportSQLiteQuery
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PantryDao {
     @Query("SELECT * FROM pantry_items ORDER BY name COLLATE NOCASE")
     fun observeAllPantryItems(): Flow<List<PantryItem>>
+
+    @RawQuery(observedEntities = [PantryItem::class])
+    fun search(query: SupportSQLiteQuery): Flow<List<PantryItem>>
 
     @Query("SELECT * FROM pantry_items WHERE quantity <= threshold ORDER BY name COLLATE NOCASE")
     fun observeLowStock(): Flow<List<PantryItem>>
