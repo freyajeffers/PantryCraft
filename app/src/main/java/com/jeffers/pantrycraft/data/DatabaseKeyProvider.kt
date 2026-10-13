@@ -85,6 +85,20 @@ object DatabaseKeyProvider {
         }
     }
 
+    fun reset(context: Context) {
+        synchronized(lock) {
+            context.applicationContext
+                .getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+                .edit()
+                .clear()
+                .commit()
+            KeyStore.getInstance(ANDROID_KEYSTORE).apply {
+                load(null)
+                if (containsAlias(KEY_ALIAS)) deleteEntry(KEY_ALIAS)
+            }
+        }
+    }
+
     private fun cipher(
         mode: Int,
         key: SecretKey,

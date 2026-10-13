@@ -109,6 +109,15 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        fun resetEncryptedDatabase(context: Context) {
+            synchronized(this) {
+                INSTANCE?.close()
+                INSTANCE = null
+                context.applicationContext.deleteDatabase("pantry_grocery_encrypted.db")
+                DatabaseKeyProvider.reset(context)
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
                 val passphrase = DatabaseKeyProvider.getKey(context)

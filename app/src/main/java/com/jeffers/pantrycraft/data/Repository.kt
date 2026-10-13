@@ -40,7 +40,10 @@ class Repository private constructor(
     suspend fun decrementQuantity(
         item: PantryItem,
         delta: Float,
-    ) = pantryDao.decrementQuantity(item.id, delta)
+    ) {
+        require(delta > 0f && delta.isFinite()) { "Quantity decrement must be finite and positive" }
+        pantryDao.decrementQuantity(item.id, delta)
+    }
 
     suspend fun getAvailableIngredientsForMeals(): List<PantryItem> = pantryDao.getAvailableIngredients()
 

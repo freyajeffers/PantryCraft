@@ -28,3 +28,5 @@
 - Fixed the production crash on navigation by executing SQLCipher PRAGMA assignments through query cursors instead of execSQL.
 - Added bounded error handling for pantry database mutations so recoverable write failures surface as Snackbar messages instead of crashing the UI coroutine.
 - Applied the same mutation-error handling and Snackbar feedback to grocery-list operations.
+- Added a user-visible recovery path for invalidated hardware-backed keys; reset explicitly deletes the encrypted database and regenerates its wrapping key.
+- Rejected non-positive and non-finite quantity decrements before reaching SQLite.

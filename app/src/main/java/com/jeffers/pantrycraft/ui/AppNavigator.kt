@@ -1,16 +1,45 @@
 package com.jeffers.pantrycraft.ui
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.jeffers.pantrycraft.data.AppDatabase
+import com.jeffers.pantrycraft.data.DatabaseKeyInvalidatedException
+import com.jeffers.pantrycraft.data.Repository
 
 @Composable
 fun AppNavigator() {
+    val context =
+        androidx.compose.ui.platform.LocalContext.current
+    val repositoryResult =
+        remember(context) {
+            runCatching { Repository.getInstance(context) }
+        }
+    val databaseError = repositoryResult.exceptionOrNull()
+    if (databaseError is DatabaseKeyInvalidatedException) {
+        DatabaseRecoveryScreen(
+            onReset = {
+                AppDatabase.resetEncryptedDatabase(context)
+                (context as? android.app.Activity)?.recreate()
+            },
+        )
+        return
+    }
+    val repository = repositoryResult.getOrThrow()
     val navController = rememberNavController()
-    val context = LocalContext.current
 
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
@@ -20,14 +49,32 @@ fun AppNavigator() {
             )
         }
         composable("pantry") {
-            val factory = PantryViewModelFactory(context)
-            val vm: PantryViewModel = viewModel(factory = factory)
+            val vm: PantryViewModel =
+                viewModel(factory = PantryViewModelFactory(repository))
             PantryScreen(vm)
         }
         composable("grocery") {
-            val factory = GroceryViewModelFactory(context)
-            val vm: GroceryViewModel = viewModel(factory = factory)
+            val vm: GroceryViewModel =
+                viewModel(factory = GroceryViewModelFactory(repository))
             GroceryScreen(vm)
+        }
+    }
+}
+
+@Composable
+private fun DatabaseRecoveryScreen(onReset: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("Encrypted database recovery required", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            "The hardware-backed key is unavailable. Resetting removes the local database and starts fresh.",
+            modifier = Modifier.padding(vertical = 16.dp),
+        )
+        Button(onClick = onReset) {
+            Text("Reset local database")
         }
     }
 }
