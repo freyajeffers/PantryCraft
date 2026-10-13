@@ -12,7 +12,7 @@ import java.util.Arrays
 @Database(
     entities = [PantryItem::class, GroceryItem::class],
     version = 2,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun pantryDao(): PantryDao

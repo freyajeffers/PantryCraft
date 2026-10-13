@@ -7,6 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -20,12 +21,21 @@ class PantrySearchTest {
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        database = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
+        database =
+            Room
+                .databaseBuilder(
+                    context,
+                    AppDatabase::class.java,
+                    "pantry-search-test.db",
+                ).openHelperFactory(
+                    SupportOpenHelperFactory(DatabaseKeyProvider.getKey(context)),
+                ).build()
     }
 
     @After
     fun tearDown() {
         database.close()
+        ApplicationProvider.getApplicationContext<Context>().deleteDatabase("pantry-search-test.db")
     }
 
     @Test

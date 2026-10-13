@@ -22,3 +22,4 @@
 - Added Snackbar undo for soft-deleted pantry items.
 - Added Counter storage filtering to complete the four supported inventory locations.
 - Added atomic quantity decrement with a zero floor and a "Use 1" inventory action.
+- Disabled Android app backup to prevent encrypted database and key-wrapper state from being restored inconsistently.

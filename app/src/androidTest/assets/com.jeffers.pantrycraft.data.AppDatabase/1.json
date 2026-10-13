@@ -1,0 +1,43 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "pantrycraft-v1",
+    "entities": [
+      {
+        "tableName": "pantry_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `quantity` REAL NOT NULL, `unit` TEXT, `threshold` REAL NOT NULL, `barcode` TEXT, `lastUpdated` INTEGER NOT NULL)",
+        "fields": [
+          {"fieldPath":"id","columnName":"id","affinity":"INTEGER","notNull":true},
+          {"fieldPath":"name","columnName":"name","affinity":"TEXT","notNull":true},
+          {"fieldPath":"quantity","columnName":"quantity","affinity":"REAL","notNull":true},
+          {"fieldPath":"unit","columnName":"unit","affinity":"TEXT"},
+          {"fieldPath":"threshold","columnName":"threshold","affinity":"REAL","notNull":true},
+          {"fieldPath":"barcode","columnName":"barcode","affinity":"TEXT"},
+          {"fieldPath":"lastUpdated","columnName":"lastUpdated","affinity":"INTEGER","notNull":true}
+        ],
+        "primaryKey":{"autoGenerate":true,"columnNames":["id"]},
+        "indices":[]
+      },
+      {
+        "tableName":"grocery_items",
+        "createSql":"CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `quantity` REAL NOT NULL, `unit` TEXT, `checked` INTEGER NOT NULL, `fromPantryId` INTEGER, `createdAt` INTEGER NOT NULL)",
+        "fields": [
+          {"fieldPath":"id","columnName":"id","affinity":"INTEGER","notNull":true},
+          {"fieldPath":"name","columnName":"name","affinity":"TEXT","notNull":true},
+          {"fieldPath":"quantity","columnName":"quantity","affinity":"REAL","notNull":true},
+          {"fieldPath":"unit","columnName":"unit","affinity":"TEXT"},
+          {"fieldPath":"checked","columnName":"checked","affinity":"INTEGER","notNull":true},
+          {"fieldPath":"fromPantryId","columnName":"fromPantryId","affinity":"INTEGER"},
+          {"fieldPath":"createdAt","columnName":"createdAt","affinity":"INTEGER","notNull":true}
+        ],
+        "primaryKey":{"autoGenerate":true,"columnNames":["id"]},
+        "indices":[]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'pantrycraft-v1')"
+    ]
+  }
+}

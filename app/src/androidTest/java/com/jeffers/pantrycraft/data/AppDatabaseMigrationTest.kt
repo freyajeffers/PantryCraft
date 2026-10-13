@@ -1,9 +1,10 @@
 package com.jeffers.pantrycraft.data
 
 import androidx.room.testing.MigrationTestHelper
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -19,7 +20,9 @@ class AppDatabaseMigrationTest {
                 InstrumentationRegistry.getInstrumentation(),
                 AppDatabase::class.java,
                 emptyList(),
-                FrameworkSQLiteOpenHelperFactory(),
+                SupportOpenHelperFactory(
+                    DatabaseKeyProvider.getKey(ApplicationProvider.getApplicationContext()),
+                ),
             )
 
     @Test

@@ -43,8 +43,11 @@ object DatabaseKeyProvider {
         passphrase: ByteArray,
     ): ByteArray {
         return try {
-            val iv = ByteArray(IV_BYTES).also(SecureRandom()::nextBytes)
-            val cipher = cipher(Cipher.ENCRYPT_MODE, getOrCreateWrappingKey(), iv)
+            val cipher =
+                Cipher.getInstance("AES/GCM/NoPadding").apply {
+                    init(Cipher.ENCRYPT_MODE, getOrCreateWrappingKey())
+                }
+            val iv = cipher.iv
             val ciphertext = cipher.doFinal(passphrase)
             val wrapped = ByteArray(iv.size + ciphertext.size)
             iv.copyInto(wrapped)
