@@ -20,6 +20,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun groceryDao(): GroceryDao
 
     companion object {
+        init {
+            System.loadLibrary("sqlcipher")
+        }
+
         val MIGRATION_1_2 =
             object : Migration(1, 2) {
                 override fun migrate(db: SupportSQLiteDatabase) {
@@ -41,14 +45,36 @@ abstract class AppDatabase : RoomDatabase() {
                             "purchase_timestamp = lastUpdated, created_at = lastUpdated, " +
                             "updated_at = lastUpdated",
                     )
-                    db.execSQL("CREATE INDEX IF NOT EXISTS index_pantry_items_normalized_name ON pantry_items(normalized_name)")
-                    db.execSQL("CREATE INDEX IF NOT EXISTS index_pantry_items_expiration ON pantry_items(expirationTimestamp)")
-                    db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_pantry_items_barcode ON pantry_items(barcode)")
-                    configureSearchIndex(db)
+                    db.execSQL(
+                        "CREATE TABLE pantry_items_new (" +
+                            "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                            "name TEXT NOT NULL, quantity REAL NOT NULL, unit TEXT, " +
+                            "threshold REAL NOT NULL, barcode TEXT, lastUpdated INTEGER NOT NULL, " +
+                            "normalized_name TEXT NOT NULL, custom_unit_name TEXT, " +
+                            "purchase_timestamp INTEGER NOT NULL, storageLocation TEXT NOT NULL, " +
+                            "category TEXT NOT NULL, expirationTimestamp INTEGER, " +
+                            "isOpened INTEGER NOT NULL, openedTimestamp INTEGER, " +
+                            "isAromaticOrSeasoning INTEGER NOT NULL, isDeleted INTEGER NOT NULL, " +
+                            "notes TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)",
+                    )
+                    db.execSQL(
+                        "INSERT INTO pantry_items_new SELECT id, name, quantity, unit, threshold, barcode, " +
+                            "lastUpdated, normalized_name, custom_unit_name, purchase_timestamp, " +
+                            "storageLocation, category, expirationTimestamp, isOpened, openedTimestamp, " +
+                            "isAromaticOrSeasoning, isDeleted, notes, created_at, updated_at " +
+                            "FROM pantry_items",
+                    )
+                    db.execSQL("DROP TABLE pantry_items")
+                    db.execSQL("ALTER TABLE pantry_items_new RENAME TO pantry_items")
+                    db.execSQL("CREATE INDEX index_pantry_items_storageLocation ON pantry_items(storageLocation)")
+                    db.execSQL("CREATE INDEX index_pantry_items_normalized_name ON pantry_items(normalized_name)")
+                    db.execSQL("CREATE INDEX index_pantry_items_expirationTimestamp ON pantry_items(expirationTimestamp)")
+                    db.execSQL("CREATE UNIQUE INDEX index_pantry_items_barcode ON pantry_items(barcode)")
+                    db.execSQL("CREATE INDEX index_pantry_items_isDeleted ON pantry_items(isDeleted)")
                 }
             }
 
-        private fun configureSearchIndex(db: SupportSQLiteDatabase) {
+        internal fun configureSearchIndex(db: SupportSQLiteDatabase) {
             db.execSQL(
                 "CREATE VIRTUAL TABLE IF NOT EXISTS pantry_items_fts " +
                     "USING fts5(name, notes, category, content='pantry_items', content_rowid='rowid')",

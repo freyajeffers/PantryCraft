@@ -30,6 +30,7 @@ class PantrySearchTest {
                 ).openHelperFactory(
                     SupportOpenHelperFactory(DatabaseKeyProvider.getKey(context)),
                 ).build()
+        AppDatabase.configureSearchIndex(database.openHelper.writableDatabase)
     }
 
     @After
