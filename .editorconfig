@@ -1,0 +1,10 @@
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+
+[*.kt]
+ktlint_standard_function-naming = disabled
+ktlint_standard_property-naming = disabled
+ktlint_standard_no-wildcard-imports = disabled

@@ -10,13 +10,14 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun HomeScreen(
     onPantryClick: () -> Unit,
-    onGroceryClick: () -> Unit
+    onGroceryClick: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text("Pantry & Grocery")
         Text("Track what you have and what you need to buy.")
@@ -28,4 +29,3 @@ fun HomeScreen(
         }
     }
 }
-

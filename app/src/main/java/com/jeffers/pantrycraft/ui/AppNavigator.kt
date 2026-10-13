@@ -16,7 +16,7 @@ fun AppNavigator() {
         composable("home") {
             HomeScreen(
                 onPantryClick = { navController.navigate("pantry") },
-                onGroceryClick = { navController.navigate("grocery") }
+                onGroceryClick = { navController.navigate("grocery") },
             )
         }
         composable("pantry") {

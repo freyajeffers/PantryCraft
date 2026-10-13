@@ -9,8 +9,8 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["storageLocation"]),
         Index(value = ["expirationTimestamp"]),
-        Index(value = ["barcode"], unique = true)
-    ]
+        Index(value = ["barcode"], unique = true),
+    ],
 )
 data class PantryItem(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -25,7 +25,7 @@ data class PantryItem(
     val expirationTimestamp: Long? = null,
     val isOpened: Boolean = false,
     val openedTimestamp: Long? = null,
-    val notes: String? = null
+    val notes: String? = null,
 )
 
 @Entity(tableName = "grocery_items")
@@ -36,5 +36,5 @@ data class GroceryItem(
     val unit: String? = null,
     val checked: Boolean = false,
     val fromPantryId: Long? = null,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
 )

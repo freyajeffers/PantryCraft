@@ -8,3 +8,4 @@
 - Enabled Room write-ahead logging for concurrent UI and background access.
 - Replaced manual repository refreshes with reactive Room `Flow` streams.
 - Added migration instrumentation coverage that verifies existing pantry data survives the schema upgrade.
+- Added a Gradle ktlint quality gate for Kotlin sources.

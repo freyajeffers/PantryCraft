@@ -9,14 +9,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class PantryViewModel(private val repo: Repository) : ViewModel() {
-    val items: StateFlow<List<PantryItem>> = repo.observePantryItems().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = emptyList()
-    )
+class PantryViewModel(
+    private val repo: Repository,
+) : ViewModel() {
+    val items: StateFlow<List<PantryItem>> =
+        repo.observePantryItems().stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList(),
+        )
 
     fun add(item: PantryItem) = viewModelScope.launch { repo.insertPantry(item) }
+
     fun update(item: PantryItem) = viewModelScope.launch { repo.updatePantry(item) }
+
     fun delete(item: PantryItem) = viewModelScope.launch { repo.deletePantry(item) }
 }

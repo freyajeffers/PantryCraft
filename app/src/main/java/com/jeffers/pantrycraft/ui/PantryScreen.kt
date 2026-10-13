@@ -3,8 +3,8 @@ package com.jeffers.pantrycraft.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,7 +26,7 @@ fun PantryScreen(viewModel: PantryViewModel) {
             }) {
                 Text("+")
             }
-        }
+        },
     ) { padding ->
         if (items.isEmpty()) {
             Text("Your pantry is empty.", modifier = Modifier.padding(padding).padding(16.dp))
@@ -41,12 +41,16 @@ fun PantryScreen(viewModel: PantryViewModel) {
 }
 
 @Composable
-fun PantryItemRow(item: PantryItem, onDelete: () -> Unit) {
+fun PantryItemRow(
+    item: PantryItem,
+    onDelete: () -> Unit,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(item.name, style = MaterialTheme.typography.titleMedium)

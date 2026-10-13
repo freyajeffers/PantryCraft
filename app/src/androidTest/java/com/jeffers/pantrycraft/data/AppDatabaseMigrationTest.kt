@@ -13,12 +13,14 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AppDatabaseMigrationTest {
     @get:Rule
-    val helper = MigrationTestHelper(
-        InstrumentationRegistry.getInstrumentation(),
-        AppDatabase::class.java,
-        emptyList(),
-        FrameworkSQLiteOpenHelperFactory()
-    )
+    val helper
+        get() =
+            MigrationTestHelper(
+                InstrumentationRegistry.getInstrumentation(),
+                AppDatabase::class.java,
+                emptyList(),
+                FrameworkSQLiteOpenHelperFactory(),
+            )
 
     @Test
     fun migrate1To2_preservesExistingDataAndAddsInventoryFields() {
@@ -26,12 +28,18 @@ class AppDatabaseMigrationTest {
             execSQL(
                 "INSERT INTO pantry_items " +
                     "(id, name, quantity, unit, threshold, barcode, lastUpdated) " +
-                    "VALUES (1, 'Milk', 1.0, 'GALLON', 0.2, '12345', 1000)"
+                    "VALUES (1, 'Milk', 1.0, 'GALLON', 0.2, '12345', 1000)",
             )
             close()
         }
 
-        val db = helper.runMigrationsAndValidate("migration-test", 2, true, AppDatabase.MIGRATION_1_2)
+        val db =
+            helper.runMigrationsAndValidate(
+                "migration-test",
+                2,
+                true,
+                AppDatabase.MIGRATION_1_2,
+            )
         db.query("SELECT * FROM pantry_items WHERE id = 1").use { cursor ->
             assertTrue(cursor.moveToFirst())
             assertEquals("Milk", cursor.getString(cursor.getColumnIndexOrThrow("name")))

@@ -3,8 +3,8 @@ package com.jeffers.pantrycraft.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -23,9 +23,9 @@ fun GroceryScreen(viewModel: GroceryViewModel) {
             ExtendedFloatingActionButton(
                 onClick = { viewModel.add(GroceryItem(name = "New item")) },
                 text = { Text("Add") },
-                icon = {}
+                icon = {},
             )
-        }
+        },
     ) { padding ->
         if (items.isEmpty()) {
             Text("Your grocery list is empty.", modifier = Modifier.padding(padding).padding(16.dp))
@@ -42,12 +42,16 @@ fun GroceryScreen(viewModel: GroceryViewModel) {
 }
 
 @Composable
-fun GroceryItemRow(item: GroceryItem, onChecked: (Boolean) -> Unit) {
+fun GroceryItemRow(
+    item: GroceryItem,
+    onChecked: (Boolean) -> Unit,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(item.name, style = MaterialTheme.typography.titleMedium)
