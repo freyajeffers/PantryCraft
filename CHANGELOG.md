@@ -32,3 +32,4 @@
 - Rejected non-positive and non-finite quantity decrements before reaching SQLite.
 - Added swipe gestures to decrement inventory items or invoke the existing soft-delete/undo flow.
 - Classified SQLite-full failures separately so pantry and grocery screens report storage exhaustion with actionable feedback.
+- SQLite-full handling now prunes only temporary `cacheDir/vision_scratch` media before reporting the storage error.

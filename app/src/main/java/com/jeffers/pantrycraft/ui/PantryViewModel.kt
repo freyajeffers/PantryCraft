@@ -91,7 +91,8 @@ class PantryViewModel(
         } catch (error: CancellationException) {
             throw error
         } catch (_: SQLiteFullException) {
-            _operationErrors.emit("Storage is full; free space and try again")
+            repo.reclaimTemporaryMedia()
+            _operationErrors.emit("Storage is full; temporary media cleared; free space and try again")
         } catch (_: Exception) {
             _operationErrors.emit(errorMessage)
         }

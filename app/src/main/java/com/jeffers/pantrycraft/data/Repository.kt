@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 class Repository private constructor(
     private val db: AppDatabase,
+    private val appContext: Context,
 ) {
     private val pantryDao = db.pantryDao()
     private val groceryDao = db.groceryDao()
@@ -65,6 +66,12 @@ class Repository private constructor(
 
     suspend fun clearCheckedGrocery() = groceryDao.deleteChecked()
 
+    fun reclaimTemporaryMedia(): Int {
+        val scratch = appContext.cacheDir.resolve("vision_scratch")
+        if (!scratch.isDirectory) return 0
+        return scratch.listFiles().orEmpty().count { it.deleteRecursively() }
+    }
+
     private fun validate(item: PantryItem): PantryItem {
         require(item.name.isNotBlank()) { "Pantry item name must not be blank" }
         require(item.quantity >= 0f) { "Pantry item quantity must not be negative" }
@@ -81,7 +88,10 @@ class Repository private constructor(
 
         fun getInstance(context: Context): Repository =
             INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Repository(AppDatabase.getDatabase(context)).also { INSTANCE = it }
+                INSTANCE ?: Repository(
+                    AppDatabase.getDatabase(context),
+                    context.applicationContext,
+                ).also { INSTANCE = it }
             }
     }
 }
