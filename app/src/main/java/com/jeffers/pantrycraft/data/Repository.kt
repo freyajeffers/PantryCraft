@@ -1,19 +1,21 @@
 package com.jeffers.pantrycraft.data
 
 import android.content.Context
+import kotlinx.coroutines.flow.Flow
 
 class Repository private constructor(private val db: AppDatabase) {
-
     private val pantryDao = db.pantryDao()
     private val groceryDao = db.groceryDao()
 
-    suspend fun getAllPantryItems() = pantryDao.getAllPantryItems()
+    fun observePantryItems(): Flow<List<PantryItem>> = pantryDao.observeAllPantryItems()
+    fun observeLowStock(): Flow<List<PantryItem>> = pantryDao.observeLowStock()
+    suspend fun findPantryItemByBarcode(barcode: String): PantryItem? = pantryDao.findByBarcode(barcode)
+    suspend fun getAvailableIngredientsForMeals(): List<PantryItem> = pantryDao.getAvailableIngredients()
     suspend fun insertPantry(item: PantryItem) = pantryDao.insert(item)
     suspend fun updatePantry(item: PantryItem) = pantryDao.update(item)
     suspend fun deletePantry(item: PantryItem) = pantryDao.delete(item)
-    suspend fun getLowStock() = pantryDao.getLowStock()
 
-    suspend fun getAllGroceryItems() = groceryDao.getAllGroceryItems()
+    fun observeGroceryItems(): Flow<List<GroceryItem>> = groceryDao.observeAllGroceryItems()
     suspend fun insertGrocery(item: GroceryItem) = groceryDao.insert(item)
     suspend fun updateGrocery(item: GroceryItem) = groceryDao.update(item)
     suspend fun deleteGrocery(item: GroceryItem) = groceryDao.delete(item)
@@ -25,10 +27,7 @@ class Repository private constructor(private val db: AppDatabase) {
 
         fun getInstance(context: Context): Repository {
             return INSTANCE ?: synchronized(this) {
-                val db = AppDatabase.getDatabase(context)
-                val repo = Repository(db)
-                INSTANCE = repo
-                repo
+                INSTANCE ?: Repository(AppDatabase.getDatabase(context)).also { INSTANCE = it }
             }
         }
     }

@@ -1,11 +1,21 @@
 package com.jeffers.pantrycraft.data
 
 import androidx.room.*
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PantryDao {
     @Query("SELECT * FROM pantry_items ORDER BY name COLLATE NOCASE")
-    suspend fun getAllPantryItems(): List<PantryItem>
+    fun observeAllPantryItems(): Flow<List<PantryItem>>
+
+    @Query("SELECT * FROM pantry_items WHERE quantity <= threshold ORDER BY name COLLATE NOCASE")
+    fun observeLowStock(): Flow<List<PantryItem>>
+
+    @Query("SELECT * FROM pantry_items WHERE barcode = :barcode LIMIT 1")
+    suspend fun findByBarcode(barcode: String): PantryItem?
+
+    @Query("SELECT * FROM pantry_items ORDER BY expirationTimestamp ASC")
+    suspend fun getAvailableIngredients(): List<PantryItem>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: PantryItem): Long
@@ -15,15 +25,12 @@ interface PantryDao {
 
     @Delete
     suspend fun delete(item: PantryItem)
-
-    @Query("SELECT * FROM pantry_items WHERE quantity <= threshold")
-    suspend fun getLowStock(): List<PantryItem>
 }
 
 @Dao
 interface GroceryDao {
     @Query("SELECT * FROM grocery_items ORDER BY createdAt DESC")
-    suspend fun getAllGroceryItems(): List<GroceryItem>
+    fun observeAllGroceryItems(): Flow<List<GroceryItem>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: GroceryItem): Long
