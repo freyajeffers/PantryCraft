@@ -73,7 +73,11 @@ abstract class AppDatabase : RoomDatabase() {
                     "INSERT INTO pantry_items_fts(rowid, name, notes, category) " +
                     "SELECT new.rowid, new.name, new.notes, new.category WHERE new.isDeleted = 0; END",
             )
-            db.execSQL("INSERT INTO pantry_items_fts(pantry_items_fts) VALUES ('rebuild')")
+            db.execSQL("INSERT INTO pantry_items_fts(pantry_items_fts) VALUES ('delete-all')")
+            db.execSQL(
+                "INSERT INTO pantry_items_fts(rowid, name, notes, category) " +
+                    "SELECT id, name, notes, category FROM pantry_items WHERE isDeleted = 0",
+            )
         }
 
         @Volatile

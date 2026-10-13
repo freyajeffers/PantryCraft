@@ -23,3 +23,4 @@
 - Added Counter storage filtering to complete the four supported inventory locations.
 - Added atomic quantity decrement with a zero floor and a "Use 1" inventory action.
 - Disabled Android app backup to prevent encrypted database and key-wrapper state from being restored inconsistently.
+- Rebuilt the FTS5 index from non-deleted rows only, preventing tombstones from entering the search index.
