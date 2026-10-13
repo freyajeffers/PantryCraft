@@ -9,3 +9,4 @@
 - Replaced manual repository refreshes with reactive Room `Flow` streams.
 - Added migration instrumentation coverage that verifies existing pantry data survives the schema upgrade.
 - Added a Gradle ktlint quality gate for Kotlin sources.
+- Added Android KeyStore-derived SQLCipher encryption with WAL, busy timeout, and memory-mapped I/O settings.

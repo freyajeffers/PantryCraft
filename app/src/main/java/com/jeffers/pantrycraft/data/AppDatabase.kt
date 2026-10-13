@@ -6,6 +6,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
+import java.util.Arrays
 
 @Database(entities = [PantryItem::class, GroceryItem::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
@@ -34,13 +36,25 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
+                val passphrase = DatabaseKeyProvider.getKey()
+                val factory = SupportOpenHelperFactory(passphrase)
+                Arrays.fill(passphrase, 0.toByte())
+
                 INSTANCE ?: Room
                     .databaseBuilder(
                         context.applicationContext,
                         AppDatabase::class.java,
-                        "pantry_grocery_db",
-                    ).setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-                    .addMigrations(MIGRATION_1_2)
+                        "pantry_grocery_encrypted.db",
+                    ).openHelperFactory(factory)
+                    .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+                    .addCallback(
+                        object : RoomDatabase.Callback() {
+                            override fun onOpen(db: SupportSQLiteDatabase) {
+                                db.execSQL("PRAGMA busy_timeout = 5000")
+                                db.execSQL("PRAGMA mmap_size = 268435456")
+                            }
+                        },
+                    ).addMigrations(MIGRATION_1_2)
                     .build()
                     .also { INSTANCE = it }
             }
