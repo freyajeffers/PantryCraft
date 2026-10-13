@@ -26,6 +26,16 @@ class PantryViewModelTest {
         )
     }
 
+    @Test
+    fun filterPantryItems_filtersCounterItems() {
+        val items = sampleItems() + PantryItem(id = 4, name = "Bread", storageLocation = "COUNTER")
+
+        assertEquals(
+            listOf(items[3]),
+            filterPantryItems(items, PantryLocationFilter.COUNTER),
+        )
+    }
+
     private fun sampleItems() =
         listOf(
             PantryItem(id = 1, name = "Rice", storageLocation = "PANTRY"),

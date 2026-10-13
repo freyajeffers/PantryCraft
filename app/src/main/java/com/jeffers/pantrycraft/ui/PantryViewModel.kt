@@ -71,6 +71,7 @@ enum class PantryLocationFilter(
     PANTRY("Pantry", "PANTRY"),
     FRIDGE("Fridge", "FRIDGE"),
     FREEZER("Freezer", "FREEZER"),
+    COUNTER("Counter", "COUNTER"),
     EXPIRING_SOON("Expiring soon", null),
 }
 

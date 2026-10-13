@@ -20,3 +20,4 @@
 - Added deterministic clock injection to Expiring Soon filtering.
 - Replaced deterministic HMAC database-key derivation with a random 256-bit SQLCipher passphrase wrapped by an Android KeyStore AES-256-GCM key.
 - Added Snackbar undo for soft-deleted pantry items.
+- Added Counter storage filtering to complete the four supported inventory locations.
