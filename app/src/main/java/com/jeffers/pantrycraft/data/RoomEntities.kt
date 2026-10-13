@@ -1,4 +1,4 @@
-package com.freya.pantrygrocery.data
+package com.jeffers.pantrycraft.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

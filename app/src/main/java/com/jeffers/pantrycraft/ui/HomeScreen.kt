@@ -1,4 +1,4 @@
-package com.freya.pantrygrocery.ui
+package com.jeffers.pantrycraft.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button

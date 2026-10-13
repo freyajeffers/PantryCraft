@@ -1,9 +1,9 @@
-package com.freya.pantrygrocery.ui
+package com.jeffers.pantrycraft.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.freya.pantrygrocery.data.GroceryItem
-import com.freya.pantrygrocery.data.Repository
+import com.jeffers.pantrycraft.data.GroceryItem
+import com.jeffers.pantrycraft.data.Repository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

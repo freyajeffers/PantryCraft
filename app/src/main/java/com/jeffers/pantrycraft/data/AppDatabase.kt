@@ -1,4 +1,4 @@
-package com.freya.pantrygrocery.data
+package com.jeffers.pantrycraft.data
 
 import android.content.Context
 import androidx.room.Database

@@ -1,4 +1,4 @@
-package com.freya.pantrygrocery.ui
+package com.jeffers.pantrycraft.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext

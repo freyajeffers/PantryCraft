@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace 'com.freya.pantrygrocery'
+    namespace 'com.jeffers.pantrycraft'
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.freya.pantrygrocery"
+        applicationId "com.jeffers.pantrycraft"
         minSdk 23
         targetSdk 36
         versionCode 1
