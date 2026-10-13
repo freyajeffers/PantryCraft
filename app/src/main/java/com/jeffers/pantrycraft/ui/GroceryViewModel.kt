@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jeffers.pantrycraft.data.GroceryItem
 import com.jeffers.pantrycraft.data.Repository
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -19,11 +22,39 @@ class GroceryViewModel(
             initialValue = emptyList(),
         )
 
-    fun add(item: GroceryItem) = viewModelScope.launch { repo.insertGrocery(item) }
+    private val _operationErrors = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val operationErrors: SharedFlow<String> = _operationErrors
 
-    fun update(item: GroceryItem) = viewModelScope.launch { repo.updateGrocery(item) }
+    fun add(item: GroceryItem) =
+        launchDatabaseOperation("Unable to add grocery item") {
+            repo.insertGrocery(item)
+        }
 
-    fun delete(item: GroceryItem) = viewModelScope.launch { repo.deleteGrocery(item) }
+    fun update(item: GroceryItem) =
+        launchDatabaseOperation("Unable to update grocery item") {
+            repo.updateGrocery(item)
+        }
 
-    fun clearChecked() = viewModelScope.launch { repo.clearCheckedGrocery() }
+    fun delete(item: GroceryItem) =
+        launchDatabaseOperation("Unable to delete grocery item") {
+            repo.deleteGrocery(item)
+        }
+
+    fun clearChecked() =
+        launchDatabaseOperation("Unable to clear checked grocery items") {
+            repo.clearCheckedGrocery()
+        }
+
+    private fun launchDatabaseOperation(
+        errorMessage: String,
+        operation: suspend () -> Unit,
+    ) = viewModelScope.launch {
+        try {
+            operation()
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            _operationErrors.emit(errorMessage)
+        }
+    }
 }

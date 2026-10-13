@@ -6,8 +6,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.GroceryItem
@@ -16,8 +18,16 @@ import com.jeffers.pantrycraft.data.GroceryItem
 @Composable
 fun GroceryScreen(viewModel: GroceryViewModel) {
     val items by viewModel.items.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(viewModel) {
+        viewModel.operationErrors.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { TopAppBar(title = { Text("Grocery list") }) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
