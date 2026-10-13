@@ -58,6 +58,11 @@ class PantryViewModel(
 
     fun update(item: PantryItem) = viewModelScope.launch { repo.updatePantry(item) }
 
+    fun decrement(
+        item: PantryItem,
+        delta: Float,
+    ) = viewModelScope.launch { repo.decrementQuantity(item, delta) }
+
     fun delete(item: PantryItem) = viewModelScope.launch { repo.deletePantry(item) }
 
     fun restore(item: PantryItem) = viewModelScope.launch { repo.restorePantry(item) }

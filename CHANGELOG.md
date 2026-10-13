@@ -21,3 +21,4 @@
 - Replaced deterministic HMAC database-key derivation with a random 256-bit SQLCipher passphrase wrapped by an Android KeyStore AES-256-GCM key.
 - Added Snackbar undo for soft-deleted pantry items.
 - Added Counter storage filtering to complete the four supported inventory locations.
+- Added atomic quantity decrement with a zero floor and a "Use 1" inventory action.

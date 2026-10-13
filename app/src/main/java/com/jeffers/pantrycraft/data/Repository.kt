@@ -37,6 +37,11 @@ class Repository private constructor(
 
     suspend fun findPantryItemByBarcode(barcode: String): PantryItem? = pantryDao.findByBarcode(barcode)
 
+    suspend fun decrementQuantity(
+        item: PantryItem,
+        delta: Float,
+    ) = pantryDao.decrementQuantity(item.id, delta)
+
     suspend fun getAvailableIngredientsForMeals(): List<PantryItem> = pantryDao.getAvailableIngredients()
 
     suspend fun insertPantry(item: PantryItem) = pantryDao.insert(validate(item))

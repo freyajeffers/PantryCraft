@@ -39,6 +39,17 @@ interface PantryDao {
     @Update
     suspend fun update(item: PantryItem)
 
+    @Query(
+        "UPDATE pantry_items SET quantity = CASE WHEN quantity - :delta < 0 THEN 0 " +
+            "ELSE quantity - :delta END, updated_at = :updatedAt " +
+            "WHERE id = :id AND isDeleted = 0",
+    )
+    suspend fun decrementQuantity(
+        id: Long,
+        delta: Float,
+        updatedAt: Long = System.currentTimeMillis(),
+    )
+
     @Delete
     suspend fun delete(item: PantryItem)
 }

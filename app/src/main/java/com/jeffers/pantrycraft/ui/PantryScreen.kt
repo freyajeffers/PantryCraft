@@ -115,7 +115,10 @@ fun PantryScreen(viewModel: PantryViewModel) {
             } else {
                 LazyColumn {
                     items(items, key = { it.id }) { item ->
-                        PantryItemRow(item) {
+                        PantryItemRow(
+                            item = item,
+                            onDecrement = { viewModel.decrement(item, 1f) },
+                        ) {
                             viewModel.delete(item)
                             scope.launch {
                                 val result =
@@ -138,6 +141,7 @@ fun PantryScreen(viewModel: PantryViewModel) {
 @Composable
 fun PantryItemRow(
     item: PantryItem,
+    onDecrement: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val expiration = expirationStatus(item.expirationTimestamp)
@@ -154,6 +158,7 @@ fun PantryItemRow(
                 style = MaterialTheme.typography.bodySmall,
             )
         }
+        TextButton(onClick = onDecrement, enabled = item.quantity > 0f) { Text("Use 1") }
         TextButton(onClick = onDelete) { Text("Delete") }
     }
 }
