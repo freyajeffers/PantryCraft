@@ -74,6 +74,12 @@ abstract class AppDatabase : RoomDatabase() {
                 }
             }
 
+        private fun searchIndexIsConfigured(db: SupportSQLiteDatabase): Boolean =
+            db
+                .query(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'pantry_items_fts'",
+                ).use { cursor -> cursor.moveToFirst() && cursor.getInt(0) == 1 }
+
         internal fun configureSearchIndex(db: SupportSQLiteDatabase) {
             db.execSQL(
                 "CREATE VIRTUAL TABLE IF NOT EXISTS pantry_items_fts " +
@@ -139,7 +145,7 @@ abstract class AppDatabase : RoomDatabase() {
                             }
 
                             override fun onOpen(db: SupportSQLiteDatabase) {
-                                configureSearchIndex(db)
+                                if (!searchIndexIsConfigured(db)) configureSearchIndex(db)
                                 db.query("PRAGMA synchronous = NORMAL").close()
                                 db.query("PRAGMA foreign_keys = ON").close()
                                 db.query("PRAGMA temp_store = MEMORY").close()

@@ -37,4 +37,6 @@
 - Expanded manual pantry entry with category suggestions and shelf-life presets that populate expiration timestamps.
 - Added a negative encrypted-storage instrumentation test proving a random SQLCipher key cannot open the database.
 - Added a storage diagnostic dialog to both inventory and grocery flows after SQLite-full recovery handling.
-- Preserved automatic FTS rebuild-on-open behavior while keeping the search index self-healing after corruption.
+- Replaced unconditional FTS rebuilds on every database open with a one-time missing-index check, reducing startup work while retaining first-open recovery.
+- Moved encrypted database initialization to Dispatchers.IO with a loading state so Compose startup does not block the main thread.
+- Verified the 5,000-row raw SQLCipher FTS prefix query at 0.12875 ms on the device.

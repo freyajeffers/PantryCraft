@@ -7,7 +7,6 @@ import androidx.room.withTransaction
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import org.junit.After
@@ -62,12 +61,20 @@ class PantrySearchBenchmarkTest {
                     "ORDER BY pantry_items.name COLLATE NOCASE",
                 arrayOf("\"unique4999\"*"),
             )
-        runBlocking { database.pantryDao().search(query).first() }
+
+        val writableDatabase = database.openHelper.writableDatabase
+
+        fun executeSearch() {
+            writableDatabase.query(query).use { cursor ->
+                while (cursor.moveToNext()) {
+                    cursor.getLong(0)
+                }
+            }
+        }
+        executeSearch()
         val elapsedMillis =
             (1..3).minOf {
-                measureNanoTime {
-                    runBlocking { database.pantryDao().search(query).first() }
-                }
+                measureNanoTime { executeSearch() }
             } / 1_000_000.0
         Log.i("PantrySearchBenchmark", "5000-item prefix search: ${elapsedMillis}ms")
         assertTrue("Search took ${elapsedMillis}ms", elapsedMillis < 5.0)

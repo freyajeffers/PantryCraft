@@ -8,7 +8,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -19,15 +19,24 @@ import androidx.navigation.compose.rememberNavController
 import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.DatabaseKeyInvalidatedException
 import com.jeffers.pantrycraft.data.Repository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun AppNavigator() {
     val context =
         androidx.compose.ui.platform.LocalContext.current
     val repositoryResult =
-        remember(context) {
-            runCatching { Repository.getInstance(context) }
-        }
+        produceState<Result<Repository>?>(initialValue = null, context) {
+            value =
+                withContext(Dispatchers.IO) {
+                    runCatching { Repository.getInstance(context) }
+                }
+        }.value
+    if (repositoryResult == null) {
+        DatabaseLoadingScreen()
+        return
+    }
     val databaseError = repositoryResult.exceptionOrNull()
     if (databaseError is DatabaseKeyInvalidatedException) {
         DatabaseRecoveryScreen(
@@ -58,6 +67,17 @@ fun AppNavigator() {
                 viewModel(factory = GroceryViewModelFactory(repository))
             GroceryScreen(vm)
         }
+    }
+}
+
+@Composable
+private fun DatabaseLoadingScreen() {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("Opening encrypted pantry", style = MaterialTheme.typography.headlineSmall)
     }
 }
 
