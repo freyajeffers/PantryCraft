@@ -15,12 +15,17 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -29,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jeffers.pantrycraft.data.PantryItem
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 private val ExpiredColor = Color(0xFFB3261E)
@@ -43,6 +49,8 @@ fun PantryScreen(viewModel: PantryViewModel) {
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var newItemName by rememberSaveable { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     if (showAddDialog) {
         AlertDialog(
@@ -73,6 +81,7 @@ fun PantryScreen(viewModel: PantryViewModel) {
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { TopAppBar(title = { Text("Pantry") }) },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
@@ -106,7 +115,19 @@ fun PantryScreen(viewModel: PantryViewModel) {
             } else {
                 LazyColumn {
                     items(items, key = { it.id }) { item ->
-                        PantryItemRow(item) { viewModel.delete(item) }
+                        PantryItemRow(item) {
+                            viewModel.delete(item)
+                            scope.launch {
+                                val result =
+                                    snackbarHostState.showSnackbar(
+                                        message = "${item.name} deleted",
+                                        actionLabel = "Undo",
+                                    )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.restore(item)
+                                }
+                            }
+                        }
                     }
                 }
             }

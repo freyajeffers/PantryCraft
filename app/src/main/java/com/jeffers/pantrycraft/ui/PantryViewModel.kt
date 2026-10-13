@@ -59,6 +59,8 @@ class PantryViewModel(
     fun update(item: PantryItem) = viewModelScope.launch { repo.updatePantry(item) }
 
     fun delete(item: PantryItem) = viewModelScope.launch { repo.deletePantry(item) }
+
+    fun restore(item: PantryItem) = viewModelScope.launch { repo.restorePantry(item) }
 }
 
 enum class PantryLocationFilter(
