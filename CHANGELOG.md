@@ -30,3 +30,4 @@
 - Applied the same mutation-error handling and Snackbar feedback to grocery-list operations.
 - Added a user-visible recovery path for invalidated hardware-backed keys; reset explicitly deletes the encrypted database and regenerates its wrapping key.
 - Rejected non-positive and non-finite quantity decrements before reaching SQLite.
+- Added swipe gestures to decrement inventory items or invoke the existing soft-delete/undo flow.

@@ -18,9 +18,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -145,6 +148,7 @@ fun PantryScreen(viewModel: PantryViewModel) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantryItemRow(
     item: PantryItem,
@@ -152,22 +156,42 @@ fun PantryItemRow(
     onDelete: () -> Unit,
 ) {
     val expiration = expirationStatus(item.expirationTimestamp)
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(item.name, style = MaterialTheme.typography.titleMedium)
-            Text("${item.quantity} ${item.unit.orEmpty()}", style = MaterialTheme.typography.bodySmall)
-            Text(
-                text = "${item.storageLocation} • ${expiration.label}",
-                color = expiration.color,
-                style = MaterialTheme.typography.bodySmall,
-            )
+    val dismissState =
+        rememberSwipeToDismissBoxState(confirmValueChange = { value ->
+            value != SwipeToDismissBoxValue.Settled
+        })
+    LaunchedEffect(dismissState.currentValue) {
+        when (dismissState.currentValue) {
+            SwipeToDismissBoxValue.StartToEnd -> {
+                onDecrement()
+                dismissState.reset()
+            }
+            SwipeToDismissBoxValue.EndToStart -> onDelete()
+            SwipeToDismissBoxValue.Settled -> Unit
         }
-        TextButton(onClick = onDecrement, enabled = item.quantity > 0f) { Text("Use 1") }
-        TextButton(onClick = onDelete) { Text("Delete") }
     }
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {},
+        content = {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(item.name, style = MaterialTheme.typography.titleMedium)
+                    Text("${item.quantity} ${item.unit.orEmpty()}", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = "${item.storageLocation} • ${expiration.label}",
+                        color = expiration.color,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                TextButton(onClick = onDecrement, enabled = item.quantity > 0f) { Text("Use 1") }
+                TextButton(onClick = onDelete) { Text("Delete") }
+            }
+        },
+    )
 }
 
 enum class ExpirationStatus(
