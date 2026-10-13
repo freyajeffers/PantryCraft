@@ -131,11 +131,11 @@ abstract class AppDatabase : RoomDatabase() {
 
                             override fun onOpen(db: SupportSQLiteDatabase) {
                                 configureSearchIndex(db)
-                                db.execSQL("PRAGMA synchronous = NORMAL")
-                                db.execSQL("PRAGMA foreign_keys = ON")
-                                db.execSQL("PRAGMA temp_store = MEMORY")
-                                db.execSQL("PRAGMA busy_timeout = 5000")
-                                db.execSQL("PRAGMA mmap_size = 268435456")
+                                db.query("PRAGMA synchronous = NORMAL").close()
+                                db.query("PRAGMA foreign_keys = ON").close()
+                                db.query("PRAGMA temp_store = MEMORY").close()
+                                db.query("PRAGMA busy_timeout = 5000").close()
+                                db.query("PRAGMA mmap_size = 268435456").close()
                             }
                         },
                     ).addMigrations(MIGRATION_1_2)
