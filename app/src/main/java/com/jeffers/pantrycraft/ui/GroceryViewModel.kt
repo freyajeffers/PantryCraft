@@ -1,5 +1,6 @@
 package com.jeffers.pantrycraft.ui
 
+import android.database.sqlite.SQLiteFullException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jeffers.pantrycraft.data.GroceryItem
@@ -53,6 +54,8 @@ class GroceryViewModel(
             operation()
         } catch (error: CancellationException) {
             throw error
+        } catch (_: SQLiteFullException) {
+            _operationErrors.emit("Storage is full; free space and try again")
         } catch (_: Exception) {
             _operationErrors.emit(errorMessage)
         }
