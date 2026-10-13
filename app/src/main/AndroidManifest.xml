@@ -2,9 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:allowBackup="true"
-        android:label="Pantry Grocery"
+        android:label="PantryCraft"
         android:supportsRtl="true"
-        android:theme="@style/Theme.PantryGrocery">
+        android:theme="@style/Theme.PantryCraft">
         <activity android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
