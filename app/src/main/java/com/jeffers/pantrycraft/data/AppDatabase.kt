@@ -115,6 +115,13 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        fun closeDatabase() {
+            synchronized(this) {
+                INSTANCE?.close()
+                INSTANCE = null
+            }
+        }
+
         fun resetEncryptedDatabase(context: Context) {
             synchronized(this) {
                 INSTANCE?.close()

@@ -37,6 +37,19 @@ object DatabaseKeyProvider {
         }
     }
 
+    fun restorePassphrase(
+        context: Context,
+        passphrase: ByteArray,
+    ) {
+        synchronized(lock) {
+            reset(context)
+            val preferences =
+                context.applicationContext
+                    .getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+            wrapAndPersist(preferences, passphrase)
+        }
+    }
+
     @Suppress("ktlint:standard:function-expression-body")
     private fun wrapAndPersist(
         preferences: android.content.SharedPreferences,

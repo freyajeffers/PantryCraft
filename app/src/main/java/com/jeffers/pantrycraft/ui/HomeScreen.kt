@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 fun HomeScreen(
     onPantryClick: () -> Unit,
     onGroceryClick: () -> Unit,
+    onBackupClick: () -> Unit,
 ) {
     Column(
         modifier =
@@ -26,6 +27,9 @@ fun HomeScreen(
         }
         Button(onClick = onGroceryClick, modifier = Modifier.fillMaxWidth()) {
             Text("Open grocery list")
+        }
+        Button(onClick = onBackupClick, modifier = Modifier.fillMaxWidth()) {
+            Text("Create encrypted backup")
         }
     }
 }
