@@ -53,6 +53,8 @@ fun PantryScreen(viewModel: PantryViewModel) {
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var newItemName by rememberSaveable { mutableStateOf("") }
+    var newCategory by rememberSaveable { mutableStateOf("OTHER") }
+    var shelfLifeDays by rememberSaveable { mutableStateOf(0) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -67,19 +69,55 @@ fun PantryScreen(viewModel: PantryViewModel) {
             onDismissRequest = { showAddDialog = false },
             title = { Text("Add pantry item") },
             text = {
-                OutlinedTextField(
-                    value = newItemName,
-                    onValueChange = { newItemName = it },
-                    singleLine = true,
-                    label = { Text("Name") },
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = newItemName,
+                        onValueChange = { newItemName = it },
+                        singleLine = true,
+                        label = { Text("Name") },
+                    )
+                    Text("Category", style = MaterialTheme.typography.labelLarge)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(listOf("OTHER", "DAIRY", "PRODUCE", "MEAT", "GRAINS")) { category ->
+                            FilterChip(
+                                selected = newCategory == category,
+                                onClick = { newCategory = category },
+                                label = { Text(category) },
+                            )
+                        }
+                    }
+                    Text("Shelf life", style = MaterialTheme.typography.labelLarge)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(listOf(0, 3, 7, 14)) { days ->
+                            FilterChip(
+                                selected = shelfLifeDays == days,
+                                onClick = { shelfLifeDays = days },
+                                label = { Text(if (days == 0) "None" else "$days days") },
+                            )
+                        }
+                    }
+                }
             },
             confirmButton = {
                 TextButton(
                     enabled = newItemName.isNotBlank(),
                     onClick = {
-                        viewModel.add(PantryItem(name = newItemName.trim(), quantity = 1f, threshold = 0f))
+                        viewModel.add(
+                            PantryItem(
+                                name = newItemName.trim(),
+                                quantity = 1f,
+                                threshold = 0f,
+                                category = newCategory,
+                                expirationTimestamp =
+                                    shelfLifeDays.takeIf { it > 0 }?.let {
+                                        System.currentTimeMillis() +
+                                            TimeUnit.DAYS.toMillis(it.toLong())
+                                    },
+                            ),
+                        )
                         newItemName = ""
+                        newCategory = "OTHER"
+                        shelfLifeDays = 0
                         showAddDialog = false
                     },
                 ) { Text("Add") }

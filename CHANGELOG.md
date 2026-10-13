@@ -34,3 +34,4 @@
 - Classified SQLite-full failures separately so pantry and grocery screens report storage exhaustion with actionable feedback.
 - SQLite-full handling now prunes only temporary `cacheDir/vision_scratch` media before reporting the storage error.
 - Added a device instrumentation benchmark for prefix FTS search over 5,000 synthetic pantry rows; the verified warmed run completed in 2.53 ms.
+- Expanded manual pantry entry with category suggestions and shelf-life presets that populate expiration timestamps.
