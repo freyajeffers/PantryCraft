@@ -55,13 +55,22 @@ fun PantryScreen(viewModel: PantryViewModel) {
     var newItemName by rememberSaveable { mutableStateOf("") }
     var newCategory by rememberSaveable { mutableStateOf("OTHER") }
     var shelfLifeDays by rememberSaveable { mutableStateOf(0) }
+    var storageError by rememberSaveable { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(viewModel) {
         viewModel.operationErrors.collect { message ->
+            if (message.startsWith("Storage is full")) storageError = message
             snackbarHostState.showSnackbar(message)
         }
+    }
+
+    storageError?.let { message ->
+        StorageDiagnosticDialog(
+            message = message,
+            onDismiss = { storageError = null },
+        )
     }
 
     if (showAddDialog) {
@@ -229,6 +238,23 @@ fun PantryItemRow(
                 TextButton(onClick = onDelete) { Text("Delete") }
             }
         },
+    )
+}
+
+@Composable
+fun StorageDiagnosticDialog(
+    message: String,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Storage space required") },
+        text = {
+            Text(
+                "$message\n\nFree device storage, then retry the operation. Temporary inference media was cleared automatically.",
+            )
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } },
     )
 }
 

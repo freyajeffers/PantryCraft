@@ -36,3 +36,4 @@
 - Added a device instrumentation benchmark for prefix FTS search over 5,000 synthetic pantry rows; the verified warmed run completed in 2.53 ms.
 - Expanded manual pantry entry with category suggestions and shelf-life presets that populate expiration timestamps.
 - Added a negative encrypted-storage instrumentation test proving a random SQLCipher key cannot open the database.
+- Added a storage diagnostic dialog to both inventory and grocery flows after SQLite-full recovery handling.
