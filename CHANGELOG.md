@@ -37,3 +37,4 @@
 - Expanded manual pantry entry with category suggestions and shelf-life presets that populate expiration timestamps.
 - Added a negative encrypted-storage instrumentation test proving a random SQLCipher key cannot open the database.
 - Added a storage diagnostic dialog to both inventory and grocery flows after SQLite-full recovery handling.
+- Preserved automatic FTS rebuild-on-open behavior while keeping the search index self-healing after corruption.
