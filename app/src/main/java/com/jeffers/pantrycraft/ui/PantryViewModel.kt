@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.Repository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -25,6 +28,9 @@ class PantryViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptyList(),
         )
+
+    private val _operationErrors = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val operationErrors: SharedFlow<String> = _operationErrors
 
     private val _selectedLocation = MutableStateFlow(PantryLocationFilter.ALL)
     val selectedLocation: StateFlow<PantryLocationFilter> = _selectedLocation
@@ -54,18 +60,39 @@ class PantryViewModel(
         _searchQuery.value = query
     }
 
-    fun add(item: PantryItem) = viewModelScope.launch { repo.insertPantry(item) }
+    fun add(item: PantryItem) = launchDatabaseOperation("Unable to add pantry item") { repo.insertPantry(item) }
 
-    fun update(item: PantryItem) = viewModelScope.launch { repo.updatePantry(item) }
+    fun update(item: PantryItem) = launchDatabaseOperation("Unable to update pantry item") { repo.updatePantry(item) }
 
     fun decrement(
         item: PantryItem,
         delta: Float,
-    ) = viewModelScope.launch { repo.decrementQuantity(item, delta) }
+    ) = launchDatabaseOperation("Unable to update pantry quantity") {
+        repo.decrementQuantity(item, delta)
+    }
 
-    fun delete(item: PantryItem) = viewModelScope.launch { repo.deletePantry(item) }
+    fun delete(item: PantryItem) =
+        launchDatabaseOperation("Unable to delete pantry item") {
+            repo.deletePantry(item)
+        }
 
-    fun restore(item: PantryItem) = viewModelScope.launch { repo.restorePantry(item) }
+    fun restore(item: PantryItem) =
+        launchDatabaseOperation("Unable to restore pantry item") {
+            repo.restorePantry(item)
+        }
+
+    private fun launchDatabaseOperation(
+        errorMessage: String,
+        operation: suspend () -> Unit,
+    ) = viewModelScope.launch {
+        try {
+            operation()
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            _operationErrors.emit(errorMessage)
+        }
+    }
 }
 
 enum class PantryLocationFilter(

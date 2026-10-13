@@ -26,3 +26,4 @@
 - Rebuilt the FTS5 index from non-deleted rows only, preventing tombstones from entering the search index.
 - Added explicit SQLCipher native-library loading and device-backed instrumentation coverage for migration, key wrapping, DAO flows, and FTS search.
 - Fixed the production crash on navigation by executing SQLCipher PRAGMA assignments through query cursors instead of execSQL.
+- Added bounded error handling for pantry database mutations so recoverable write failures surface as Snackbar messages instead of crashing the UI coroutine.
