@@ -16,3 +16,6 @@
 - Added debounced pantry search UI and an Expiring Soon inventory filter.
 - Added normalized names, unit metadata, purchase/created/updated timestamps, and migration backfill for legacy pantry rows.
 - Added StrongBox-first SQLCipher key generation with TEE fallback and explicit invalidated-key failure handling.
+- Added tombstone-based soft delete and restore support; default inventory flows and FTS searches exclude deleted records.
+- Added deterministic clock injection to Expiring Soon filtering.
+- Replaced deterministic HMAC database-key derivation with a random 256-bit SQLCipher passphrase wrapped by an Android KeyStore AES-256-GCM key.

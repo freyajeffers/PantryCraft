@@ -45,6 +45,14 @@ class PantrySearchTest {
                 ),
             )
 
+            database.pantryDao().insert(
+                PantryItem(
+                    name = "Deleted Milk",
+                    category = "DAIRY",
+                    isDeleted = true,
+                ),
+            )
+
             assertEquals("Whole Milk", findSingle("milk").name)
             assertEquals("Whole Milk", findSingle("cereal").name)
             assertEquals("Rice", findSingle("staple").name)
@@ -58,8 +66,9 @@ class PantrySearchTest {
     private fun searchQuery(term: String) =
         SimpleSQLiteQuery(
             "SELECT pantry_items.* FROM pantry_items " +
-                "JOIN PantryItemFts ON pantry_items.rowid = PantryItemFts.rowid " +
-                "WHERE PantryItemFts MATCH ? ORDER BY pantry_items.name COLLATE NOCASE",
+                "JOIN pantry_items_fts ON pantry_items.rowid = pantry_items_fts.rowid " +
+                "WHERE pantry_items.isDeleted = 0 AND pantry_items_fts MATCH ? " +
+                "ORDER BY pantry_items.name COLLATE NOCASE",
             arrayOf(term),
         )
 }

@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey
         Index(value = ["normalized_name"]),
         Index(value = ["expirationTimestamp"]),
         Index(value = ["barcode"], unique = true),
+        Index(value = ["isDeleted"]),
     ],
 )
 data class PantryItem(
@@ -30,6 +31,8 @@ data class PantryItem(
     val expirationTimestamp: Long? = null,
     val isOpened: Boolean = false,
     val openedTimestamp: Long? = null,
+    val isAromaticOrSeasoning: Boolean = false,
+    val isDeleted: Boolean = false,
     val notes: String? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long = lastUpdated,
     @ColumnInfo(name = "updated_at") val updatedAt: Long = lastUpdated,

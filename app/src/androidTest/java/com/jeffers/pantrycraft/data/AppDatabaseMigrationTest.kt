@@ -50,6 +50,8 @@ class AppDatabaseMigrationTest {
             assertEquals(1000, cursor.getLong(cursor.getColumnIndexOrThrow("created_at")))
             assertEquals(1000, cursor.getLong(cursor.getColumnIndexOrThrow("updated_at")))
             assertEquals(0, cursor.getInt(cursor.getColumnIndexOrThrow("isOpened")))
+            assertEquals(0, cursor.getInt(cursor.getColumnIndexOrThrow("isAromaticOrSeasoning")))
+            assertEquals(0, cursor.getInt(cursor.getColumnIndexOrThrow("isDeleted")))
         }
         db.close()
     }

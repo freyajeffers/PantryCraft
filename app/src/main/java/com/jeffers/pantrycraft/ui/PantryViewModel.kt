@@ -75,13 +75,14 @@ enum class PantryLocationFilter(
 fun filterPantryItems(
     items: List<PantryItem>,
     filter: PantryLocationFilter,
+    now: Long = System.currentTimeMillis(),
 ): List<PantryItem> =
     when (filter) {
         PantryLocationFilter.ALL -> items
         PantryLocationFilter.EXPIRING_SOON -> {
-            val cutoff = System.currentTimeMillis() + 5 * 24 * 60 * 60 * 1_000L
+            val cutoff = now + 5 * 24 * 60 * 60 * 1_000L
             items.filter { item ->
-                item.expirationTimestamp?.let { it in System.currentTimeMillis()..cutoff } == true
+                item.expirationTimestamp?.let { it in now..cutoff } == true
             }
         }
         else -> {

@@ -28,6 +28,8 @@ abstract class AppDatabase : RoomDatabase() {
                     db.execSQL("ALTER TABLE pantry_items ADD COLUMN expirationTimestamp INTEGER DEFAULT NULL")
                     db.execSQL("ALTER TABLE pantry_items ADD COLUMN isOpened INTEGER NOT NULL DEFAULT 0")
                     db.execSQL("ALTER TABLE pantry_items ADD COLUMN openedTimestamp INTEGER DEFAULT NULL")
+                    db.execSQL("ALTER TABLE pantry_items ADD COLUMN isAromaticOrSeasoning INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("ALTER TABLE pantry_items ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
                     db.execSQL("ALTER TABLE pantry_items ADD COLUMN notes TEXT DEFAULT NULL")
                     db.execSQL("ALTER TABLE pantry_items ADD COLUMN normalized_name TEXT NOT NULL DEFAULT ''")
                     db.execSQL("ALTER TABLE pantry_items ADD COLUMN custom_unit_name TEXT DEFAULT NULL")
@@ -48,27 +50,30 @@ abstract class AppDatabase : RoomDatabase() {
 
         private fun configureSearchIndex(db: SupportSQLiteDatabase) {
             db.execSQL(
-                "CREATE VIRTUAL TABLE IF NOT EXISTS PantryItemFts " +
+                "CREATE VIRTUAL TABLE IF NOT EXISTS pantry_items_fts " +
                     "USING fts5(name, notes, category, content='pantry_items', content_rowid='rowid')",
             )
             db.execSQL(
                 "CREATE TRIGGER IF NOT EXISTS pantry_items_fts_ai AFTER INSERT ON pantry_items " +
-                    "BEGIN INSERT INTO PantryItemFts(rowid, name, notes, category) " +
+                    "WHEN new.isDeleted = 0 " +
+                    "BEGIN INSERT INTO pantry_items_fts(rowid, name, notes, category) " +
                     "VALUES (new.rowid, new.name, new.notes, new.category); END",
             )
             db.execSQL(
                 "CREATE TRIGGER IF NOT EXISTS pantry_items_fts_ad AFTER DELETE ON pantry_items " +
-                    "BEGIN INSERT INTO PantryItemFts(PantryItemFts, rowid, name, notes, category) " +
+                    "WHEN old.isDeleted = 0 " +
+                    "BEGIN INSERT INTO pantry_items_fts(pantry_items_fts, rowid, name, notes, category) " +
                     "VALUES ('delete', old.rowid, old.name, old.notes, old.category); END",
             )
             db.execSQL(
                 "CREATE TRIGGER IF NOT EXISTS pantry_items_fts_au AFTER UPDATE ON pantry_items " +
-                    "BEGIN INSERT INTO PantryItemFts(PantryItemFts, rowid, name, notes, category) " +
-                    "VALUES ('delete', old.rowid, old.name, old.notes, old.category); " +
-                    "INSERT INTO PantryItemFts(rowid, name, notes, category) " +
-                    "VALUES (new.rowid, new.name, new.notes, new.category); END",
+                    "BEGIN " +
+                    "INSERT INTO pantry_items_fts(pantry_items_fts, rowid, name, notes, category) " +
+                    "SELECT 'delete', old.rowid, old.name, old.notes, old.category WHERE old.isDeleted = 0; " +
+                    "INSERT INTO pantry_items_fts(rowid, name, notes, category) " +
+                    "SELECT new.rowid, new.name, new.notes, new.category WHERE new.isDeleted = 0; END",
             )
-            db.execSQL("INSERT INTO PantryItemFts(PantryItemFts) VALUES ('rebuild')")
+            db.execSQL("INSERT INTO pantry_items_fts(pantry_items_fts) VALUES ('rebuild')")
         }
 
         @Volatile
@@ -76,7 +81,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
-                val passphrase = DatabaseKeyProvider.getKey()
+                val passphrase = DatabaseKeyProvider.getKey(context)
                 val factory = SupportOpenHelperFactory(passphrase.copyOf())
                 Arrays.fill(passphrase, 0.toByte())
 

@@ -25,8 +25,9 @@ class Repository private constructor(
         return pantryDao.search(
             SimpleSQLiteQuery(
                 "SELECT pantry_items.* FROM pantry_items " +
-                    "JOIN PantryItemFts ON pantry_items.rowid = PantryItemFts.rowid " +
-                    "WHERE PantryItemFts MATCH ? ORDER BY pantry_items.name COLLATE NOCASE",
+                    "JOIN pantry_items_fts ON pantry_items.rowid = pantry_items_fts.rowid " +
+                    "WHERE pantry_items.isDeleted = 0 AND pantry_items_fts MATCH ? " +
+                    "ORDER BY pantry_items.name COLLATE NOCASE",
                 arrayOf(ftsQuery),
             ),
         )
@@ -42,7 +43,9 @@ class Repository private constructor(
 
     suspend fun updatePantry(item: PantryItem) = pantryDao.update(validate(item).copy(updatedAt = System.currentTimeMillis()))
 
-    suspend fun deletePantry(item: PantryItem) = pantryDao.delete(item)
+    suspend fun deletePantry(item: PantryItem) = pantryDao.softDelete(item.id)
+
+    suspend fun restorePantry(item: PantryItem) = pantryDao.restore(item.id)
 
     fun observeGroceryItems(): Flow<List<GroceryItem>> = groceryDao.observeAllGroceryItems()
 
