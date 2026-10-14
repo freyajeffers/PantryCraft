@@ -19,7 +19,6 @@ class Repository private constructor(
         val ftsQuery =
             searchTerm
                 .split(Regex("\\s+"))
-                .filter(String::isNotBlank)
                 .joinToString(" ") { term ->
                     "\"${term.replace("\"", "\"\"")}\"*"
                 }
