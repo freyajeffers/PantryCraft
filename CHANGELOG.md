@@ -30,6 +30,7 @@
 - Added ephemeral high-resolution shelf capture: private JPEG scratch files are downscaled to WebP, returned as volatile bytes, and deleted immediately after capture processing.
 - Added bounded snapshot decoding with bounds-first sampling, RGB_565 source buffers, strict normalized vision JSON parsing/repair, and a batch review composable.
 - Added Room-backed custom barcode associations with 2.5-second scan debouncing and offline resolver contracts.
+- Added a packaged Open Food Facts SQLite seed catalog with 7,252 validated food barcode records and an app-private read-only asset lookup path.
 - Added a 50-session Android scratch-directory cleanup stress test covering zero residual temporary files.
 - Made the pantry ledger the initial interactive destination so Phase 1 launch behavior opens directly to inventory.
 - Added local release signing configuration sourced from a user-scoped 0600 keystore properties file; credentials and keystore material remain outside the repository.

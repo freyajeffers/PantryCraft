@@ -15,6 +15,7 @@ data class BarcodeMatch(
 
 class OfflineBarcodeResolver(
     private val customBarcodeDao: CustomBarcodeDao,
+    private val assetBarcodeDatabase: AssetBarcodeDatabase? = null,
 ) {
     private var lastScannedBarcode: String? = null
     private var lastScannedAt = 0L
@@ -28,6 +29,7 @@ class OfflineBarcodeResolver(
         lastScannedAt = now
         return withContext(Dispatchers.IO) {
             customBarcodeDao.findByBarcode(barcode)?.toMatch(barcode)
+                ?: assetBarcodeDatabase?.findByBarcode(barcode)?.toMatch()
                 ?: EmbeddedBarcodeCatalog.products[barcode]?.toMatch(barcode)
         }
     }
@@ -41,6 +43,8 @@ class OfflineBarcodeResolver(
     private fun CustomBarcodeItem.toMatch(barcode: String) = BarcodeMatch(barcode, name, category, defaultUnit, estimatedShelfLifeDays)
 
     private fun EmbeddedProduct.toMatch(barcode: String) = BarcodeMatch(barcode, name, category, unit, shelfLifeDays)
+
+    private fun EmbeddedBarcodeMatch.toMatch() = BarcodeMatch(barcode, name, category, "COUNT", shelfLifeDays)
 
     companion object {
         private const val DEBOUNCE_MS = 2_500L
