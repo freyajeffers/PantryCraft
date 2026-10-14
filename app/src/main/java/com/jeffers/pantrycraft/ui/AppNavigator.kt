@@ -1,5 +1,6 @@
 package com.jeffers.pantrycraft.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -7,14 +8,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
 import com.jeffers.pantrycraft.data.DatabaseKeyInvalidatedException
@@ -53,29 +55,32 @@ fun AppNavigator() {
         return
     }
     val repository = repositoryResult.getOrThrow()
-    val navController = rememberNavController()
-
-    NavHost(navController = navController, startDestination = "home") {
-        composable("home") {
+    var destination by rememberSaveable { mutableStateOf("home") }
+    if (destination != "home") {
+        BackHandler { destination = "home" }
+    }
+    when (destination) {
+        "home" -> {
             HomeScreen(
-                onPantryClick = { navController.navigate("pantry") },
-                onGroceryClick = { navController.navigate("grocery") },
-                onBackupClick = { navController.navigate("backup") },
+                onPantryClick = { destination = "pantry" },
+                onGroceryClick = { destination = "grocery" },
+                onBackupClick = { destination = "backup" },
             )
         }
-        composable("pantry") {
+
+        "pantry" -> {
             val vm: PantryViewModel =
                 viewModel(factory = PantryViewModelFactory(repository))
             PantryScreen(vm)
         }
-        composable("grocery") {
+
+        "grocery" -> {
             val vm: GroceryViewModel =
                 viewModel(factory = GroceryViewModelFactory(repository))
             GroceryScreen(vm)
         }
-        composable("backup") {
-            DatabaseBackupScreen(context)
-        }
+
+        "backup" -> DatabaseBackupScreen(context)
     }
 }
 
