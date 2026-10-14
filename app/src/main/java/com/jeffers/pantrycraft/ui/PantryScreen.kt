@@ -87,7 +87,19 @@ fun PantryScreen(viewModel: PantryViewModel) {
                     )
                     Text("Category", style = MaterialTheme.typography.labelLarge)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(listOf("OTHER", "DAIRY", "PRODUCE", "MEAT", "GRAINS")) { category ->
+                        items(
+                            listOf(
+                                "OTHER",
+                                "PRODUCE",
+                                "DAIRY",
+                                "MEAT",
+                                "BAKERY",
+                                "PANTRY_STAPLE",
+                                "FROZEN",
+                                "SPICE",
+                                "BEVERAGE",
+                            ),
+                        ) { category ->
                             FilterChip(
                                 selected = newCategory == category,
                                 onClick = { newCategory = category },
