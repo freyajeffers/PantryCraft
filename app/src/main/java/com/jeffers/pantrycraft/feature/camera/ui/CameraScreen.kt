@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -38,10 +40,14 @@ import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult
 import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
 import com.jeffers.pantrycraft.feature.camera.core.CameraManager
+import com.jeffers.pantrycraft.feature.camera.vision.MlKitSnapshotModel
+import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
+import com.jeffers.pantrycraft.feature.camera.vision.SnapshotVisionService
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun CameraScreen() {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -65,7 +71,23 @@ fun CameraScreen() {
     val scope = rememberCoroutineScope()
     var snapshotStatus by remember { mutableStateOf<String?>(null) }
     var barcodeMatch by remember { mutableStateOf<BarcodeMatch?>(null) }
+    var parsedItems by remember { mutableStateOf<List<ParsedVisionItem>>(emptyList()) }
     val barcodeResolver = remember { Repository.getInstance(context).offlineBarcodeResolver() }
+    val snapshotVisionService =
+        remember {
+            SnapshotVisionService(
+                MlKitSnapshotModel(
+                    ObjectDetection.getClient(
+                        ObjectDetectorOptions
+                            .Builder()
+                            .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
+                            .enableMultipleObjects()
+                            .enableClassification()
+                            .build(),
+                    ),
+                ),
+            )
+        }
     val previewView =
         remember(context) {
             PreviewView(context).apply {
@@ -111,6 +133,7 @@ fun CameraScreen() {
         onDispose {
             cameraManager.unbind()
             analyzer.close()
+            snapshotVisionService.close()
             analysisExecutor.shutdown()
         }
     }
@@ -165,11 +188,12 @@ fun CameraScreen() {
             onClick = {
                 snapshotStatus = "Capturing…"
                 scope.launch {
-                    runCatching { cameraManager.captureSnapshot() }
-                        .onSuccess { frame ->
-                            frame.close()
-                            snapshotStatus = "Snapshot processed and cleared"
-                        }.onFailure { snapshotStatus = "Snapshot failed" }
+                    runCatching {
+                        snapshotVisionService.analyze(cameraManager.captureSnapshot())
+                    }.onSuccess {
+                        parsedItems = it
+                        snapshotStatus = "Snapshot processed and cleared"
+                    }.onFailure { snapshotStatus = "Snapshot failed" }
                 }
             },
             modifier =
@@ -178,6 +202,15 @@ fun CameraScreen() {
                     .padding(24.dp),
         ) {
             Text("Capture shelf")
+        }
+        if (parsedItems.isNotEmpty()) {
+            ModalBottomSheet(onDismissRequest = { parsedItems = emptyList() }) {
+                BatchReviewBottomSheet(
+                    items = parsedItems,
+                    onConfirm = { parsedItems = emptyList() },
+                    onDismiss = { parsedItems = emptyList() },
+                )
+            }
         }
     }
 }
