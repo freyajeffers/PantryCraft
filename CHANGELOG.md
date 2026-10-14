@@ -29,6 +29,7 @@
 - Added PIN-protected streaming backups that atomically bundle the SQLCipher database passphrase with the database file using PBKDF2-HMAC-SHA256 and AES-256-GCM.
 - Added encrypted backup creation and hardware-key recovery UI, including passphrase re-wrapping after KeyStore invalidation.
 - Enabled debug Android coverage reports and expanded repository contract instrumentation coverage for pantry, grocery, validation, search, and temporary-media paths.
+- Closed repository branch-coverage gaps for temporary-media cleanup; Kotlin-generated coroutine bookkeeping remains excluded from functional coverage interpretation.
 - Rebuilt the FTS5 index from non-deleted rows only, preventing tombstones from entering the search index.
 - Added explicit SQLCipher native-library loading and device-backed instrumentation coverage for migration, key wrapping, DAO flows, and FTS search.
 - Fixed the production crash on navigation by executing SQLCipher PRAGMA assignments through query cursors instead of execSQL.

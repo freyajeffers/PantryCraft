@@ -88,7 +88,10 @@ class RepositoryTest {
                 runBlocking { repository.decrementQuantity(observed, Float.POSITIVE_INFINITY) }
             }
 
-            val scratch = context.cacheDir.resolve("vision_scratch").apply { mkdirs() }
+            val scratch = context.cacheDir.resolve("vision_scratch")
+            scratch.deleteRecursively()
+            assertEquals(0, repository.reclaimTemporaryMedia())
+            scratch.mkdirs()
             scratch.resolve("temporary-frame").writeText("ephemeral")
             assertEquals(1, repository.reclaimTemporaryMedia())
             assertEquals(0, repository.reclaimTemporaryMedia())
