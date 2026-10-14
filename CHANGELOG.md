@@ -30,7 +30,7 @@
 - Added ephemeral high-resolution shelf capture: private JPEG scratch files are downscaled to WebP, returned as volatile bytes, and deleted immediately after capture processing.
 - Added bounded snapshot decoding with bounds-first sampling, RGB_565 source buffers, strict normalized vision JSON parsing/repair, and a batch review composable.
 - Added Room-backed custom barcode associations with 2.5-second scan debouncing and offline resolver contracts.
-- Added a packaged Open Food Facts SQLite seed catalog with 59,723 validated food barcode records and an app-private read-only asset lookup path.
+- Added an optional Open Food Facts SQLite catalog with 59,723 validated food barcode records; it is downloaded into app-private storage when requested and remains outside the APK and Git.
 - Wired live barcode detections through the offline resolver so recognized catalog products are surfaced in the camera HUD.
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.
