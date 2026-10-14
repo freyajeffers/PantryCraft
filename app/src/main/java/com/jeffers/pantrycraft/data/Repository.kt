@@ -40,8 +40,9 @@ class Repository private constructor(
     suspend fun decrementQuantity(
         item: PantryItem,
         delta: Float,
-    ) {
-        require(delta > 0f && delta.isFinite()) { "Quantity decrement must be finite and positive" }
+    ) = require(delta > 0f && delta.isFinite()) {
+        "Quantity decrement must be finite and positive"
+    }.let {
         pantryDao.decrementQuantity(item.id, delta)
     }
 
