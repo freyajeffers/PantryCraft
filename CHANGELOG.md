@@ -24,6 +24,7 @@
 - Added atomic quantity decrement with a zero floor and a "Use 1" inventory action.
 - Disabled Android app backup to prevent encrypted database and key-wrapper state from being restored inconsistently.
 - Replaced the initial navigation graph composition with lightweight state-based routing and back handling to reduce startup composition work.
+- Moved dashboard, pantry, grocery, and backup navigation into a persistent Material 3 bottom navigation bar; removed dashboard navigation buttons.
 - Made the pantry ledger the initial interactive destination so Phase 1 launch behavior opens directly to inventory.
 - Added local release signing configuration sourced from a user-scoped 0600 keystore properties file; credentials and keystore material remain outside the repository.
 - Added PIN-protected streaming backups that atomically bundle the SQLCipher database passphrase with the database file using PBKDF2-HMAC-SHA256 and AES-256-GCM.

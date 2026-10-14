@@ -1,18 +1,14 @@
 package com.jeffers.pantrycraft.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun HomeScreen(
-    onPantryClick: () -> Unit,
-    onGroceryClick: () -> Unit,
-    onBackupClick: () -> Unit,
-) {
+fun HomeScreen() {
     Column(
         modifier =
             Modifier
@@ -22,14 +18,9 @@ fun HomeScreen(
     ) {
         Text("Pantry & Grocery")
         Text("Track what you have and what you need to buy.")
-        Button(onClick = onPantryClick, modifier = Modifier.fillMaxWidth()) {
-            Text("Open pantry")
-        }
-        Button(onClick = onGroceryClick, modifier = Modifier.fillMaxWidth()) {
-            Text("Open grocery list")
-        }
-        Button(onClick = onBackupClick, modifier = Modifier.fillMaxWidth()) {
-            Text("Create encrypted backup")
-        }
+        Text(
+            "Use the navigation bar to switch between your dashboard, pantry, grocery list, and backups.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

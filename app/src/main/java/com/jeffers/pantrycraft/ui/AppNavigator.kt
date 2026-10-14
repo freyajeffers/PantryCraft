@@ -2,10 +2,14 @@ package com.jeffers.pantrycraft.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,29 +63,51 @@ fun AppNavigator() {
     if (destination != "home") {
         BackHandler { destination = "home" }
     }
-    when (destination) {
-        "home" -> {
-            HomeScreen(
-                onPantryClick = { destination = "pantry" },
-                onGroceryClick = { destination = "grocery" },
-                onBackupClick = { destination = "backup" },
-            )
-        }
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                BottomDestination.entries.forEach { item ->
+                    NavigationBarItem(
+                        selected = destination == item.route,
+                        onClick = { destination = item.route },
+                        icon = { Text(item.symbol) },
+                        label = { Text(item.label) },
+                    )
+                }
+            }
+        },
+    ) { contentPadding ->
+        Box(modifier = Modifier.padding(contentPadding)) {
+            when (destination) {
+                "home" -> HomeScreen()
 
-        "pantry" -> {
-            val vm: PantryViewModel =
-                viewModel(factory = PantryViewModelFactory(repository))
-            PantryScreen(vm)
-        }
+                "pantry" -> {
+                    val vm: PantryViewModel =
+                        viewModel(factory = PantryViewModelFactory(repository))
+                    PantryScreen(vm)
+                }
 
-        "grocery" -> {
-            val vm: GroceryViewModel =
-                viewModel(factory = GroceryViewModelFactory(repository))
-            GroceryScreen(vm)
-        }
+                "grocery" -> {
+                    val vm: GroceryViewModel =
+                        viewModel(factory = GroceryViewModelFactory(repository))
+                    GroceryScreen(vm)
+                }
 
-        "backup" -> DatabaseBackupScreen(context)
+                "backup" -> DatabaseBackupScreen(context)
+            }
+        }
     }
+}
+
+private enum class BottomDestination(
+    val route: String,
+    val label: String,
+    val symbol: String,
+) {
+    HOME("home", "Dashboard", "⌂"),
+    PANTRY("pantry", "Pantry", "▣"),
+    GROCERY("grocery", "Grocery", "✓"),
+    BACKUP("backup", "Backup", "↥"),
 }
 
 @Composable
