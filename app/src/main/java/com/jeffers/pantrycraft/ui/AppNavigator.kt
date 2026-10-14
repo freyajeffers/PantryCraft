@@ -25,6 +25,7 @@ import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
 import com.jeffers.pantrycraft.data.DatabaseKeyInvalidatedException
 import com.jeffers.pantrycraft.data.Repository
+import com.jeffers.pantrycraft.feature.camera.ui.CameraScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -93,6 +94,8 @@ fun AppNavigator() {
                     GroceryScreen(vm)
                 }
 
+                "camera" -> CameraScreen()
+
                 "backup" -> DatabaseBackupScreen(context)
             }
         }
@@ -107,6 +110,7 @@ private enum class BottomDestination(
     HOME("home", "Dashboard", "⌂"),
     PANTRY("pantry", "Pantry", "▣"),
     GROCERY("grocery", "Grocery", "✓"),
+    CAMERA("camera", "Scan", "◎"),
     BACKUP("backup", "Backup", "↥"),
 }
 

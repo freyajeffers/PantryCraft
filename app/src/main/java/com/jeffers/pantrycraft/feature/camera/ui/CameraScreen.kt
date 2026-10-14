@@ -1,0 +1,136 @@
+package com.jeffers.pantrycraft.feature.camera.ui
+
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.objects.ObjectDetection
+import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
+import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer
+import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult
+import com.jeffers.pantrycraft.feature.camera.core.CameraManager
+import java.util.concurrent.Executors
+
+@Composable
+fun CameraScreen() {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED,
+        )
+    }
+    val requestPermission =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { hasCameraPermission = it }
+
+    if (!hasCameraPermission) {
+        CameraPermissionPrompt { requestPermission.launch(Manifest.permission.CAMERA) }
+        return
+    }
+
+    val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
+    var latestResult by remember { mutableStateOf<LiveVisionResult?>(null) }
+    val analyzer =
+        remember {
+            val barcodeOptions =
+                BarcodeScannerOptions
+                    .Builder()
+                    .setBarcodeFormats(
+                        Barcode.FORMAT_UPC_A,
+                        Barcode.FORMAT_UPC_E,
+                        Barcode.FORMAT_EAN_8,
+                        Barcode.FORMAT_EAN_13,
+                        Barcode.FORMAT_QR_CODE,
+                    ).build()
+            val objectOptions =
+                ObjectDetectorOptions
+                    .Builder()
+                    .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
+                    .enableMultipleObjects()
+                    .enableClassification()
+                    .build()
+            LiveVisionAnalyzer(
+                barcodeScanner = BarcodeScanning.getClient(barcodeOptions),
+                objectDetector = ObjectDetection.getClient(objectOptions),
+                executor = analysisExecutor,
+                onResult = { latestResult = it },
+            )
+        }
+    val cameraManager = remember { CameraManager(context, analyzer, analysisExecutor) }
+
+    DisposableEffect(cameraManager, lifecycleOwner) {
+        val previewView = PreviewView(context)
+        previewView.implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+        cameraManager.bind(lifecycleOwner, previewView)
+        onDispose {
+            cameraManager.unbind()
+            analyzer.close()
+            analysisExecutor.shutdown()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Text(
+            text =
+                latestResult?.let { result ->
+                    buildString {
+                        append("Objects: ")
+                        append(result.objectBoxes.size)
+                        if (result.barcodes.isNotEmpty()) {
+                            append("  Barcodes: ")
+                            append(result.barcodes.joinToString())
+                        }
+                    }
+                } ?: "Scanning…",
+            modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(16.dp),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+@Composable
+private fun CameraPermissionPrompt(onRequestPermission: () -> Unit) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("Camera access is required to scan pantry items.")
+        Button(onClick = onRequestPermission, modifier = Modifier.padding(top = 16.dp)) {
+            Text("Allow camera")
+        }
+    }
+}
