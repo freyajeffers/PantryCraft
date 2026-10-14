@@ -12,9 +12,10 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -33,13 +34,15 @@ import kotlinx.coroutines.withContext
 fun AppNavigator() {
     val context =
         androidx.compose.ui.platform.LocalContext.current
-    val repositoryResult =
-        produceState<Result<Repository>?>(initialValue = null, context) {
-            value =
-                withContext(Dispatchers.IO) {
-                    runCatching { Repository.getInstance(context) }
-                }
-        }.value
+    // Load Repository lazily off the UI thread so composition and first-draw are fast.
+    val repositoryResultState = remember { mutableStateOf<Result<Repository>?>(null) }
+    LaunchedEffect(Unit) {
+        repositoryResultState.value =
+            withContext(Dispatchers.IO) {
+                runCatching { Repository.getInstance(context.applicationContext) }
+            }
+    }
+    val repositoryResult = repositoryResultState.value
     if (repositoryResult == null) {
         DatabaseLoadingScreen()
         return
