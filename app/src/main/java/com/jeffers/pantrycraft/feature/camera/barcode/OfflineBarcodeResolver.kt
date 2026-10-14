@@ -1,0 +1,65 @@
+package com.jeffers.pantrycraft.feature.camera.barcode
+
+import com.jeffers.pantrycraft.data.CustomBarcodeDao
+import com.jeffers.pantrycraft.data.CustomBarcodeItem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+data class BarcodeMatch(
+    val barcode: String,
+    val name: String,
+    val category: String,
+    val unit: String,
+    val estimatedShelfLifeDays: Int,
+)
+
+class OfflineBarcodeResolver(
+    private val customBarcodeDao: CustomBarcodeDao,
+) {
+    private var lastScannedBarcode: String? = null
+    private var lastScannedAt = 0L
+
+    suspend fun resolveBarcode(rawCode: String): BarcodeMatch? {
+        val barcode = rawCode.trim()
+        require(barcode.matches(Regex("\\d{8,14}"))) { "Unsupported barcode format" }
+        val now = System.currentTimeMillis()
+        if (barcode == lastScannedBarcode && now - lastScannedAt < DEBOUNCE_MS) return null
+        lastScannedBarcode = barcode
+        lastScannedAt = now
+        return withContext(Dispatchers.IO) {
+            customBarcodeDao.findByBarcode(barcode)?.toMatch(barcode)
+                ?: EmbeddedBarcodeCatalog.products[barcode]?.toMatch(barcode)
+        }
+    }
+
+    suspend fun remember(item: CustomBarcodeItem) =
+        withContext(Dispatchers.IO) {
+            require(item.barcode.matches(Regex("\\d{8,14}"))) { "Unsupported barcode format" }
+            customBarcodeDao.upsert(item)
+        }
+
+    private fun CustomBarcodeItem.toMatch(barcode: String) = BarcodeMatch(barcode, name, category, defaultUnit, estimatedShelfLifeDays)
+
+    private fun EmbeddedProduct.toMatch(barcode: String) = BarcodeMatch(barcode, name, category, unit, shelfLifeDays)
+
+    companion object {
+        private const val DEBOUNCE_MS = 2_500L
+    }
+}
+
+private data class EmbeddedProduct(
+    val name: String,
+    val category: String,
+    val unit: String,
+    val shelfLifeDays: Int,
+)
+
+/** Small deterministic seed catalog; the full OpenFoodFacts asset can be added without API changes. */
+private object EmbeddedBarcodeCatalog {
+    val products =
+        mapOf(
+            "012000001056" to EmbeddedProduct("Coca-Cola", "OTHER", "COUNT", 365),
+            "011110038364" to EmbeddedProduct("Great Value Milk", "DAIRY", "COUNT", 14),
+            "004100007012" to EmbeddedProduct("Cheerios", "PANTRY_STAPLE", "COUNT", 365),
+        )
+}

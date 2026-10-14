@@ -104,6 +104,7 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2'
 
     testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20250517'
     androidTestImplementation 'androidx.room:room-testing:2.8.5'
     androidTestImplementation 'net.zetetic:sqlcipher-android:4.19.1'
     androidTestImplementation 'androidx.test:core:1.5.0'

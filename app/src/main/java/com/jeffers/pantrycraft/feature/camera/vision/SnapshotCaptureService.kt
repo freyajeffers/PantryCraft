@@ -56,8 +56,16 @@ class SnapshotCaptureService(
         }
 
     private fun compressForVision(file: File): ByteArray {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, bounds)
         val source =
-            BitmapFactory.decodeFile(file.absolutePath)
+            BitmapFactory.decodeFile(
+                file.absolutePath,
+                BitmapFactory.Options().apply {
+                    inSampleSize = calculateSampleSize(bounds.outWidth, bounds.outHeight)
+                    inPreferredConfig = Bitmap.Config.RGB_565
+                },
+            )
                 ?: error("Camera returned an unreadable image")
         val scaled = scale(source)
         return try {
@@ -85,8 +93,18 @@ class SnapshotCaptureService(
         )
     }
 
+    private fun calculateSampleSize(
+        width: Int,
+        height: Int,
+    ): Int {
+        var sample = 1
+        while (maxOf(width / sample, height / sample) > MAX_DECODE_DIMENSION) sample *= 2
+        return sample
+    }
+
     companion object {
         private const val MAX_DIMENSION = 1536
+        private const val MAX_DECODE_DIMENSION = 2048
         private val contextExecutor =
             java.util.concurrent.Executors
                 .newSingleThreadExecutor()

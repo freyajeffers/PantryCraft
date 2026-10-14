@@ -10,14 +10,16 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import java.util.Arrays
 
 @Database(
-    entities = [PantryItem::class, GroceryItem::class],
-    version = 2,
+    entities = [PantryItem::class, GroceryItem::class, CustomBarcodeItem::class],
+    version = 3,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun pantryDao(): PantryDao
 
     abstract fun groceryDao(): GroceryDao
+
+    abstract fun customBarcodeDao(): CustomBarcodeDao
 
     companion object {
         init {
@@ -71,6 +73,18 @@ abstract class AppDatabase : RoomDatabase() {
                     db.execSQL("CREATE INDEX index_pantry_items_expirationTimestamp ON pantry_items(expirationTimestamp)")
                     db.execSQL("CREATE UNIQUE INDEX index_pantry_items_barcode ON pantry_items(barcode)")
                     db.execSQL("CREATE INDEX index_pantry_items_isDeleted ON pantry_items(isDeleted)")
+                }
+            }
+
+        val MIGRATION_2_3 =
+            object : Migration(2, 3) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "CREATE TABLE IF NOT EXISTS custom_barcode_cache (" +
+                            "barcode TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, " +
+                            "category TEXT NOT NULL, defaultUnit TEXT NOT NULL, " +
+                            "estimatedShelfLifeDays INTEGER NOT NULL, lastScanned INTEGER NOT NULL)",
+                    )
                 }
             }
 
@@ -160,7 +174,7 @@ abstract class AppDatabase : RoomDatabase() {
                                 db.query("PRAGMA mmap_size = 268435456").close()
                             }
                         },
-                    ).addMigrations(MIGRATION_1_2)
+                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                     .also { INSTANCE = it }
             }
