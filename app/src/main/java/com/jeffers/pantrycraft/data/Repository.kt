@@ -2,6 +2,7 @@ package com.jeffers.pantrycraft.data
 
 import android.content.Context
 import androidx.sqlite.db.SimpleSQLiteQuery
+import com.jeffers.pantrycraft.feature.camera.barcode.OfflineBarcodeResolver
 import kotlinx.coroutines.flow.Flow
 
 class Repository private constructor(
@@ -12,6 +13,8 @@ class Repository private constructor(
     private val groceryDao = db.groceryDao()
 
     fun observePantryItems(): Flow<List<PantryItem>> = pantryDao.observeAllPantryItems()
+
+    fun offlineBarcodeResolver(): OfflineBarcodeResolver = OfflineBarcodeResolver(db.customBarcodeDao())
 
     fun searchPantryItems(query: String): Flow<List<PantryItem>> {
         val searchTerm = query.trim()

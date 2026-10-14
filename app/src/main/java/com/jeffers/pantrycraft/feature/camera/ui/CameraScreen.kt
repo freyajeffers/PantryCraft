@@ -33,8 +33,10 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.objects.ObjectDetection
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
+import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult
+import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
 import com.jeffers.pantrycraft.feature.camera.core.CameraManager
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
@@ -62,6 +64,8 @@ fun CameraScreen() {
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
     val scope = rememberCoroutineScope()
     var snapshotStatus by remember { mutableStateOf<String?>(null) }
+    var barcodeMatch by remember { mutableStateOf<BarcodeMatch?>(null) }
+    val barcodeResolver = remember { Repository.getInstance(context).offlineBarcodeResolver() }
     val previewView =
         remember(context) {
             PreviewView(context).apply {
@@ -92,7 +96,12 @@ fun CameraScreen() {
                 barcodeScanner = BarcodeScanning.getClient(barcodeOptions),
                 objectDetector = ObjectDetection.getClient(objectOptions),
                 executor = analysisExecutor,
-                onResult = { latestResult = it },
+                onResult = {
+                    latestResult = it
+                    it.barcodes.firstOrNull()?.let { barcode ->
+                        scope.launch { barcodeMatch = barcodeResolver.resolveBarcode(barcode) }
+                    }
+                },
             )
         }
     val cameraManager = remember { CameraManager(context, analyzer, analysisExecutor) }
@@ -133,16 +142,19 @@ fun CameraScreen() {
         }
         Text(
             text =
-                latestResult?.let { result ->
-                    buildString {
-                        append("Objects: ")
-                        append(result.objectBoxes.size)
-                        if (result.barcodes.isNotEmpty()) {
-                            append("  Barcodes: ")
-                            append(result.barcodes.joinToString())
+                latestResult
+                    ?.let { result ->
+                        buildString {
+                            append("Objects: ")
+                            append(result.objectBoxes.size)
+                            if (result.barcodes.isNotEmpty()) {
+                                append("  Barcodes: ")
+                                append(result.barcodes.joinToString())
+                            }
                         }
-                    }
-                } ?: snapshotStatus ?: "Scanning…",
+                    }?.let { text ->
+                        barcodeMatch?.let { match -> "$text · ${match.name}" } ?: text
+                    } ?: snapshotStatus ?: "Scanning…",
             modifier =
                 Modifier
                     .align(Alignment.TopCenter)
