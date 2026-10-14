@@ -38,9 +38,9 @@ class SnapshotCaptureService(
                     override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                         try {
                             val bytes = compressForVision(file)
-                            continuation.resume(SnapshotFrame(bytes))
+                            if (continuation.isActive) continuation.resume(SnapshotFrame(bytes)) else bytes.fill(0)
                         } catch (error: Exception) {
-                            continuation.resumeWithException(error)
+                            if (continuation.isActive) continuation.resumeWithException(error)
                         } finally {
                             file.delete()
                         }
@@ -48,7 +48,7 @@ class SnapshotCaptureService(
 
                     override fun onError(exception: ImageCaptureException) {
                         file.delete()
-                        continuation.resumeWithException(exception)
+                        if (continuation.isActive) continuation.resumeWithException(exception)
                     }
                 },
             )
