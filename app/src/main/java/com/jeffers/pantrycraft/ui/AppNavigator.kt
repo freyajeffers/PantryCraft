@@ -55,7 +55,7 @@ fun AppNavigator() {
         return
     }
     val repository = repositoryResult.getOrThrow()
-    var destination by rememberSaveable { mutableStateOf("home") }
+    var destination by rememberSaveable { mutableStateOf("pantry") }
     if (destination != "home") {
         BackHandler { destination = "home" }
     }

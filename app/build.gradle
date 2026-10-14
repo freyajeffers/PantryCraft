@@ -6,6 +6,14 @@ plugins {
     id 'org.jlleitschuh.gradle.ktlint'
 }
 
+def signingProperties = new Properties()
+def signingPropertiesFile = file(
+    System.getenv('PANTRYCRAFT_SIGNING_PROPERTIES') ?: "${System.getProperty('user.home')}/.config/pantrycraft/signing.properties",
+)
+if (signingPropertiesFile.isFile()) {
+    signingPropertiesFile.withInputStream { signingProperties.load(it) }
+}
+
 android {
     namespace 'com.jeffers.pantrycraft'
     compileSdk 36
@@ -27,12 +35,24 @@ android {
         }
     }
 
+    signingConfigs {
+        release {
+            if (!signingProperties.isEmpty()) {
+                storeFile file(signingProperties['storeFile'])
+                storePassword signingProperties['storePassword']
+                keyAlias signingProperties['keyAlias']
+                keyPassword signingProperties['keyPassword']
+            }
+        }
+    }
+
     buildTypes {
         debug {
             testCoverageEnabled true
         }
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
