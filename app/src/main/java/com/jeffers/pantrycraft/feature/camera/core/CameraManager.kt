@@ -3,12 +3,15 @@ package com.jeffers.pantrycraft.feature.camera.core
 import android.content.Context
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer
+import com.jeffers.pantrycraft.feature.camera.vision.SnapshotCaptureService
+import com.jeffers.pantrycraft.feature.camera.vision.SnapshotFrame
 import java.util.concurrent.ExecutorService
 
 class CameraManager(
@@ -18,6 +21,7 @@ class CameraManager(
 ) {
     private val appContext = context.applicationContext
     private var cameraProvider: ProcessCameraProvider? = null
+    private var imageCapture: ImageCapture? = null
 
     fun bind(
         owner: LifecycleOwner,
@@ -39,20 +43,30 @@ class CameraManager(
                         .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                         .build()
                         .apply { setAnalyzer(analysisExecutor, analyzer) }
+                val imageCapture = ImageCapture.Builder().build()
+                this@CameraManager.imageCapture = imageCapture
                 provider.unbindAll()
                 provider.bindToLifecycle(
                     owner,
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     preview,
                     analysis,
+                    imageCapture,
                 )
             },
             ContextCompat.getMainExecutor(appContext),
         )
     }
 
+    suspend fun captureSnapshot(): SnapshotFrame =
+        SnapshotCaptureService(
+            appContext,
+            imageCapture ?: error("Camera capture is not ready"),
+        ).capture()
+
     fun unbind() {
         cameraProvider?.unbindAll()
         cameraProvider = null
+        imageCapture = null
     }
 }

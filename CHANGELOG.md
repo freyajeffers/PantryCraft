@@ -27,6 +27,7 @@
 - Moved dashboard, pantry, grocery, and backup navigation into a persistent Material 3 bottom navigation bar; removed dashboard navigation buttons.
 - Added Phase 2 CameraX live analysis foundation with Camera permission handling, a lifecycle-bound preview, 15 FPS throttling, ML Kit barcode scanning, object detection, normalized bounding boxes, and guaranteed ImageProxy closure.
 - Added the live camera preview surface and Compose bounding-box HUD overlay for detected objects.
+- Added ephemeral high-resolution shelf capture: private JPEG scratch files are downscaled to WebP, returned as volatile bytes, and deleted immediately after capture processing.
 - Made the pantry ledger the initial interactive destination so Phase 1 launch behavior opens directly to inventory.
 - Added local release signing configuration sourced from a user-scoped 0600 keystore properties file; credentials and keystore material remain outside the repository.
 - Added PIN-protected streaming backups that atomically bundle the SQLCipher database passphrase with the database file using PBKDF2-HMAC-SHA256 and AES-256-GCM.

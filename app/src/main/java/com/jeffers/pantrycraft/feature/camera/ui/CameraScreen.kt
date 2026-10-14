@@ -19,6 +19,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +36,7 @@ import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult
 import com.jeffers.pantrycraft.feature.camera.core.CameraManager
+import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
 @Composable
@@ -58,6 +60,8 @@ fun CameraScreen() {
     }
 
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
+    val scope = rememberCoroutineScope()
+    var snapshotStatus by remember { mutableStateOf<String?>(null) }
     val previewView =
         remember(context) {
             PreviewView(context).apply {
@@ -138,13 +142,31 @@ fun CameraScreen() {
                             append(result.barcodes.joinToString())
                         }
                     }
-                } ?: "Scanning…",
+                } ?: snapshotStatus ?: "Scanning…",
             modifier =
                 Modifier
                     .align(Alignment.TopCenter)
                     .padding(16.dp),
             color = MaterialTheme.colorScheme.onSurface,
         )
+        Button(
+            onClick = {
+                snapshotStatus = "Capturing…"
+                scope.launch {
+                    runCatching { cameraManager.captureSnapshot() }
+                        .onSuccess { frame ->
+                            frame.close()
+                            snapshotStatus = "Snapshot processed and cleared"
+                        }.onFailure { snapshotStatus = "Snapshot failed" }
+                }
+            },
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(24.dp),
+        ) {
+            Text("Capture shelf")
+        }
     }
 }
 
