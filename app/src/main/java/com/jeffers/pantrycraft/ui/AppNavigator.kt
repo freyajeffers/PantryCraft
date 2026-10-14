@@ -99,7 +99,7 @@ fun AppNavigator() {
 
                 "camera" -> CameraScreen()
 
-                "backup" -> DatabaseBackupScreen(context)
+                "settings" -> SettingsScreen(context, repository)
             }
         }
     }
@@ -114,7 +114,7 @@ private enum class BottomDestination(
     PANTRY("pantry", "Pantry", "▣"),
     GROCERY("grocery", "Grocery", "✓"),
     CAMERA("camera", "Scan", "◎"),
-    BACKUP("backup", "Backup", "↥"),
+    SETTINGS("settings", "Settings", "⚙"),
 }
 
 @Composable

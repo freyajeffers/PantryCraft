@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -22,54 +24,100 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
+import com.jeffers.pantrycraft.data.Repository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun DatabaseBackupScreen(context: android.content.Context) {
+fun SettingsScreen(
+    context: android.content.Context,
+    repository: Repository,
+) {
     val scope = rememberCoroutineScope()
     var pin by remember { mutableStateOf("") }
-    var result by remember { mutableStateOf<String?>(null) }
+    var backupResult by remember { mutableStateOf<String?>(null) }
+    var catalogResult by remember { mutableStateOf<String?>(null) }
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("Create encrypted backup", style = MaterialTheme.typography.headlineSmall)
-        Text("The database and SQLCipher key will be encrypted together under this PIN.")
-        OutlinedTextField(
-            value = pin,
-            onValueChange = { pin = it },
-            label = { Text("Backup PIN") },
-            visualTransformation = PasswordVisualTransformation(),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-        )
-        Button(
-            enabled = pin.isNotEmpty(),
-            onClick = {
-                val suppliedPin = pin.toCharArray()
-                pin = ""
-                scope.launch {
-                    result =
-                        withContext(Dispatchers.IO) {
-                            runCatching {
-                                DatabaseBackupManager.createEncryptedBackup(
-                                    context,
-                                    suppliedPin,
-                                )
-                            }.fold(
-                                onSuccess = { "Backup created: $it" },
-                                onFailure = { "Backup failed: ${it.message}" },
-                            )
+        Text("Settings", style = MaterialTheme.typography.headlineSmall)
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Encrypted backup", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "Protect a copy of the database and SQLCipher key with a PIN.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { pin = it },
+                    label = { Text("Backup PIN") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                )
+                Button(
+                    enabled = pin.isNotEmpty(),
+                    onClick = {
+                        val suppliedPin = pin.toCharArray()
+                        pin = ""
+                        scope.launch {
+                            backupResult =
+                                withContext(Dispatchers.IO) {
+                                    runCatching {
+                                        DatabaseBackupManager.createEncryptedBackup(
+                                            context,
+                                            suppliedPin,
+                                        )
+                                    }.fold(
+                                        onSuccess = { "Backup created: $it" },
+                                        onFailure = { "Backup failed: ${it.message}" },
+                                    )
+                                }
                         }
+                    },
+                ) {
+                    Text("Create backup")
                 }
-            },
-        ) {
-            Text("Create backup")
+                backupResult?.let { Text(it, modifier = Modifier.padding(top = 12.dp)) }
+            }
         }
-        result?.let { Text(it, modifier = Modifier.padding(top = 16.dp)) }
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("FoodFacts catalog", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "Download the optional 59,723-product barcode catalog from cloud storage. " +
+                        "It is verified with SHA-256 before replacement.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(
+                    onClick = {
+                        scope.launch {
+                            catalogResult =
+                                withContext(Dispatchers.IO) {
+                                    runCatching { repository.downloadOfflineCatalog() }
+                                        .fold(
+                                            onSuccess = { "Catalog downloaded: ${it.length() / 1_000_000} MB" },
+                                            onFailure = { "Catalog download failed: ${it.message}" },
+                                        )
+                                }
+                        }
+                    },
+                    modifier = Modifier.padding(top = 16.dp),
+                ) {
+                    Text("Download catalog")
+                }
+                catalogResult?.let { Text(it, modifier = Modifier.padding(top = 12.dp)) }
+            }
+        }
     }
 }
 
