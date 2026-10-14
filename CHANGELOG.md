@@ -33,6 +33,7 @@
 - Added a packaged Open Food Facts SQLite seed catalog with 7,252 validated food barcode records and an app-private read-only asset lookup path.
 - Wired live barcode detections through the offline resolver so recognized catalog products are surfaced in the camera HUD.
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
+- Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.
 - Added a 50-session Android scratch-directory cleanup stress test covering zero residual temporary files.
 - Made the pantry ledger the initial interactive destination so Phase 1 launch behavior opens directly to inventory.
 - Added local release signing configuration sourced from a user-scoped 0600 keystore properties file; credentials and keystore material remain outside the repository.

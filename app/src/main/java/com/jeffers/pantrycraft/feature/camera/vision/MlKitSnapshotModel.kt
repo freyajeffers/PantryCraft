@@ -27,7 +27,7 @@ class MlKitSnapshotModel(
             }
             objectDetector
                 .process(InputImage.fromBitmap(bitmap, 0))
-                .addOnSuccessListener(Executors.newSingleThreadExecutor()) { objects ->
+                .addOnSuccessListener(executor) { objects ->
                     try {
                         val items = JSONArray()
                         objects.forEach { detected ->
@@ -66,4 +66,8 @@ class MlKitSnapshotModel(
         }
 
     override fun close() = objectDetector.close()
+
+    companion object {
+        private val executor = Executors.newSingleThreadExecutor()
+    }
 }
