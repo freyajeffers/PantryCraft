@@ -11,6 +11,15 @@ class AssetBarcodeDatabase(
 
     init {
         val target = File(context.noBackupFilesDir, ASSET_NAME)
+        if (
+            !target.exists() &&
+            !context.assets
+                .list("")
+                .orEmpty()
+                .contains(ASSET_NAME)
+        ) {
+            throw IllegalStateException("Offline food catalog is not installed")
+        }
         if (!target.exists()) {
             context.assets.open(ASSET_NAME).use { input -> target.outputStream().use(input::copyTo) }
         }

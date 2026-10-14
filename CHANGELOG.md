@@ -35,6 +35,7 @@
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.
 - Added a 50-session Android scratch-directory cleanup stress test covering zero residual temporary files.
+- Added an optional checksum-verified Google Cloud Storage download path for the offline food catalog; the catalog remains outside Git and local-first operation remains the default.
 - Made the pantry ledger the initial interactive destination so Phase 1 launch behavior opens directly to inventory.
 - Added local release signing configuration sourced from a user-scoped 0600 keystore properties file; credentials and keystore material remain outside the repository.
 - Added PIN-protected streaming backups that atomically bundle the SQLCipher database passphrase with the database file using PBKDF2-HMAC-SHA256 and AES-256-GCM.
