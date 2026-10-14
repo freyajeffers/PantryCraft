@@ -36,6 +36,7 @@
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.
 - Added a 50-session Android scratch-directory cleanup stress test covering zero residual temporary files.
 - Moved initial encrypted repository acquisition into a lifecycle coroutine so the first Compose frame is not blocked by database setup.
+- Connected the packaged or downloaded food catalog to the live barcode resolver with hardcoded fallback when the catalog is unavailable.
 - Added an optional checksum-verified Google Cloud Storage download path for the offline food catalog; the catalog remains outside Git and local-first operation remains the default.
 - Made the pantry ledger the initial interactive destination so Phase 1 launch behavior opens directly to inventory.
 - Added local release signing configuration sourced from a user-scoped 0600 keystore properties file; credentials and keystore material remain outside the repository.

@@ -2,6 +2,7 @@ package com.jeffers.pantrycraft.data
 
 import android.content.Context
 import androidx.sqlite.db.SimpleSQLiteQuery
+import com.jeffers.pantrycraft.feature.camera.barcode.AssetBarcodeDatabase
 import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
 import com.jeffers.pantrycraft.feature.camera.barcode.OfflineBarcodeResolver
 import kotlinx.coroutines.flow.Flow
@@ -15,7 +16,11 @@ class Repository private constructor(
 
     fun observePantryItems(): Flow<List<PantryItem>> = pantryDao.observeAllPantryItems()
 
-    fun offlineBarcodeResolver(): OfflineBarcodeResolver = OfflineBarcodeResolver(db.customBarcodeDao())
+    fun offlineBarcodeResolver(): OfflineBarcodeResolver =
+        OfflineBarcodeResolver(
+            customBarcodeDao = db.customBarcodeDao(),
+            assetBarcodeDatabase = runCatching { AssetBarcodeDatabase(appContext) }.getOrNull(),
+        )
 
     suspend fun downloadOfflineCatalog() = CatalogDownloadService(appContext).downloadIfNeeded()
 
