@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -56,6 +58,12 @@ fun CameraScreen() {
     }
 
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
+    val previewView =
+        remember(context) {
+            PreviewView(context).apply {
+                implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+            }
+        }
     var latestResult by remember { mutableStateOf<LiveVisionResult?>(null) }
     val analyzer =
         remember {
@@ -86,8 +94,6 @@ fun CameraScreen() {
     val cameraManager = remember { CameraManager(context, analyzer, analysisExecutor) }
 
     DisposableEffect(cameraManager, lifecycleOwner) {
-        val previewView = PreviewView(context)
-        previewView.implementationMode = PreviewView.ImplementationMode.PERFORMANCE
         cameraManager.bind(lifecycleOwner, previewView)
         onDispose {
             cameraManager.unbind()
@@ -97,6 +103,30 @@ fun CameraScreen() {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        AndroidView(
+            factory = { previewView },
+            modifier = Modifier.fillMaxSize(),
+        )
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            latestResult?.objectBoxes?.forEach { box ->
+                drawRect(
+                    color = androidx.compose.ui.graphics.Color.Cyan,
+                    topLeft =
+                        androidx.compose.ui.geometry.Offset(
+                            box.xmin * size.width,
+                            box.ymin * size.height,
+                        ),
+                    size =
+                        androidx.compose.ui.geometry.Size(
+                            (box.xmax - box.xmin) * size.width,
+                            (box.ymax - box.ymin) * size.height,
+                        ),
+                    style =
+                        androidx.compose.ui.graphics.drawscope
+                            .Stroke(width = 4f),
+                )
+            }
+        }
         Text(
             text =
                 latestResult?.let { result ->
