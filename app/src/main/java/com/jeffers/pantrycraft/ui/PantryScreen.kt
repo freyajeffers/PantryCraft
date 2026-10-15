@@ -102,7 +102,7 @@ fun PantryScreen(viewModel: PantryViewModel) {
                     }
                     Text("Shelf life", style = MaterialTheme.typography.labelLarge)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(listOf(0, 3, 7, 14)) { days ->
+                        items(PantryTaxonomy.shelfLifeOptionsDays) { days ->
                             FilterChip(
                                 selected = shelfLifeDays == days,
                                 onClick = { shelfLifeDays = days },

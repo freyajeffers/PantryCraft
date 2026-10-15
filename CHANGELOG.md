@@ -48,6 +48,7 @@
 - Applied integer increment/decrement controls to Count, Each, Package, Can, and Bottle units.
 - Centralized pantry categories, units, and discrete-quantity unit definitions for consistent editing across the app.
 - Centralized storage locations and added a storage-location dropdown to scanner item editing.
+- Centralized shelf-life options and added shelf-life editing to scanner item review.
 - Wired live barcode detections through the offline resolver so recognized catalog products are surfaced in the camera HUD.
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.

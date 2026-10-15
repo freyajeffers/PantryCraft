@@ -64,6 +64,7 @@ fun BatchReviewBottomSheet(
     var editCategory by remember { mutableStateOf("") }
     var editUnit by remember { mutableStateOf("") }
     var editStorageLocation by remember { mutableStateOf("") }
+    var editShelfLifeDays by remember { mutableStateOf(0) }
     val quantityTextByIndex = remember { mutableStateMapOf<Int, String>() }
     val selectedItems = reviewItems.filter { it.included }.map { it.item }
 
@@ -96,6 +97,7 @@ fun BatchReviewBottomSheet(
                                     editCategory = reviewItem.item.category
                                     editUnit = reviewItem.item.unit
                                     editStorageLocation = reviewItem.item.storageLocation
+                                    editShelfLifeDays = reviewItem.item.estimatedShelfLifeDays
                                     quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity)
                                     editingIndex = index
                                 },
@@ -119,6 +121,10 @@ fun BatchReviewBottomSheet(
                         )
                         Text(
                             "Storage: ${reviewItem.item.storageLocation}",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Text(
+                            "Shelf life: ${reviewItem.item.estimatedShelfLifeDays.toShelfLifeLabel()}",
                             style = MaterialTheme.typography.bodySmall,
                         )
                         Text(
@@ -227,6 +233,14 @@ fun BatchReviewBottomSheet(
                         options = PantryTaxonomy.storageLocations,
                         onSelected = { editStorageLocation = it },
                     )
+                    ReviewDropdown(
+                        label = "Shelf life",
+                        value = editShelfLifeDays.toShelfLifeLabel(),
+                        options = PantryTaxonomy.shelfLifeOptionsDays.map { it.toShelfLifeLabel() },
+                        onSelected = { selected ->
+                            editShelfLifeDays = selected.removeSuffix(" days").toIntOrNull() ?: 0
+                        },
+                    )
                 }
             },
             confirmButton = {
@@ -247,6 +261,7 @@ fun BatchReviewBottomSheet(
                                                     editStorageLocation.trim().ifEmpty {
                                                         PantryTaxonomy.storageLocations.first()
                                                     },
+                                                estimatedShelfLifeDays = editShelfLifeDays,
                                             ),
                                     )
                             }
@@ -262,6 +277,8 @@ fun BatchReviewBottomSheet(
         )
     }
 }
+
+private fun Int.toShelfLifeLabel() = if (this == 0) "None" else "$this days"
 
 @Composable
 private fun ReviewDropdown(

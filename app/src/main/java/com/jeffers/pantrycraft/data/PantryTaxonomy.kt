@@ -25,4 +25,6 @@ object PantryTaxonomy {
     val integerQuantityUnits = setOf("COUNT", "EACH", "PACKAGE", "CAN", "BOTTLE")
 
     val storageLocations = listOf("PANTRY", "FRIDGE", "FREEZER", "COUNTER")
+
+    val shelfLifeOptionsDays = listOf(0, 3, 7, 14)
 }
