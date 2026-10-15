@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -20,7 +21,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
@@ -74,8 +79,22 @@ fun AppNavigator() {
                     NavigationBarItem(
                         selected = destination == item.route,
                         onClick = { destination = item.route },
-                        icon = { Text(item.symbol) },
-                        label = { Text(item.label) },
+                        icon = {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .size(40.dp)
+                                        .semantics { contentDescription = item.label },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    item.symbol,
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                            }
+                        },
+                        label = null,
                     )
                 }
             }
