@@ -36,6 +36,8 @@
 - Moved the FoodFacts download card above backup settings and rewrote both cards with plain-language explanations.
 - Removed bottom-navigation labels and enlarged the accessible navigation icons to use the available space.
 - Enhanced Settings with a clear purpose statement, catalog readiness status, private-storage guidance, and full-width actions.
+- Replaced text-symbol navigation buttons with modern Material icons, using outlined icons at rest and filled icons for the active destination.
+- Replaced the pantry plus sign and empty grocery FAB icon with accessible Material icons.
 - Wired live barcode detections through the offline resolver so recognized catalog products are surfaced in the camera HUD.
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.

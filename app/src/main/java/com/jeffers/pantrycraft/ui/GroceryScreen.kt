@@ -3,6 +3,8 @@ package com.jeffers.pantrycraft.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -42,7 +44,12 @@ fun GroceryScreen(viewModel: GroceryViewModel) {
             ExtendedFloatingActionButton(
                 onClick = { viewModel.add(GroceryItem(name = "New item")) },
                 text = { Text("Add") },
-                icon = {},
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.AddShoppingCart,
+                        contentDescription = "Add grocery item",
+                    )
+                },
             )
         },
     ) { padding ->

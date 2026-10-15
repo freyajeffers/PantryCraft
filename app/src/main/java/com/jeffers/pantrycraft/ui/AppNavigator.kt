@@ -7,6 +7,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -23,9 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
@@ -87,10 +91,10 @@ fun AppNavigator() {
                                         .semantics { contentDescription = item.label },
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Text(
-                                    item.symbol,
-                                    fontSize = 28.sp,
-                                    fontWeight = FontWeight.Medium,
+                                androidx.compose.material3.Icon(
+                                    imageVector = if (destination == item.route) item.selectedIcon else item.icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(32.dp),
                                 )
                             }
                         },
@@ -127,13 +131,39 @@ fun AppNavigator() {
 private enum class BottomDestination(
     val route: String,
     val label: String,
-    val symbol: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val selectedIcon: androidx.compose.ui.graphics.vector.ImageVector,
 ) {
-    HOME("home", "Dashboard", "⌂"),
-    PANTRY("pantry", "Pantry", "▣"),
-    GROCERY("grocery", "Grocery", "✓"),
-    CAMERA("camera", "Scan", "◎"),
-    SETTINGS("settings", "Settings", "⚙"),
+    HOME(
+        "home",
+        "Dashboard",
+        Icons.Filled.Home,
+        Icons.Filled.Home,
+    ),
+    PANTRY(
+        "pantry",
+        "Pantry",
+        Icons.Filled.Inventory2,
+        Icons.Filled.Inventory2,
+    ),
+    GROCERY(
+        "grocery",
+        "Grocery",
+        Icons.Filled.ShoppingCart,
+        Icons.Filled.ShoppingCart,
+    ),
+    CAMERA(
+        "camera",
+        "Scan",
+        Icons.Filled.QrCodeScanner,
+        Icons.Filled.QrCodeScanner,
+    ),
+    SETTINGS(
+        "settings",
+        "Settings",
+        Icons.Filled.Settings,
+        Icons.Filled.Settings,
+    ),
 }
 
 @Composable
