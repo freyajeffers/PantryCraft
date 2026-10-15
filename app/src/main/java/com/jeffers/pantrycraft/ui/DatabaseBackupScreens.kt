@@ -65,6 +65,7 @@ fun SettingsScreen(
     var backupResult by remember { mutableStateOf<String?>(null) }
     var pendingBackupName by remember { mutableStateOf<String?>(null) }
     var lastExportedUri by remember { mutableStateOf(DatabaseBackupManager.persistedBackupUri(context)) }
+    var backupRecords by remember { mutableStateOf(DatabaseBackupManager.backupRecords(context)) }
 
     var restoreResult by remember { mutableStateOf<String?>(null) }
     var confirmDatabaseReset by remember { mutableStateOf(false) }
@@ -72,6 +73,7 @@ fun SettingsScreen(
     var showPinDialog by remember { mutableStateOf(false) }
     val pinDialogAction = remember { mutableStateOf<(CharArray) -> Unit>({}) }
     var pinText by remember { mutableStateOf("") }
+    var showBackupList by remember { mutableStateOf(false) }
     val createBackupLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.CreateDocument("application/octet-stream"),
@@ -92,6 +94,7 @@ fun SettingsScreen(
                         }
                     }.onSuccess {
                         lastExportedUri = uri
+                        backupRecords = DatabaseBackupManager.backupRecords(context)
                         Toast.makeText(context, "Encrypted backup saved", Toast.LENGTH_SHORT).show()
                     }.onFailure {
                         backupResult = "Backup export failed: ${it.message}"
@@ -148,6 +151,22 @@ fun SettingsScreen(
             if (restoreResult == null) (context as? android.app.Activity)?.recreate()
         }
     }
+
+    fun restoreFromInternal(
+        backupName: String,
+        suppliedPin: CharArray,
+    ) {
+        scope.launch {
+            restoreResult =
+                withContext(Dispatchers.IO) {
+                    runCatching {
+                        DatabaseBackupManager.restoreEncryptedBackup(context, backupName, suppliedPin)
+                    }.exceptionOrNull()?.message
+                }
+            if (restoreResult == null) (context as? android.app.Activity)?.recreate()
+        }
+    }
+
     val openRestoreLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.OpenDocument(),
@@ -175,6 +194,48 @@ fun SettingsScreen(
     var catalogTotalBytes by remember { mutableStateOf(-1L) }
     var catalogDialog by remember { mutableStateOf<CatalogDialog?>(null) }
     var confirmCatalogDelete by remember { mutableStateOf(false) }
+    if (showBackupList) {
+        AlertDialog(
+            onDismissRequest = { showBackupList = false },
+            title = { Text("Choose a backup to restore") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (backupRecords.isEmpty()) {
+                        Text("No backups have been created yet.")
+                    } else {
+                        backupRecords.forEach { record ->
+                            TextButton(
+                                onClick = {
+                                    showBackupList = false
+                                    pinDialogAction.value = { suppliedPin ->
+                                        record.exportedUri?.let { restoreFromUri(Uri.parse(it), suppliedPin) }
+                                            ?: restoreFromInternal(record.backupName, suppliedPin)
+                                    }
+                                    pinText = ""
+                                    showPinDialog = true
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    Text(record.createdAtLabel)
+                                    Text(
+                                        record.exportedUri?.let {
+                                            "File: ${Uri.parse(it).lastPathSegment ?: it}"
+                                        } ?: "Location: app backup storage",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(record.backupName, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showBackupList = false }) { Text("Cancel") }
+            },
+        )
+    }
     catalogDialog?.let { dialog ->
         AlertDialog(
             onDismissRequest = { catalogDialog = null },
@@ -394,6 +455,7 @@ fun SettingsScreen(
                                             )
                                         }.fold(
                                             onSuccess = {
+                                                backupRecords = DatabaseBackupManager.backupRecords(context)
                                                 pendingBackupName = it
                                                 createBackupLauncher.launch(it)
                                                 "Backup created. Choose where to save the encrypted file."
@@ -435,12 +497,10 @@ fun SettingsScreen(
                     ) { Text("Share saved backup") }
                 }
                 OutlinedButton(
-                    enabled = lastExportedUri != null,
+                    enabled = backupRecords.isNotEmpty(),
                     onClick = {
-                        val uri = lastExportedUri ?: return@OutlinedButton
-                        pinDialogAction.value = { suppliedPin -> restoreFromUri(uri, suppliedPin) }
-                        pinText = ""
-                        showPinDialog = true
+                        showBackupList = true
+                        backupRecords = DatabaseBackupManager.backupRecords(context)
                     },
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 ) { Text("Restore saved backup") }

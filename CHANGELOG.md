@@ -61,6 +61,7 @@
 - Integrated restore saved backup, open backup file, and confirmation-protected database reset into the normal Settings backup card.
 - Backup round-trip instrumentation now cleans up its temporary marker rows before and after execution, preventing test data from appearing in the pantry.
 - Backup PIN entry now appears only after starting backup generation or selecting a restore file; the Settings card no longer keeps a persistent PIN field visible.
+- Backup metadata now records every generated backup with a saved timestamp label and export location hint; restore presents the complete backup history before requesting the PIN.
 - Wired live barcode detections through the offline resolver so recognized catalog products are surfaced in the camera HUD.
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.

@@ -2,12 +2,16 @@ package com.jeffers.pantrycraft.data
 
 import android.content.Context
 import android.net.Uri
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import java.security.SecureRandom
+import java.text.DateFormat
 import java.util.Arrays
+import java.util.Date
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
 import javax.crypto.CipherOutputStream
@@ -39,6 +43,48 @@ object DatabaseBackupManager {
     private const val KEY_LEN_BITS = 256
     private const val PREFS_NAME = "backup_preferences"
     private const val LAST_EXPORTED_URI = "last_exported_uri"
+    private const val BACKUP_RECORDS = "backup_records"
+
+    data class BackupRecord(
+        val backupName: String,
+        val createdAt: Long,
+        val createdAtLabel: String,
+        val exportedUri: String?,
+    )
+
+    fun backupRecords(context: Context): List<BackupRecord> {
+        val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val stored =
+            runCatching {
+                val json = JSONArray(preferences.getString(BACKUP_RECORDS, "[]"))
+                (0 until json.length()).map { index ->
+                    val item = json.getJSONObject(index)
+                    BackupRecord(
+                        backupName = item.getString("name"),
+                        createdAt = item.getLong("createdAt"),
+                        createdAtLabel = item.optString("createdAtLabel", item.getString("name")),
+                        exportedUri = item.optString("uri").takeIf { it.isNotBlank() },
+                    )
+                }
+            }.getOrDefault(emptyList())
+        val known = stored.mapTo(mutableSetOf()) { it.backupName }
+        val missing =
+            listBackups(context)
+                .filterNot(known::contains)
+                .map { name -> BackupRecord(name, backupTimestamp(name), name, null) }
+        return (stored + missing).sortedByDescending { it.createdAt }
+    }
+
+    fun recordCreatedBackup(
+        context: Context,
+        backupName: String,
+    ) {
+        val timestamp = backupTimestamp(backupName)
+        saveBackupRecord(
+            context,
+            BackupRecord(backupName, timestamp, formatBackupTimestamp(timestamp), null),
+        )
+    }
 
     fun persistedBackupUri(context: Context): Uri? {
         val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -62,6 +108,18 @@ object DatabaseBackupManager {
             .edit()
             .putString(LAST_EXPORTED_URI, destination.toString())
             .apply()
+        val record = backupRecords(context).firstOrNull { it.backupName == backupName }
+        val baseRecord =
+            record ?: run {
+                val timestamp = backupTimestamp(backupName)
+                BackupRecord(backupName, timestamp, formatBackupTimestamp(timestamp), null)
+            }
+        saveBackupRecord(
+            context,
+            baseRecord.copy(
+                exportedUri = destination.toString(),
+            ),
+        )
     }
 
     fun restoreEncryptedBackupFromUri(
@@ -158,8 +216,41 @@ object DatabaseBackupManager {
             derived?.fill(0)
             Arrays.fill(pin, '\u0000')
         }
+        recordCreatedBackup(
+            context,
+            dest.name,
+        )
         return dest.name
     }
+
+    private fun saveBackupRecord(
+        context: Context,
+        record: BackupRecord,
+    ) {
+        val records = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val merged = backupRecords(context).filterNot { it.backupName == record.backupName } + record
+        val json = JSONArray()
+        merged.sortedByDescending { it.createdAt }.forEach {
+            json.put(
+                JSONObject().apply {
+                    put("name", it.backupName)
+                    put("createdAt", it.createdAt)
+                    put("createdAtLabel", formatBackupTimestamp(it.createdAt))
+                    put("uri", it.exportedUri ?: "")
+                },
+            )
+        }
+        records.edit().putString(BACKUP_RECORDS, json.toString()).apply()
+    }
+
+    private fun backupTimestamp(backupName: String): Long =
+        backupName
+            .substringBeforeLast(".pcbk")
+            .substringAfterLast('.')
+            .toLongOrNull() ?: System.currentTimeMillis()
+
+    private fun formatBackupTimestamp(timestamp: Long): String =
+        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(timestamp))
 
     @Throws(IOException::class)
     fun restoreEncryptedBackup(
