@@ -33,6 +33,7 @@
 - Added an optional Open Food Facts SQLite catalog with 59,723 validated food barcode records; it is downloaded into app-private storage when requested and remains outside the APK and Git.
 - Replaced the Backup navigation tab with Settings, grouping encrypted database backup and FoodFacts catalog download into separate cards.
 - Added a local live-analysis timing readout for verifying ML Kit frame processing latency on-device.
+- Moved the FoodFacts download card above backup settings and rewrote both cards with plain-language explanations.
 - Wired live barcode detections through the offline resolver so recognized catalog products are surfaced in the camera HUD.
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.

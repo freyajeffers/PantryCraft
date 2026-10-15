@@ -43,11 +43,48 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineSmall)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("FoodFacts barcode catalog", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "This optional catalog helps PantryCraft recognize packaged foods when you scan a barcode. " +
+                        "Download it once to make barcode lookups work offline. The catalog is saved only inside " +
+                        "the app and does not contain your pantry or grocery list.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(
+                    onClick = {
+                        scope.launch {
+                            catalogResult =
+                                withContext(Dispatchers.IO) {
+                                    runCatching { repository.downloadOfflineCatalog() }
+                                        .fold(
+                                            onSuccess = { "Food catalog ready for offline barcode scans." },
+                                            onFailure = { "Catalog download failed: ${it.message}" },
+                                        )
+                                }
+                        }
+                    },
+                    modifier = Modifier.padding(top = 16.dp),
+                ) {
+                    Text("Download food catalog")
+                }
+                catalogResult?.let { Text(it, modifier = Modifier.padding(top = 12.dp)) }
+            }
+        }
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Encrypted backup", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    "Protect a copy of the database and SQLCipher key with a PIN.",
+                    "Save an encrypted copy of your pantry and grocery data on this device. " +
+                        "Choose a PIN that you can remember; you will need it to restore the backup. " +
+                        "Nothing is uploaded when you create a backup.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 OutlinedTextField(
@@ -79,43 +116,9 @@ fun SettingsScreen(
                         }
                     },
                 ) {
-                    Text("Create backup")
+                    Text("Create encrypted backup")
                 }
                 backupResult?.let { Text(it, modifier = Modifier.padding(top = 12.dp)) }
-            }
-        }
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors =
-                CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("FoodFacts catalog", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    "Download the optional 59,723-product barcode catalog from cloud storage. " +
-                        "It is verified with SHA-256 before replacement.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Button(
-                    onClick = {
-                        scope.launch {
-                            catalogResult =
-                                withContext(Dispatchers.IO) {
-                                    runCatching { repository.downloadOfflineCatalog() }
-                                        .fold(
-                                            onSuccess = { "Catalog downloaded: ${it.length() / 1_000_000} MB" },
-                                            onFailure = { "Catalog download failed: ${it.message}" },
-                                        )
-                                }
-                        }
-                    },
-                    modifier = Modifier.padding(top = 16.dp),
-                ) {
-                    Text("Download catalog")
-                }
-                catalogResult?.let { Text(it, modifier = Modifier.padding(top = 12.dp)) }
             }
         }
     }
