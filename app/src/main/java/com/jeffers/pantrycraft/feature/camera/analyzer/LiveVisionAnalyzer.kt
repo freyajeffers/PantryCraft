@@ -1,10 +1,12 @@
 package com.jeffers.pantrycraft.feature.camera.analyzer
 
 import android.graphics.Rect
+import android.os.SystemClock
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.objects.ObjectDetector
@@ -30,6 +32,7 @@ class LiveVisionAnalyzer(
     private val executor: ExecutorService,
     private val onResult: (LiveVisionResult) -> Unit,
     private val onError: (Exception) -> Unit = {},
+    private val onProcessingDurationMillis: (Long) -> Unit = {},
 ) : ImageAnalysis.Analyzer {
     private val isAnalyzing = AtomicBoolean(false)
     private var lastAnalyzedAt = 0L
@@ -44,6 +47,7 @@ class LiveVisionAnalyzer(
             return
         }
         lastAnalyzedAt = now
+        val startedAt = SystemClock.elapsedRealtime()
 
         val mediaImage = imageProxy.image
         if (mediaImage == null) {
@@ -53,20 +57,24 @@ class LiveVisionAnalyzer(
         }
 
         val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-        barcodeScanner
-            .process(inputImage)
-            .continueWithTask(executor) { barcodeTask ->
+        val barcodeTask = barcodeScanner.process(inputImage)
+        val objectTask = objectDetector.process(inputImage)
+        Tasks
+            .whenAllComplete(barcodeTask, objectTask)
+            .continueWith(executor) {
                 val barcodes = barcodeTask.result.orEmpty().mapNotNull { it.rawValue }
-                objectDetector.process(inputImage).continueWith { objectTask ->
-                    val boxes = objectTask.result.orEmpty().map { it.boundingBox.toNormalized(imageProxy.width, imageProxy.height) }
-                    LiveVisionResult(barcodes, boxes)
-                }
+                val boxes =
+                    objectTask.result.orEmpty().map {
+                        it.boundingBox.toNormalized(imageProxy.width, imageProxy.height)
+                    }
+                LiveVisionResult(barcodes, boxes)
             }.addOnSuccessListener(executor) { onResult(it) }
             .addOnFailureListener(executor) { onError(it) }
             .addOnCompleteListener(executor) {
                 try {
                     imageProxy.close()
                 } finally {
+                    onProcessingDurationMillis(SystemClock.elapsedRealtime() - startedAt)
                     isAnalyzing.set(false)
                 }
             }
@@ -90,5 +98,17 @@ class LiveVisionAnalyzer(
 
     companion object {
         private const val FRAME_INTERVAL_MS = 66L
+    }
+}
+
+class FrameTimingStats {
+    var sampleCount: Int = 0
+        private set
+    var maxDurationMillis: Long = 0
+        private set
+
+    fun record(durationMillis: Long) {
+        sampleCount += 1
+        maxDurationMillis = maxOf(maxDurationMillis, durationMillis)
     }
 }

@@ -36,6 +36,7 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.objects.ObjectDetection
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import com.jeffers.pantrycraft.data.Repository
+import com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult
 import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
@@ -95,6 +96,8 @@ fun CameraScreen() {
             }
         }
     var latestResult by remember { mutableStateOf<LiveVisionResult?>(null) }
+    val frameTimingStats = remember { FrameTimingStats() }
+    var latestFrameTime by remember { mutableStateOf<Long?>(null) }
     val analyzer =
         remember {
             val barcodeOptions =
@@ -123,6 +126,10 @@ fun CameraScreen() {
                     it.barcodes.firstOrNull()?.let { barcode ->
                         scope.launch { barcodeMatch = barcodeResolver.resolveBarcode(barcode) }
                     }
+                },
+                onProcessingDurationMillis = { durationMillis ->
+                    frameTimingStats.record(durationMillis)
+                    scope.launch { latestFrameTime = durationMillis }
                 },
             )
         }
@@ -174,6 +181,7 @@ fun CameraScreen() {
                                 append("  Barcodes: ")
                                 append(result.barcodes.joinToString())
                             }
+                            latestFrameTime?.let { append("  Analysis: ${it}ms") }
                         }
                     }?.let { text ->
                         barcodeMatch?.let { match -> "$text · ${match.name}" } ?: text
