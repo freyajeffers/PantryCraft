@@ -52,6 +52,8 @@ fun BatchReviewBottomSheet(
     items: List<ParsedVisionItem>,
     onConfirm: (List<ParsedVisionItem>) -> Unit,
     onDismiss: () -> Unit,
+    title: String = "Review captured items",
+    description: String = "Choose what to add, then adjust quantities before saving.",
 ) {
     var reviewItems by remember(items) {
         mutableStateOf(
@@ -76,9 +78,9 @@ fun BatchReviewBottomSheet(
         modifier = Modifier.padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Review captured items", style = MaterialTheme.typography.headlineSmall)
+        Text(title, style = MaterialTheme.typography.headlineSmall)
         Text(
-            "Choose what to add, then adjust quantities before saving.",
+            description,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -200,7 +202,7 @@ fun BatchReviewBottomSheet(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(onClick = onDismiss) { Text("Cancel") }
             Button(
-                enabled = selectedItems.isNotEmpty(),
+                enabled = selectedItems.isNotEmpty() && selectedItems.all { it.name.isNotBlank() },
                 onClick = { onConfirm(selectedItems) },
             ) {
                 Text("Save ${selectedItems.size} selected")

@@ -15,6 +15,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -40,13 +41,32 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jeffers.pantrycraft.data.PantryItem
-import com.jeffers.pantrycraft.data.PantryTaxonomy
+import com.jeffers.pantrycraft.feature.camera.ui.BatchReviewBottomSheet
+import com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox
+import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
+import com.jeffers.pantrycraft.feature.camera.vision.toPantryItem
+import com.jeffers.pantrycraft.feature.camera.vision.toParsedVisionItem
+import com.jeffers.pantrycraft.feature.camera.vision.toUpdatedPantryItem
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 private val ExpiredColor = Color(0xFFB3261E)
 private val ExpiringSoonColor = Color(0xFFFFB300)
 private val FreshColor = Color(0xFF2E7D32)
+
+private fun newPantryDraft() =
+    ParsedVisionItem(
+        name = "",
+        category = "OTHER",
+        storageLocation = "PANTRY",
+        quantity = 1f,
+        unit = "COUNT",
+        confidence = 1f,
+        estimatedShelfLifeDays = 0,
+        isAromaticOrSeasoning = false,
+        boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+        conditionNotes = null,
+    )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,9 +75,7 @@ fun PantryScreen(viewModel: PantryViewModel) {
     val selectedLocation by viewModel.selectedLocation.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
-    var newItemName by rememberSaveable { mutableStateOf("") }
-    var newCategory by rememberSaveable { mutableStateOf("OTHER") }
-    var shelfLifeDays by rememberSaveable { mutableStateOf(0) }
+    var editorItem by remember { mutableStateOf<PantryItem?>(null) }
     var storageError by rememberSaveable { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -77,76 +95,34 @@ fun PantryScreen(viewModel: PantryViewModel) {
     }
 
     if (showAddDialog) {
-        AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = { Text("Add pantry item") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = newItemName,
-                        onValueChange = { newItemName = it },
-                        singleLine = true,
-                        label = { Text("Name") },
-                    )
-                    Text("Category", style = MaterialTheme.typography.labelLarge)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(
-                            PantryTaxonomy.categories,
-                        ) { category ->
-                            FilterChip(
-                                selected = newCategory == category,
-                                onClick = { newCategory = category },
-                                label = { Text(category) },
-                            )
+        ModalBottomSheet(onDismissRequest = { showAddDialog = false }) {
+            BatchReviewBottomSheet(
+                items = listOf(editorItem?.toParsedVisionItem() ?: newPantryDraft()),
+                title = if (editorItem == null) "Add pantry item" else "Edit pantry item",
+                description = "Review the pantry item details before saving.",
+                onConfirm = { drafts ->
+                    drafts.firstOrNull()?.let { draft ->
+                        if (editorItem == null) {
+                            viewModel.add(draft.toPantryItem())
+                        } else {
+                            viewModel.update(draft.toUpdatedPantryItem(editorItem!!))
                         }
                     }
-                    Text("Shelf life", style = MaterialTheme.typography.labelLarge)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(PantryTaxonomy.shelfLifeOptionsDays) { days ->
-                            FilterChip(
-                                selected = shelfLifeDays == days,
-                                onClick = { shelfLifeDays = days },
-                                label = { Text(if (days == 0) "None" else "$days days") },
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = newItemName.isNotBlank(),
-                    onClick = {
-                        viewModel.add(
-                            PantryItem(
-                                name = newItemName.trim(),
-                                quantity = 1f,
-                                threshold = 0f,
-                                category = newCategory,
-                                expirationTimestamp =
-                                    shelfLifeDays.takeIf { it > 0 }?.let {
-                                        System.currentTimeMillis() +
-                                            TimeUnit.DAYS.toMillis(it.toLong())
-                                    },
-                            ),
-                        )
-                        newItemName = ""
-                        newCategory = "OTHER"
-                        shelfLifeDays = 0
-                        showAddDialog = false
-                    },
-                ) { Text("Add") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) { Text("Cancel") }
-            },
-        )
+                    showAddDialog = false
+                },
+                onDismiss = { showAddDialog = false },
+            )
+        }
     }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { TopAppBar(title = { Text("Pantry") }) },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
+            FloatingActionButton(onClick = {
+                editorItem = null
+                showAddDialog = true
+            }) {
                 androidx.compose.material3.Icon(
                     imageVector = Icons.Filled.Add,
                     contentDescription = "Add pantry item",
@@ -183,6 +159,10 @@ fun PantryScreen(viewModel: PantryViewModel) {
                         PantryItemRow(
                             item = item,
                             onDecrement = { viewModel.decrement(item, 1f) },
+                            onEdit = {
+                                editorItem = item
+                                showAddDialog = true
+                            },
                         ) {
                             viewModel.delete(item)
                             scope.launch {
@@ -208,6 +188,7 @@ fun PantryScreen(viewModel: PantryViewModel) {
 fun PantryItemRow(
     item: PantryItem,
     onDecrement: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val expiration = expirationStatus(item.expirationTimestamp)
@@ -243,6 +224,7 @@ fun PantryItemRow(
                     )
                 }
                 TextButton(onClick = onDecrement, enabled = item.quantity > 0f) { Text("Use 1") }
+                TextButton(onClick = onEdit) { Text("Edit") }
                 TextButton(onClick = onDelete) { Text("Delete") }
             }
         },

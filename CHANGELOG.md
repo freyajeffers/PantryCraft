@@ -51,6 +51,7 @@
 - Centralized shelf-life options and added shelf-life editing to scanner item review.
 - Changed modal shelf-life editing to preset increment/decrement controls, with zero represented as None.
 - Changed shelf-life controls to single-day integer increments/decrements with additional quick presets.
+- Reused the scanner review sheet for pantry add and edit flows, including quantity, category, unit, storage, and shelf-life editing.
 - Wired live barcode detections through the offline resolver so recognized catalog products are surfaced in the camera HUD.
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.
