@@ -1,34 +1,47 @@
 package com.jeffers.pantrycraft.feature.camera.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
 import java.math.BigDecimal
+
+private val reviewCategories =
+    listOf("PRODUCE", "DAIRY", "MEAT", "SEAFOOD", "GRAINS", "CANNED", "FROZEN", "SNACKS", "BEVERAGES", "CONDIMENTS", "SPICES", "OTHER")
+
+private val reviewUnits =
+    listOf("COUNT", "EACH", "G", "KG", "ML", "L", "OZ", "LB", "PACKAGE", "CAN", "BOTTLE")
 
 private data class ReviewItem(
     val item: ParsedVisionItem,
@@ -54,6 +67,8 @@ fun BatchReviewBottomSheet(
     var editingIndex by remember { mutableStateOf<Int?>(null) }
     var editName by remember { mutableStateOf("") }
     var editCategory by remember { mutableStateOf("") }
+    var editUnit by remember { mutableStateOf("") }
+    val quantityTextByIndex = remember { mutableStateMapOf<Int, String>() }
     val selectedItems = reviewItems.filter { it.included }.map { it.item }
 
     Column(
@@ -83,6 +98,8 @@ fun BatchReviewBottomSheet(
                                 onClick = {
                                     editName = reviewItem.item.name
                                     editCategory = reviewItem.item.category
+                                    editUnit = reviewItem.item.unit
+                                    quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity)
                                     editingIndex = index
                                 },
                             ) {
@@ -107,43 +124,63 @@ fun BatchReviewBottomSheet(
                             "Confidence ${(reviewItem.item.confidence * 100).toInt()}%",
                             style = MaterialTheme.typography.bodySmall,
                         )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Quantity", modifier = Modifier.weight(1f))
-                            IconButton(
-                                enabled = reviewItem.item.quantity > 1f,
-                                onClick = {
-                                    reviewItems =
-                                        reviewItems.toMutableList().also {
-                                            it[index] =
-                                                reviewItem.copy(
-                                                    item =
-                                                        reviewItem.item.copy(
-                                                            quantity =
-                                                                (reviewItem.item.quantity - 1f).coerceAtLeast(1f),
-                                                        ),
-                                                )
-                                        }
-                                },
-                            ) {
-                                Icon(Icons.Filled.Remove, contentDescription = "Decrease quantity")
+                        if (reviewItem.item.unit == "COUNT") {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Quantity", modifier = Modifier.weight(1f))
+                                IconButton(
+                                    enabled = reviewItem.item.quantity > 1f,
+                                    onClick = {
+                                        reviewItems =
+                                            reviewItems.toMutableList().also {
+                                                it[index] =
+                                                    reviewItem.copy(
+                                                        item =
+                                                            reviewItem.item.copy(
+                                                                quantity =
+                                                                    (reviewItem.item.quantity - 1f).coerceAtLeast(1f),
+                                                            ),
+                                                    )
+                                            }
+                                        quantityTextByIndex[index] = formatQuantity((reviewItem.item.quantity - 1f).coerceAtLeast(1f))
+                                    },
+                                ) {
+                                    Icon(Icons.Filled.Remove, contentDescription = "Decrease quantity")
+                                }
+                                Text(formatQuantity(reviewItem.item.quantity))
+                                IconButton(
+                                    onClick = {
+                                        reviewItems =
+                                            reviewItems.toMutableList().also {
+                                                it[index] =
+                                                    reviewItem.copy(
+                                                        item =
+                                                            reviewItem.item.copy(
+                                                                quantity = reviewItem.item.quantity + 1f,
+                                                            ),
+                                                    )
+                                            }
+                                        quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity + 1f)
+                                    },
+                                ) {
+                                    Icon(Icons.Filled.Add, contentDescription = "Increase quantity")
+                                }
                             }
-                            Text(formatQuantity(reviewItem.item.quantity))
-                            IconButton(
-                                onClick = {
-                                    reviewItems =
-                                        reviewItems.toMutableList().also {
-                                            it[index] =
-                                                reviewItem.copy(
-                                                    item =
-                                                        reviewItem.item.copy(
-                                                            quantity = reviewItem.item.quantity + 1f,
-                                                        ),
-                                                )
-                                        }
+                        } else {
+                            OutlinedTextField(
+                                value = quantityTextByIndex[index] ?: formatQuantity(reviewItem.item.quantity),
+                                onValueChange = { text ->
+                                    quantityTextByIndex[index] = text
+                                    text.toFloatOrNull()?.takeIf { it > 0f }?.let { quantity ->
+                                        reviewItems =
+                                            reviewItems.toMutableList().also {
+                                                it[index] = reviewItem.copy(item = reviewItem.item.copy(quantity = quantity))
+                                            }
+                                    }
                                 },
-                            ) {
-                                Icon(Icons.Filled.Add, contentDescription = "Increase quantity")
-                            }
+                                label = { Text("Quantity (${reviewItem.item.unit})") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                singleLine = true,
+                            )
                         }
                     }
                 }
@@ -171,11 +208,17 @@ fun BatchReviewBottomSheet(
                         label = { Text("Name") },
                         singleLine = true,
                     )
-                    OutlinedTextField(
+                    ReviewDropdown(
+                        label = "Category",
                         value = editCategory,
-                        onValueChange = { editCategory = it.uppercase() },
-                        label = { Text("Category") },
-                        singleLine = true,
+                        options = reviewCategories,
+                        onSelected = { editCategory = it },
+                    )
+                    ReviewDropdown(
+                        label = "Unit",
+                        value = editUnit,
+                        options = reviewUnits,
+                        onSelected = { editUnit = it },
                     )
                 }
             },
@@ -192,6 +235,7 @@ fun BatchReviewBottomSheet(
                                             current.item.copy(
                                                 name = editName.trim(),
                                                 category = editCategory.trim().ifEmpty { "OTHER" },
+                                                unit = editUnit.trim().ifEmpty { "COUNT" },
                                             ),
                                     )
                             }
@@ -205,6 +249,41 @@ fun BatchReviewBottomSheet(
                 TextButton(onClick = { editingIndex = null }) { Text("Cancel") }
             },
         )
+    }
+}
+
+@Composable
+private fun ReviewDropdown(
+    label: String,
+    value: String,
+    options: List<String>,
+    onSelected: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Column {
+        Text(label, style = MaterialTheme.typography.labelMedium)
+        Box {
+            OutlinedButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { expanded = true },
+            ) {
+                Text(value.ifBlank { "Select $label" }, modifier = Modifier.weight(1f))
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onSelected(option)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
     }
 }
 
