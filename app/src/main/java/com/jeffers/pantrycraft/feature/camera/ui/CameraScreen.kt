@@ -47,6 +47,7 @@ import com.jeffers.pantrycraft.feature.camera.core.CameraManager
 import com.jeffers.pantrycraft.feature.camera.vision.MlKitSnapshotModel
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
 import com.jeffers.pantrycraft.feature.camera.vision.SnapshotVisionService
+import com.jeffers.pantrycraft.feature.camera.vision.toPantryItem
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
@@ -76,7 +77,8 @@ fun CameraScreen() {
     var snapshotStatus by remember { mutableStateOf<String?>(null) }
     var barcodeMatch by remember { mutableStateOf<BarcodeMatch?>(null) }
     var parsedItems by remember { mutableStateOf<List<ParsedVisionItem>>(emptyList()) }
-    val barcodeResolver = remember { Repository.getInstance(context).offlineBarcodeResolver() }
+    val repository = remember { Repository.getInstance(context) }
+    val barcodeResolver = remember { repository.offlineBarcodeResolver() }
     val snapshotVisionService =
         remember {
             SnapshotVisionService(
@@ -221,7 +223,20 @@ fun CameraScreen() {
             ModalBottomSheet(onDismissRequest = { parsedItems = emptyList() }) {
                 BatchReviewBottomSheet(
                     items = parsedItems,
-                    onConfirm = { parsedItems = emptyList() },
+                    onConfirm = { confirmedItems ->
+                        scope.launch {
+                            runCatching {
+                                confirmedItems.forEach { item ->
+                                    repository.insertPantry(item.toPantryItem())
+                                }
+                            }.onSuccess {
+                                parsedItems = emptyList()
+                                snapshotStatus = "Added ${confirmedItems.size} items to your pantry"
+                            }.onFailure {
+                                snapshotStatus = "Could not add items to your pantry"
+                            }
+                        }
+                    },
                     onDismiss = { parsedItems = emptyList() },
                 )
             }
