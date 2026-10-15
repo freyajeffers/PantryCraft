@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.PantryTaxonomy
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
@@ -233,13 +234,11 @@ fun BatchReviewBottomSheet(
                         options = PantryTaxonomy.storageLocations,
                         onSelected = { editStorageLocation = it },
                     )
-                    ReviewDropdown(
+                    ReviewPresetStepper(
                         label = "Shelf life",
-                        value = editShelfLifeDays.toShelfLifeLabel(),
-                        options = PantryTaxonomy.shelfLifeOptionsDays.map { it.toShelfLifeLabel() },
-                        onSelected = { selected ->
-                            editShelfLifeDays = selected.removeSuffix(" days").toIntOrNull() ?: 0
-                        },
+                        value = editShelfLifeDays,
+                        presets = PantryTaxonomy.shelfLifeOptionsDays,
+                        onValueChange = { editShelfLifeDays = it },
                     )
                 }
             },
@@ -279,6 +278,39 @@ fun BatchReviewBottomSheet(
 }
 
 private fun Int.toShelfLifeLabel() = if (this == 0) "None" else "$this days"
+
+@Composable
+private fun ReviewPresetStepper(
+    label: String,
+    value: Int,
+    presets: List<Int>,
+    onValueChange: (Int) -> Unit,
+) {
+    val previous = presets.lastOrNull { it < value }
+    val next = presets.firstOrNull { it > value }
+    Column {
+        Text(label, style = MaterialTheme.typography.labelMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(
+                enabled = previous != null,
+                onClick = { previous?.let(onValueChange) },
+            ) {
+                Icon(Icons.Filled.Remove, contentDescription = "Decrease $label")
+            }
+            Text(
+                value.toShelfLifeLabel(),
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+            )
+            IconButton(
+                enabled = next != null,
+                onClick = { next?.let(onValueChange) },
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "Increase $label")
+            }
+        }
+    }
+}
 
 @Composable
 private fun ReviewDropdown(
