@@ -54,6 +54,7 @@
 - Reused the scanner review sheet for pantry add and edit flows, including quantity, category, unit, storage, and shelf-life editing.
 - Single-item review now shows editable fields directly in the sheet and hides per-item Edit/Remove actions.
 - Simplified the single-item review confirmation label to Save.
+- Updated pantry quantity actions: integer units use increment/decrement controls, while fractional units use a keypad-backed Use modal.
 - Wired live barcode detections through the offline resolver so recognized catalog products are surfaced in the camera HUD.
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.

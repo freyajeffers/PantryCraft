@@ -8,12 +8,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -38,9 +42,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jeffers.pantrycraft.data.PantryItem
+import com.jeffers.pantrycraft.data.PantryTaxonomy
 import com.jeffers.pantrycraft.feature.camera.ui.BatchReviewBottomSheet
 import com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
@@ -48,6 +54,7 @@ import com.jeffers.pantrycraft.feature.camera.vision.toPantryItem
 import com.jeffers.pantrycraft.feature.camera.vision.toParsedVisionItem
 import com.jeffers.pantrycraft.feature.camera.vision.toUpdatedPantryItem
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
 
 private val ExpiredColor = Color(0xFFB3261E)
@@ -76,6 +83,8 @@ fun PantryScreen(viewModel: PantryViewModel) {
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var editorItem by remember { mutableStateOf<PantryItem?>(null) }
+    var useItem by remember { mutableStateOf<PantryItem?>(null) }
+    var useAmount by rememberSaveable { mutableStateOf("") }
     var storageError by rememberSaveable { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -113,6 +122,34 @@ fun PantryScreen(viewModel: PantryViewModel) {
                 onDismiss = { showAddDialog = false },
             )
         }
+    }
+
+    useItem?.let { item ->
+        AlertDialog(
+            onDismissRequest = { useItem = null },
+            title = { Text("Use ${item.name}") },
+            text = {
+                OutlinedTextField(
+                    value = useAmount,
+                    onValueChange = { useAmount = it },
+                    label = { Text("Amount (${item.unit.orEmpty()})") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = useAmount.toFloatOrNull()?.let { it > 0f } == true,
+                    onClick = {
+                        useAmount.toFloatOrNull()?.takeIf { it > 0f }?.let { amount ->
+                            viewModel.decrement(item, amount)
+                        }
+                        useItem = null
+                    },
+                ) { Text("Use") }
+            },
+            dismissButton = { TextButton(onClick = { useItem = null }) { Text("Cancel") } },
+        )
     }
 
     Scaffold(
@@ -159,6 +196,11 @@ fun PantryScreen(viewModel: PantryViewModel) {
                         PantryItemRow(
                             item = item,
                             onDecrement = { viewModel.decrement(item, 1f) },
+                            onIncrement = { viewModel.update(item.copy(quantity = item.quantity + 1f)) },
+                            onUse = {
+                                useAmount = ""
+                                useItem = item
+                            },
                             onEdit = {
                                 editorItem = item
                                 showAddDialog = true
@@ -188,6 +230,8 @@ fun PantryScreen(viewModel: PantryViewModel) {
 fun PantryItemRow(
     item: PantryItem,
     onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+    onUse: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -223,13 +267,25 @@ fun PantryItemRow(
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                TextButton(onClick = onDecrement, enabled = item.quantity > 0f) { Text("Use 1") }
+                if (item.unit.orEmpty() in PantryTaxonomy.integerQuantityUnits) {
+                    IconButton(onClick = onDecrement, enabled = item.quantity > 0f) {
+                        Icon(Icons.Filled.Remove, contentDescription = "Decrease quantity")
+                    }
+                    Text(formatPantryQuantity(item.quantity))
+                    IconButton(onClick = onIncrement) {
+                        Icon(Icons.Filled.Add, contentDescription = "Increase quantity")
+                    }
+                } else {
+                    TextButton(onClick = onUse, enabled = item.quantity > 0f) { Text("Use") }
+                }
                 TextButton(onClick = onEdit) { Text("Edit") }
                 TextButton(onClick = onDelete) { Text("Delete") }
             }
         },
     )
 }
+
+private fun formatPantryQuantity(quantity: Float) = BigDecimal(quantity.toString()).stripTrailingZeros().toPlainString()
 
 @Composable
 fun StorageDiagnosticDialog(
