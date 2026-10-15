@@ -2,14 +2,18 @@ package com.jeffers.pantrycraft.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,6 +35,19 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
+private data class CatalogDialog(
+    val title: String,
+    val message: String,
+    val isError: Boolean,
+)
+
+private fun formatFileSize(bytes: Long): String =
+    when {
+        bytes < 1024L -> "$bytes B"
+        bytes < 1024L * 1024L -> "%.1f KB".format(bytes / 1024.0)
+        else -> "%.1f MB".format(bytes / (1024.0 * 1024.0))
+    }
+
 @Composable
 fun SettingsScreen(
     context: android.content.Context,
@@ -39,10 +56,63 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     var pin by remember { mutableStateOf("") }
     var backupResult by remember { mutableStateOf<String?>(null) }
-    var catalogResult by remember { mutableStateOf<String?>(null) }
     var catalogReady by remember {
         mutableStateOf(
             File(context.noBackupFilesDir, CatalogDownloadService.CATALOG_FILE_NAME).isFile,
+        )
+    }
+    var catalogFileSize by remember {
+        mutableStateOf(
+            File(context.noBackupFilesDir, CatalogDownloadService.CATALOG_FILE_NAME)
+                .takeIf { it.isFile }
+                ?.length(),
+        )
+    }
+    var catalogDownloading by remember { mutableStateOf(false) }
+    var catalogDownloadedBytes by remember { mutableStateOf(0L) }
+    var catalogTotalBytes by remember { mutableStateOf(-1L) }
+    var catalogDialog by remember { mutableStateOf<CatalogDialog?>(null) }
+    var confirmCatalogDelete by remember { mutableStateOf(false) }
+    catalogDialog?.let { dialog ->
+        AlertDialog(
+            onDismissRequest = { catalogDialog = null },
+            title = { Text(dialog.title) },
+            text = { Text(dialog.message) },
+            confirmButton = {
+                TextButton(onClick = { catalogDialog = null }) { Text("OK") }
+            },
+        )
+    }
+    if (confirmCatalogDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmCatalogDelete = false },
+            title = { Text("Delete downloaded catalog?") },
+            text = {
+                Text(
+                    "This removes the offline barcode catalog from this device. " +
+                        "You can download it again later.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmCatalogDelete = false
+                        val file = File(context.noBackupFilesDir, CatalogDownloadService.CATALOG_FILE_NAME)
+                        if (file.delete()) {
+                            catalogReady = false
+                            catalogFileSize = null
+                            catalogDialog =
+                                CatalogDialog("Catalog deleted", "The offline barcode catalog was removed.", false)
+                        } else {
+                            catalogDialog =
+                                CatalogDialog("Delete failed", "The downloaded catalog could not be removed.", true)
+                        }
+                    },
+                ) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmCatalogDelete = false }) { Text("Cancel") }
+            },
         )
     }
     Column(
@@ -70,7 +140,11 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    if (catalogReady) "Ready for offline barcode scans" else "Not downloaded",
+                    if (catalogReady) {
+                        "Ready for offline barcode scans · ${formatFileSize(catalogFileSize ?: 0L)}"
+                    } else {
+                        "Not downloaded"
+                    },
                     color =
                         if (catalogReady) {
                             MaterialTheme.colorScheme.primary
@@ -80,27 +154,85 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(top = 12.dp),
                 )
-                Button(
-                    onClick = {
-                        scope.launch {
-                            catalogResult =
-                                withContext(Dispatchers.IO) {
-                                    runCatching { repository.downloadOfflineCatalog() }
-                                        .fold(
-                                            onSuccess = {
-                                                catalogReady = true
-                                                "Food catalog ready for offline barcode scans."
-                                            },
-                                            onFailure = { "Catalog download failed: ${it.message}" },
-                                        )
-                                }
+                if (catalogDownloading) {
+                    val progress =
+                        if (catalogTotalBytes > 0) {
+                            catalogDownloadedBytes.toFloat() / catalogTotalBytes
+                        } else {
+                            null
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                ) {
-                    Text("Download food catalog")
+                    if (progress == null) {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        )
+                    } else {
+                        LinearProgressIndicator(
+                            progress = { progress.coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        )
+                    }
+                    Text(
+                        if (catalogTotalBytes > 0) {
+                            "Downloading ${formatFileSize(catalogDownloadedBytes)} of ${formatFileSize(catalogTotalBytes)}"
+                        } else {
+                            "Downloading ${formatFileSize(catalogDownloadedBytes)}"
+                        },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
                 }
-                catalogResult?.let { Text(it, modifier = Modifier.padding(top = 12.dp)) }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Button(
+                        enabled = !catalogDownloading,
+                        onClick = {
+                            catalogDownloading = true
+                            catalogDownloadedBytes = 0L
+                            catalogTotalBytes = -1L
+                            scope.launch {
+                                val result =
+                                    withContext(Dispatchers.IO) {
+                                        runCatching {
+                                            repository.downloadOfflineCatalog { downloaded, total ->
+                                                catalogDownloadedBytes = downloaded
+                                                catalogTotalBytes = total
+                                            }
+                                        }
+                                    }
+                                catalogDownloading = false
+                                result.fold(
+                                    onSuccess = { file ->
+                                        catalogReady = true
+                                        catalogFileSize = file.length()
+                                        catalogDialog =
+                                            CatalogDialog(
+                                                "Download complete",
+                                                "The food catalog is ready for offline barcode scans (${formatFileSize(file.length())}).",
+                                                false,
+                                            )
+                                    },
+                                    onFailure = {
+                                        catalogDialog =
+                                            CatalogDialog(
+                                                "Download failed",
+                                                it.message ?: "The catalog could not be downloaded. Check your connection and try again.",
+                                                true,
+                                            )
+                                    },
+                                )
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) { Text(if (catalogReady) "Download again" else "Download food catalog") }
+                    if (catalogReady) {
+                        OutlinedButton(
+                            onClick = { confirmCatalogDelete = true },
+                            enabled = !catalogDownloading,
+                        ) { Text("Delete") }
+                    }
+                }
             }
         }
         Card(modifier = Modifier.fillMaxWidth()) {

@@ -22,7 +22,8 @@ class Repository private constructor(
             assetBarcodeDatabase = runCatching { AssetBarcodeDatabase(appContext) }.getOrNull(),
         )
 
-    suspend fun downloadOfflineCatalog() = CatalogDownloadService(appContext).downloadIfNeeded()
+    suspend fun downloadOfflineCatalog(onProgress: (downloadedBytes: Long, totalBytes: Long) -> Unit = { _, _ -> }) =
+        CatalogDownloadService(appContext).downloadIfNeeded(onProgress = onProgress)
 
     fun searchPantryItems(query: String): Flow<List<PantryItem>> {
         val searchTerm = query.trim()

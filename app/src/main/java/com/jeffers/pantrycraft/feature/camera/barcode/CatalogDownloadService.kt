@@ -14,6 +14,7 @@ class CatalogDownloadService(
     suspend fun downloadIfNeeded(
         url: String = DEFAULT_URL,
         expectedSha256: String = DEFAULT_SHA256,
+        onProgress: (downloadedBytes: Long, totalBytes: Long) -> Unit = { _, _ -> },
     ): File =
         withContext(Dispatchers.IO) {
             val destination = File(context.noBackupFilesDir, CATALOG_FILE_NAME)
@@ -44,6 +45,7 @@ class CatalogDownloadService(
                             total += count
                             if (total > MAX_BYTES) throw CatalogDownloadException("Catalog exceeds size limit")
                             output.write(buffer, 0, count)
+                            onProgress(total, contentLength)
                         }
                     }
                 }

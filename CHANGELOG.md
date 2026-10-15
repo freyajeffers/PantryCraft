@@ -55,6 +55,7 @@
 - Single-item review now shows editable fields directly in the sheet and hides per-item Edit/Remove actions.
 - Simplified the single-item review confirmation label to Save.
 - Updated pantry quantity actions: integer units use increment/decrement controls, while fractional units use a keypad-backed Use modal.
+- Improved FoodFacts catalog downloads with byte progress, downloaded file size, retry-friendly success/failure dialogs, and confirmation-protected deletion.
 - Wired live barcode detections through the offline resolver so recognized catalog products are surfaced in the camera HUD.
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.
