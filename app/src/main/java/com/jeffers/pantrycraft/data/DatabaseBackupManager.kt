@@ -43,6 +43,7 @@ object DatabaseBackupManager {
     private const val KEY_LEN_BITS = 256
     private const val PREFS_NAME = "backup_preferences"
     private const val LAST_EXPORTED_URI = "last_exported_uri"
+    private const val LAST_DB_CHECKSUM = "last_db_checksum"
     private const val BACKUP_RECORDS = "backup_records"
 
     data class BackupRecord(
@@ -120,6 +121,38 @@ object DatabaseBackupManager {
                 exportedUri = destination.toString(),
             ),
         )
+    }
+
+    fun dbChecksum(context: Context): String? {
+        val dbFile = context.getDatabasePath(DB_NAME)
+        if (!dbFile.exists() || !dbFile.isFile) return null
+        return runCatching {
+            val digest = java.security.MessageDigest.getInstance("SHA-256")
+            dbFile.inputStream().use { input ->
+                val buffer = ByteArray(16 * 1024)
+                var read: Int
+                while (input.read(buffer).also { read = it } > 0) {
+                    digest.update(buffer, 0, read)
+                }
+            }
+            digest.digest().joinToString("") { "%02x".format(it) }
+        }.getOrNull()
+    }
+
+    fun lastDbChecksum(context: Context): String? =
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(LAST_DB_CHECKSUM, null)
+
+    fun saveLastDbChecksum(
+        context: Context,
+        checksum: String?,
+    ) {
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(LAST_DB_CHECKSUM, checksum)
+            .apply()
     }
 
     fun restoreEncryptedBackupFromUri(

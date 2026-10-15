@@ -505,7 +505,15 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        listOf(15L to "15 min", 60L to "1 hour", 24 * 60L to "Daily").forEach { interval ->
+                        listOf(
+                            60L to "1 hour",
+                            3 * 60L to "3 hours",
+                            6 * 60L to "6 hours",
+                            12 * 60L to "12 hours",
+                            24 * 60L to "Daily",
+                            7 * 24 * 60L to "Weekly",
+                            30 * 24 * 60L to "Monthly",
+                        ).forEach { interval ->
                             TextButton(onClick = {
                                 automaticBackupIntervalMinutes = interval.first
                                 AutomaticBackupPreferences.setSchedule(

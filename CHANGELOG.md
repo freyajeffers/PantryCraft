@@ -63,7 +63,8 @@
 - Backup PIN entry now appears only after starting backup generation or selecting a restore file; the Settings card no longer keeps a persistent PIN field visible.
 - Backup metadata now records every generated backup with a saved timestamp label and export location hint; restore presents the complete backup history before requesting the PIN.
 - The backup-generation action is hidden when pantry and grocery data are empty, and the saved-backup restore-list action is hidden when no backup history exists.
-- Added optional automatic encrypted background backups with a Keystore-protected PIN and selectable 15-minute, hourly, or daily intervals; empty databases are skipped.
+- Added optional automatic encrypted background backups with a Keystore-protected PIN and selectable intervals; empty databases are skipped.
+- Automatic backup intervals now start at one hour and include 3/6/12 hours, daily, weekly, and monthly choices; unchanged database content is not backed up again.
 - Wired live barcode detections through the offline resolver so recognized catalog products are surfaced in the camera HUD.
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.

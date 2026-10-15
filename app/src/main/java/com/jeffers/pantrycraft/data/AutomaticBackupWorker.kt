@@ -27,7 +27,15 @@ class AutomaticBackupWorker(
                     .isNotEmpty()
             val hasUserData = hasPantryData || hasGroceryData
             if (hasUserData) {
-                DatabaseBackupManager.createEncryptedBackup(applicationContext, pin)
+                AppDatabase.closeDatabase()
+                val checksum = DatabaseBackupManager.dbChecksum(applicationContext)
+                val last = DatabaseBackupManager.lastDbChecksum(applicationContext)
+                if (checksum != null && checksum == last) {
+                    // no changes since last backup; skip
+                } else {
+                    DatabaseBackupManager.createEncryptedBackup(applicationContext, pin)
+                    DatabaseBackupManager.saveLastDbChecksum(applicationContext, checksum)
+                }
             }
             Result.success()
         } catch (_: Exception) {
