@@ -87,7 +87,7 @@ class Repository private constructor(
         require(item.name.isNotBlank()) { "Pantry item name must not be blank" }
         require(item.quantity >= 0f) { "Pantry item quantity must not be negative" }
         require(item.threshold >= 0f) { "Pantry item threshold must not be negative" }
-        require(item.storageLocation in setOf("PANTRY", "FRIDGE", "FREEZER", "COUNTER")) {
+        require(item.storageLocation in PantryTaxonomy.storageLocations) {
             "Unsupported pantry storage location"
         }
         return item.copy(normalizedName = item.name.trim().lowercase())

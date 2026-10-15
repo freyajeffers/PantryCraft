@@ -4,6 +4,7 @@ import android.database.sqlite.SQLiteFullException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jeffers.pantrycraft.data.PantryItem
+import com.jeffers.pantrycraft.data.PantryTaxonomy
 import com.jeffers.pantrycraft.data.Repository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -104,10 +105,10 @@ enum class PantryLocationFilter(
     val storageLocation: String?,
 ) {
     ALL("All", null),
-    PANTRY("Pantry", "PANTRY"),
-    FRIDGE("Fridge", "FRIDGE"),
-    FREEZER("Freezer", "FREEZER"),
-    COUNTER("Counter", "COUNTER"),
+    PANTRY("Pantry", PantryTaxonomy.storageLocations[0]),
+    FRIDGE("Fridge", PantryTaxonomy.storageLocations[1]),
+    FREEZER("Freezer", PantryTaxonomy.storageLocations[2]),
+    COUNTER("Counter", PantryTaxonomy.storageLocations[3]),
     EXPIRING_SOON("Expiring soon", null),
 }
 

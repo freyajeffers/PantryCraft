@@ -63,6 +63,7 @@ fun BatchReviewBottomSheet(
     var editName by remember { mutableStateOf("") }
     var editCategory by remember { mutableStateOf("") }
     var editUnit by remember { mutableStateOf("") }
+    var editStorageLocation by remember { mutableStateOf("") }
     val quantityTextByIndex = remember { mutableStateMapOf<Int, String>() }
     val selectedItems = reviewItems.filter { it.included }.map { it.item }
 
@@ -94,6 +95,7 @@ fun BatchReviewBottomSheet(
                                     editName = reviewItem.item.name
                                     editCategory = reviewItem.item.category
                                     editUnit = reviewItem.item.unit
+                                    editStorageLocation = reviewItem.item.storageLocation
                                     quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity)
                                     editingIndex = index
                                 },
@@ -113,6 +115,10 @@ fun BatchReviewBottomSheet(
                         }
                         Text(
                             "Category: ${reviewItem.item.category} · Unit: ${reviewItem.item.unit}",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Text(
+                            "Storage: ${reviewItem.item.storageLocation}",
                             style = MaterialTheme.typography.bodySmall,
                         )
                         Text(
@@ -215,6 +221,12 @@ fun BatchReviewBottomSheet(
                         options = PantryTaxonomy.units,
                         onSelected = { editUnit = it },
                     )
+                    ReviewDropdown(
+                        label = "Storage location",
+                        value = editStorageLocation,
+                        options = PantryTaxonomy.storageLocations,
+                        onSelected = { editStorageLocation = it },
+                    )
                 }
             },
             confirmButton = {
@@ -231,6 +243,10 @@ fun BatchReviewBottomSheet(
                                                 name = editName.trim(),
                                                 category = editCategory.trim().ifEmpty { "OTHER" },
                                                 unit = editUnit.trim().ifEmpty { "COUNT" },
+                                                storageLocation =
+                                                    editStorageLocation.trim().ifEmpty {
+                                                        PantryTaxonomy.storageLocations.first()
+                                                    },
                                             ),
                                     )
                             }

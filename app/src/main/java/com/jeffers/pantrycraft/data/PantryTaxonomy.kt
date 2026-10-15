@@ -23,4 +23,6 @@ object PantryTaxonomy {
         listOf("COUNT", "EACH", "G", "KG", "ML", "L", "OZ", "LB", "PACKAGE", "CAN", "BOTTLE")
 
     val integerQuantityUnits = setOf("COUNT", "EACH", "PACKAGE", "CAN", "BOTTLE")
+
+    val storageLocations = listOf("PANTRY", "FRIDGE", "FREEZER", "COUNTER")
 }
