@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
@@ -65,6 +66,9 @@ fun SettingsScreen(
     var backupResult by remember { mutableStateOf<String?>(null) }
     var pendingBackupName by remember { mutableStateOf<String?>(null) }
     var lastExportedUri by remember { mutableStateOf(DatabaseBackupManager.persistedBackupUri(context)) }
+    var pendingRestorePin by remember { mutableStateOf<CharArray?>(null) }
+    var restoreResult by remember { mutableStateOf<String?>(null) }
+    var confirmDatabaseReset by remember { mutableStateOf(false) }
     val createBackupLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.CreateDocument("application/octet-stream"),
@@ -92,6 +96,29 @@ fun SettingsScreen(
                 }
             }
         }
+
+    fun restoreFromUri(
+        uri: Uri,
+        suppliedPin: CharArray,
+    ) {
+        scope.launch {
+            restoreResult =
+                withContext(Dispatchers.IO) {
+                    runCatching {
+                        DatabaseBackupManager.restoreEncryptedBackupFromUri(context, uri, suppliedPin)
+                    }.exceptionOrNull()?.message
+                }
+            if (restoreResult == null) (context as? android.app.Activity)?.recreate()
+        }
+    }
+    val openRestoreLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            val suppliedPin = pendingRestorePin
+            pendingRestorePin = null
+            if (uri != null && suppliedPin != null) restoreFromUri(uri, suppliedPin)
+        }
     var catalogReady by remember {
         mutableStateOf(
             File(context.noBackupFilesDir, CatalogDownloadService.CATALOG_FILE_NAME).isFile,
@@ -116,6 +143,32 @@ fun SettingsScreen(
             text = { Text(dialog.message) },
             confirmButton = {
                 TextButton(onClick = { catalogDialog = null }) { Text("OK") }
+            },
+        )
+    }
+    restoreResult?.let { message ->
+        if (message.isNotBlank()) {
+            Text(message, color = MaterialTheme.colorScheme.error)
+        }
+    }
+    if (confirmDatabaseReset) {
+        AlertDialog(
+            onDismissRequest = { confirmDatabaseReset = false },
+            title = { Text("Reset local database?") },
+            text = {
+                Text("This permanently deletes pantry and grocery data on this device. Restore a backup first if needed.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmDatabaseReset = false
+                        AppDatabase.resetEncryptedDatabase(context)
+                        (context as? android.app.Activity)?.recreate()
+                    },
+                ) { Text("Reset database") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDatabaseReset = false }) { Text("Cancel") }
             },
         )
     }
@@ -350,6 +403,29 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     ) { Text("Share saved backup") }
                 }
+                OutlinedButton(
+                    enabled = lastExportedUri != null && pin.isNotEmpty(),
+                    onClick = {
+                        val uri = lastExportedUri ?: return@OutlinedButton
+                        val suppliedPin = pin.toCharArray()
+                        pin = ""
+                        restoreFromUri(uri, suppliedPin)
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) { Text("Restore saved backup") }
+                OutlinedButton(
+                    enabled = pin.isNotEmpty(),
+                    onClick = {
+                        pendingRestorePin = pin.toCharArray()
+                        pin = ""
+                        openRestoreLauncher.launch(arrayOf("application/octet-stream", "application/*"))
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) { Text("Open backup file to restore") }
+                TextButton(
+                    onClick = { confirmDatabaseReset = true },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) { Text("Reset local database") }
                 backupResult?.let { Text(it, modifier = Modifier.padding(top = 12.dp)) }
             }
         }
