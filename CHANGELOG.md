@@ -59,6 +59,7 @@
 - Hardened encrypted backup recovery by rejecting path-traversal names, filtering backup listings to regular .pcbk files, and requiring confirmation before local database reset.
 - Added system file pickers for choosing backup export destinations and opening backup files without broad filesystem permissions; the selected export URI is persisted for future recovery.
 - Integrated restore saved backup, open backup file, and confirmation-protected database reset into the normal Settings backup card.
+- Backup round-trip instrumentation now cleans up its temporary marker rows before and after execution, preventing test data from appearing in the pantry.
 - Wired live barcode detections through the offline resolver so recognized catalog products are surfaced in the camera HUD.
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.

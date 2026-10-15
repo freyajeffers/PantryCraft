@@ -21,13 +21,27 @@ class DatabaseBackupManagerTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
         AppDatabase.closeDatabase()
+        removeRoundTripEntries()
     }
 
     @After
     fun tearDown() {
         AppDatabase.closeDatabase()
+        removeRoundTripEntries()
+        AppDatabase.closeDatabase()
         File(context.filesDir, "backups").deleteRecursively()
     }
+
+    private fun removeRoundTripEntries() =
+        runBlocking {
+            AppDatabase
+                .getDatabase(context)
+                .pantryDao()
+                .observeAllPantryItems()
+                .first()
+                .filter { it.name.startsWith("backup-round-trip-") }
+                .forEach { AppDatabase.getDatabase(context).pantryDao().delete(it) }
+        }
 
     @Test
     fun encryptedBackupRoundTripsDatabaseAndRejectsWrongPin() =
@@ -60,14 +74,20 @@ class DatabaseBackupManagerTest {
                 backupName,
                 "correct-pin".toCharArray(),
             )
-            val restored =
-                AppDatabase
-                    .getDatabase(context)
-                    .pantryDao()
-                    .observeAllPantryItems()
-                    .first()
-                    .single { it.name == marker }
-            assertEquals(marker, restored.name)
+            var restored: PantryItem? = null
+            try {
+                val restoredItem =
+                    AppDatabase
+                        .getDatabase(context)
+                        .pantryDao()
+                        .observeAllPantryItems()
+                        .first()
+                        .single { it.name == marker }
+                restored = restoredItem
+                assertEquals(marker, restoredItem.name)
+            } finally {
+                restored?.let { AppDatabase.getDatabase(context).pantryDao().delete(it) }
+            }
         }
 
     @Test
