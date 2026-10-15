@@ -43,6 +43,8 @@ private val reviewCategories =
 private val reviewUnits =
     listOf("COUNT", "EACH", "G", "KG", "ML", "L", "OZ", "LB", "PACKAGE", "CAN", "BOTTLE")
 
+private val integerQuantityUnits = setOf("COUNT", "EACH", "PACKAGE", "CAN", "BOTTLE")
+
 private data class ReviewItem(
     val item: ParsedVisionItem,
     val included: Boolean,
@@ -124,7 +126,7 @@ fun BatchReviewBottomSheet(
                             "Confidence ${(reviewItem.item.confidence * 100).toInt()}%",
                             style = MaterialTheme.typography.bodySmall,
                         )
-                        if (reviewItem.item.unit == "COUNT") {
+                        if (reviewItem.item.unit in integerQuantityUnits) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("Quantity", modifier = Modifier.weight(1f))
                                 IconButton(
