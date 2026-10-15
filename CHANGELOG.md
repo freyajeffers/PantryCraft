@@ -38,6 +38,7 @@
 - Enhanced Settings with a clear purpose statement, catalog readiness status, private-storage guidance, and full-width actions.
 - Replaced text-symbol navigation buttons with modern Material icons, using outlined icons at rest and filled icons for the active destination.
 - Replaced the pantry plus sign and empty grocery FAB icon with accessible Material icons.
+- Replaced the scanner capture text button with an accessible camera FAB icon.
 - Wired live barcode detections through the offline resolver so recognized catalog products are surfaced in the camera HUD.
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.

@@ -11,8 +11,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -192,7 +195,7 @@ fun CameraScreen() {
                     .padding(16.dp),
             color = MaterialTheme.colorScheme.onSurface,
         )
-        Button(
+        FloatingActionButton(
             onClick = {
                 snapshotStatus = "Capturing…"
                 scope.launch {
@@ -209,7 +212,10 @@ fun CameraScreen() {
                     .align(Alignment.BottomCenter)
                     .padding(24.dp),
         ) {
-            Text("Capture shelf")
+            androidx.compose.material3.Icon(
+                imageVector = Icons.Filled.PhotoCamera,
+                contentDescription = "Capture shelf for scanning",
+            )
         }
         if (parsedItems.isNotEmpty()) {
             ModalBottomSheet(onDismissRequest = { parsedItems = emptyList() }) {
