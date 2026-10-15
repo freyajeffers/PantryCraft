@@ -42,6 +42,7 @@
 - Connected scanner review confirmation to encrypted pantry persistence, including shelf-life dates and item metadata.
 - Added selective add/dismiss controls and quantity increment/decrement controls to scanner review.
 - Updated scanner review quantities to hide unnecessary trailing zeroes while preserving meaningful decimals.
+- Clarified scanner review metadata, renamed Dismiss to Remove, and added modal editing for item names and categories.
 - Wired live barcode detections through the offline resolver so recognized catalog products are surfaced in the camera HUD.
 - Added an offline ML Kit snapshot model fallback, schema parser dispatch, and modal batch-review flow for captured shelf items; snapshot bytes are cleared after analysis.
 - Added cancellation-safe model shutdown and bitmap lifecycle handling for snapshot inference.

@@ -10,11 +10,13 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,6 +51,9 @@ fun BatchReviewBottomSheet(
             },
         )
     }
+    var editingIndex by remember { mutableStateOf<Int?>(null) }
+    var editName by remember { mutableStateOf("") }
+    var editCategory by remember { mutableStateOf("") }
     val selectedItems = reviewItems.filter { it.included }.map { it.item }
 
     Column(
@@ -76,17 +81,30 @@ fun BatchReviewBottomSheet(
                             )
                             TextButton(
                                 onClick = {
+                                    editName = reviewItem.item.name
+                                    editCategory = reviewItem.item.category
+                                    editingIndex = index
+                                },
+                            ) {
+                                Text("Edit")
+                            }
+                            TextButton(
+                                onClick = {
                                     reviewItems =
                                         reviewItems.toMutableList().also {
                                             it[index] = reviewItem.copy(included = !reviewItem.included)
                                         }
                                 },
                             ) {
-                                Text(if (reviewItem.included) "Dismiss" else "Add")
+                                Text(if (reviewItem.included) "Remove" else "Add")
                             }
                         }
                         Text(
-                            "${reviewItem.item.unit} · Confidence ${(reviewItem.item.confidence * 100).toInt()}%",
+                            "Category: ${reviewItem.item.category} · Unit: ${reviewItem.item.unit}",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Text(
+                            "Confidence ${(reviewItem.item.confidence * 100).toInt()}%",
                             style = MaterialTheme.typography.bodySmall,
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -140,6 +158,53 @@ fun BatchReviewBottomSheet(
                 Text("Add ${selectedItems.size} selected")
             }
         }
+    }
+    editingIndex?.let { index ->
+        AlertDialog(
+            onDismissRequest = { editingIndex = null },
+            title = { Text("Edit captured item") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = editName,
+                        onValueChange = { editName = it },
+                        label = { Text("Name") },
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = editCategory,
+                        onValueChange = { editCategory = it.uppercase() },
+                        label = { Text("Category") },
+                        singleLine = true,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = editName.isNotBlank(),
+                    onClick = {
+                        reviewItems =
+                            reviewItems.toMutableList().also {
+                                val current = it[index]
+                                it[index] =
+                                    current.copy(
+                                        item =
+                                            current.item.copy(
+                                                name = editName.trim(),
+                                                category = editCategory.trim().ifEmpty { "OTHER" },
+                                            ),
+                                    )
+                            }
+                        editingIndex = null
+                    },
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { editingIndex = null }) { Text("Cancel") }
+            },
+        )
     }
 }
 
