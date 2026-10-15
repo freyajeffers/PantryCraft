@@ -27,4 +27,6 @@ object PantryTaxonomy {
     val storageLocations = listOf("PANTRY", "FRIDGE", "FREEZER", "COUNTER")
 
     val shelfLifeOptionsDays = listOf(0, 3, 7, 14)
+
+    val shelfLifePresetDays = listOf(0, 3, 7, 14, 30, 60, 90, 180, 365)
 }

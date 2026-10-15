@@ -1,5 +1,6 @@
 package com.jeffers.pantrycraft.feature.camera.ui
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -17,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -234,10 +237,10 @@ fun BatchReviewBottomSheet(
                         options = PantryTaxonomy.storageLocations,
                         onSelected = { editStorageLocation = it },
                     )
-                    ReviewPresetStepper(
+                    ReviewShelfLifeEditor(
                         label = "Shelf life",
                         value = editShelfLifeDays,
-                        presets = PantryTaxonomy.shelfLifeOptionsDays,
+                        presets = PantryTaxonomy.shelfLifePresetDays,
                         onValueChange = { editShelfLifeDays = it },
                     )
                 }
@@ -280,20 +283,18 @@ fun BatchReviewBottomSheet(
 private fun Int.toShelfLifeLabel() = if (this == 0) "None" else "$this days"
 
 @Composable
-private fun ReviewPresetStepper(
+private fun ReviewShelfLifeEditor(
     label: String,
     value: Int,
     presets: List<Int>,
     onValueChange: (Int) -> Unit,
 ) {
-    val previous = presets.lastOrNull { it < value }
-    val next = presets.firstOrNull { it > value }
     Column {
         Text(label, style = MaterialTheme.typography.labelMedium)
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(
-                enabled = previous != null,
-                onClick = { previous?.let(onValueChange) },
+                enabled = value > 0,
+                onClick = { onValueChange((value - 1).coerceAtLeast(0)) },
             ) {
                 Icon(Icons.Filled.Remove, contentDescription = "Decrease $label")
             }
@@ -303,10 +304,21 @@ private fun ReviewPresetStepper(
                 textAlign = TextAlign.Center,
             )
             IconButton(
-                enabled = next != null,
-                onClick = { next?.let(onValueChange) },
+                onClick = { onValueChange(value + 1) },
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Increase $label")
+            }
+        }
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            presets.forEach { preset ->
+                FilterChip(
+                    selected = value == preset,
+                    onClick = { onValueChange(preset) },
+                    label = { Text(preset.toShelfLifeLabel()) },
+                )
             }
         }
     }
