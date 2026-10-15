@@ -155,7 +155,7 @@ fun BatchReviewBottomSheet(
                 enabled = selectedItems.isNotEmpty(),
                 onClick = { onConfirm(selectedItems) },
             ) {
-                Text("Add ${selectedItems.size} selected")
+                Text("Save ${selectedItems.size} selected")
             }
         }
     }
