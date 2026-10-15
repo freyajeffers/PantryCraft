@@ -25,9 +25,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
 import com.jeffers.pantrycraft.data.Repository
+import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 @Composable
 fun SettingsScreen(
@@ -38,11 +40,20 @@ fun SettingsScreen(
     var pin by remember { mutableStateOf("") }
     var backupResult by remember { mutableStateOf<String?>(null) }
     var catalogResult by remember { mutableStateOf<String?>(null) }
+    var catalogReady by remember {
+        mutableStateOf(
+            File(context.noBackupFilesDir, CatalogDownloadService.CATALOG_FILE_NAME).isFile,
+        )
+    }
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            "Manage offline barcode data and protect your pantry information.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors =
@@ -58,6 +69,17 @@ fun SettingsScreen(
                         "the app and does not contain your pantry or grocery list.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Text(
+                    if (catalogReady) "Ready for offline barcode scans" else "Not downloaded",
+                    color =
+                        if (catalogReady) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
                 Button(
                     onClick = {
                         scope.launch {
@@ -65,13 +87,16 @@ fun SettingsScreen(
                                 withContext(Dispatchers.IO) {
                                     runCatching { repository.downloadOfflineCatalog() }
                                         .fold(
-                                            onSuccess = { "Food catalog ready for offline barcode scans." },
+                                            onSuccess = {
+                                                catalogReady = true
+                                                "Food catalog ready for offline barcode scans."
+                                            },
                                             onFailure = { "Catalog download failed: ${it.message}" },
                                         )
                                 }
                         }
                     },
-                    modifier = Modifier.padding(top = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                 ) {
                     Text("Download food catalog")
                 }
@@ -86,6 +111,12 @@ fun SettingsScreen(
                         "Choose a PIN that you can remember; you will need it to restore the backup. " +
                         "Nothing is uploaded when you create a backup.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    "Backups are stored in the app's private storage.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(top = 12.dp),
                 )
                 OutlinedTextField(
                     value = pin,
@@ -115,6 +146,7 @@ fun SettingsScreen(
                                 }
                         }
                     },
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Create encrypted backup")
                 }
