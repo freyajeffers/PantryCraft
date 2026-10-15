@@ -22,6 +22,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -36,6 +37,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.AppDatabase
+import com.jeffers.pantrycraft.data.AutomaticBackupPreferences
+import com.jeffers.pantrycraft.data.AutomaticBackupScheduler
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
@@ -70,6 +73,12 @@ fun SettingsScreen(
     var pendingBackupName by remember { mutableStateOf<String?>(null) }
     var lastExportedUri by remember { mutableStateOf(DatabaseBackupManager.persistedBackupUri(context)) }
     var backupRecords by remember { mutableStateOf(DatabaseBackupManager.backupRecords(context)) }
+    var automaticBackupsEnabled by remember {
+        mutableStateOf(AutomaticBackupPreferences.isEnabled(context))
+    }
+    var automaticBackupIntervalMinutes by remember {
+        mutableStateOf(AutomaticBackupPreferences.intervalMinutes(context))
+    }
 
     var restoreResult by remember { mutableStateOf<String?>(null) }
     var confirmDatabaseReset by remember { mutableStateOf(false) }
@@ -445,6 +454,70 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(top = 12.dp),
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Automatic background backups")
+                        Text(
+                            "Backups run while the app is not open and stay on this device. " +
+                                "The PIN is protected by Android Keystore.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = automaticBackupsEnabled,
+                        onCheckedChange = { enabled ->
+                            if (!enabled) {
+                                automaticBackupsEnabled = false
+                                AutomaticBackupPreferences.setSchedule(
+                                    context,
+                                    enabled = false,
+                                    intervalMinutes = automaticBackupIntervalMinutes,
+                                )
+                                AutomaticBackupScheduler.cancel(context)
+                            } else {
+                                pinDialogAction.value = { suppliedPin ->
+                                    AutomaticBackupPreferences.savePin(context, suppliedPin)
+                                    AutomaticBackupPreferences.setSchedule(
+                                        context,
+                                        enabled = true,
+                                        intervalMinutes = automaticBackupIntervalMinutes,
+                                    )
+                                    automaticBackupsEnabled = true
+                                    AutomaticBackupScheduler.schedule(
+                                        context,
+                                        automaticBackupIntervalMinutes,
+                                    )
+                                }
+                                pinText = ""
+                                showPinDialog = true
+                            }
+                        },
+                        modifier = Modifier.padding(start = 12.dp),
+                    )
+                }
+                if (automaticBackupsEnabled) {
+                    Text("Backup interval", modifier = Modifier.padding(top = 12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        listOf(15L to "15 min", 60L to "1 hour", 24 * 60L to "Daily").forEach { interval ->
+                            TextButton(onClick = {
+                                automaticBackupIntervalMinutes = interval.first
+                                AutomaticBackupPreferences.setSchedule(
+                                    context,
+                                    enabled = true,
+                                    intervalMinutes = interval.first,
+                                )
+                                AutomaticBackupScheduler.schedule(context, interval.first)
+                            }) { Text(interval.second) }
+                        }
+                    }
+                }
                 if (databaseHasUserData) {
                     Button(
                         onClick = {
