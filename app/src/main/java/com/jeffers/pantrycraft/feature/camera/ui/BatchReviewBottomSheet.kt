@@ -249,7 +249,7 @@ fun BatchReviewBottomSheet(
                     )
                 },
             ) {
-                Text("Save ${selectedItems.size} selected")
+                Text(if (items.size == 1) "Save" else "Save ${selectedItems.size} selected")
             }
         }
     }
