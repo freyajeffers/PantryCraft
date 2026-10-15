@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
+import java.math.BigDecimal
 
 private data class ReviewItem(
     val item: ParsedVisionItem,
@@ -142,8 +143,4 @@ fun BatchReviewBottomSheet(
     }
 }
 
-private fun formatQuantity(quantity: Float) =
-    when {
-        quantity % 1f == 0f -> quantity.toInt().toString()
-        else -> "%.1f".format(quantity)
-    }
+private fun formatQuantity(quantity: Float) = BigDecimal(quantity.toString()).stripTrailingZeros().toPlainString()
