@@ -25,6 +25,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +63,9 @@ fun SettingsScreen(
     repository: Repository,
 ) {
     val scope = rememberCoroutineScope()
+    val pantryItems by repository.observePantryItems().collectAsState(initial = emptyList())
+    val groceryItems by repository.observeGroceryItems().collectAsState(initial = emptyList())
+    val databaseHasUserData = pantryItems.isNotEmpty() || groceryItems.isNotEmpty()
     var backupResult by remember { mutableStateOf<String?>(null) }
     var pendingBackupName by remember { mutableStateOf<String?>(null) }
     var lastExportedUri by remember { mutableStateOf(DatabaseBackupManager.persistedBackupUri(context)) }
@@ -441,35 +445,37 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(top = 12.dp),
                 )
-                Button(
-                    onClick = {
-                        // prompt for PIN then create backup
-                        pinDialogAction.value = { suppliedPin ->
-                            scope.launch {
-                                backupResult =
-                                    withContext(Dispatchers.IO) {
-                                        runCatching {
-                                            DatabaseBackupManager.createEncryptedBackup(
-                                                context,
-                                                suppliedPin,
+                if (databaseHasUserData) {
+                    Button(
+                        onClick = {
+                            // prompt for PIN then create backup
+                            pinDialogAction.value = { suppliedPin ->
+                                scope.launch {
+                                    backupResult =
+                                        withContext(Dispatchers.IO) {
+                                            runCatching {
+                                                DatabaseBackupManager.createEncryptedBackup(
+                                                    context,
+                                                    suppliedPin,
+                                                )
+                                            }.fold(
+                                                onSuccess = {
+                                                    backupRecords = DatabaseBackupManager.backupRecords(context)
+                                                    pendingBackupName = it
+                                                    createBackupLauncher.launch(it)
+                                                    "Backup created. Choose where to save the encrypted file."
+                                                },
+                                                onFailure = { "Backup failed: ${it.message}" },
                                             )
-                                        }.fold(
-                                            onSuccess = {
-                                                backupRecords = DatabaseBackupManager.backupRecords(context)
-                                                pendingBackupName = it
-                                                createBackupLauncher.launch(it)
-                                                "Backup created. Choose where to save the encrypted file."
-                                            },
-                                            onFailure = { "Backup failed: ${it.message}" },
-                                        )
-                                    }
+                                        }
+                                }
                             }
-                        }
-                        pinText = ""
-                        showPinDialog = true
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("Save encrypted backup file") }
+                            pinText = ""
+                            showPinDialog = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Save encrypted backup file") }
+                }
                 Text(
                     if (lastExportedUri != null) {
                         "Saved location remembered for recovery."
@@ -496,14 +502,15 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     ) { Text("Share saved backup") }
                 }
-                OutlinedButton(
-                    enabled = backupRecords.isNotEmpty(),
-                    onClick = {
-                        showBackupList = true
-                        backupRecords = DatabaseBackupManager.backupRecords(context)
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                ) { Text("Restore saved backup") }
+                if (backupRecords.isNotEmpty()) {
+                    OutlinedButton(
+                        onClick = {
+                            showBackupList = true
+                            backupRecords = DatabaseBackupManager.backupRecords(context)
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    ) { Text("Restore saved backup") }
+                }
                 OutlinedButton(
                     onClick = {
                         openRestoreLauncher.launch(arrayOf("application/octet-stream", "application/*"))
