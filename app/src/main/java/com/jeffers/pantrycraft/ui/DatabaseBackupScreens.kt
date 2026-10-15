@@ -1,5 +1,10 @@
 package com.jeffers.pantrycraft.ui
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,6 +12,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -56,6 +63,35 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     var pin by remember { mutableStateOf("") }
     var backupResult by remember { mutableStateOf<String?>(null) }
+    var pendingBackupName by remember { mutableStateOf<String?>(null) }
+    var lastExportedUri by remember { mutableStateOf(DatabaseBackupManager.persistedBackupUri(context)) }
+    val createBackupLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument("application/octet-stream"),
+        ) { uri ->
+            val backupName = pendingBackupName
+            pendingBackupName = null
+            if (uri != null && backupName != null) {
+                runCatching {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                    )
+                }
+                scope.launch {
+                    runCatching {
+                        withContext(Dispatchers.IO) {
+                            DatabaseBackupManager.exportBackup(context, backupName, uri)
+                        }
+                    }.onSuccess {
+                        lastExportedUri = uri
+                        Toast.makeText(context, "Encrypted backup saved", Toast.LENGTH_SHORT).show()
+                    }.onFailure {
+                        backupResult = "Backup export failed: ${it.message}"
+                    }
+                }
+            }
+        }
     var catalogReady by remember {
         mutableStateOf(
             File(context.noBackupFilesDir, CatalogDownloadService.CATALOG_FILE_NAME).isFile,
@@ -114,7 +150,7 @@ fun SettingsScreen(
         )
     }
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineSmall)
@@ -205,14 +241,12 @@ fun SettingsScreen(
                                         onSuccess = { file ->
                                             catalogReady = true
                                             catalogFileSize = file.length()
-                                            catalogDialog =
-                                                CatalogDialog(
-                                                    "Download complete",
-                                                    "The food catalog is ready for offline barcode scans (${formatFileSize(
-                                                        file.length(),
-                                                    )}).",
-                                                    false,
-                                                )
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Food catalog downloaded (${formatFileSize(file.length())})",
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
                                         },
                                         onFailure = {
                                             catalogDialog =
@@ -276,7 +310,11 @@ fun SettingsScreen(
                                             suppliedPin,
                                         )
                                     }.fold(
-                                        onSuccess = { "Backup created: $it" },
+                                        onSuccess = {
+                                            pendingBackupName = it
+                                            createBackupLauncher.launch(it)
+                                            "Backup created. Choose where to save the encrypted file."
+                                        },
                                         onFailure = { "Backup failed: ${it.message}" },
                                     )
                                 }
@@ -284,7 +322,33 @@ fun SettingsScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Create encrypted backup")
+                    Text("Save encrypted backup file")
+                }
+                Text(
+                    if (lastExportedUri != null) {
+                        "Saved location remembered for recovery."
+                    } else {
+                        "Choose a file location so it can be found during recovery."
+                    },
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+                if (lastExportedUri != null) {
+                    OutlinedButton(
+                        onClick = {
+                            context.startActivity(
+                                Intent.createChooser(
+                                    Intent(Intent.ACTION_SEND).apply {
+                                        type = "application/octet-stream"
+                                        putExtra(Intent.EXTRA_STREAM, lastExportedUri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    },
+                                    "Share encrypted backup",
+                                ),
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    ) { Text("Share saved backup") }
                 }
                 backupResult?.let { Text(it, modifier = Modifier.padding(top = 12.dp)) }
             }
@@ -299,11 +363,33 @@ fun DatabaseRecoveryScreen(
     onReset: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val backups = remember { DatabaseBackupManager.listBackups(context) }
+    val backups =
+        remember {
+            DatabaseBackupManager.listBackups(context) +
+                listOfNotNull(DatabaseBackupManager.persistedBackupUri(context)?.toString())
+        }
     var selectedBackup by remember { mutableStateOf(backups.firstOrNull()) }
     var pin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var confirmReset by remember { mutableStateOf(false) }
+    var pendingRestorePin by remember { mutableStateOf<CharArray?>(null) }
+    val openBackupLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            val suppliedPin = pendingRestorePin
+            pendingRestorePin = null
+            if (uri != null && suppliedPin != null) {
+                scope.launch {
+                    error =
+                        withContext(Dispatchers.IO) {
+                            runCatching { onRestore(uri.toString(), suppliedPin) }
+                                .exceptionOrNull()
+                                ?.message
+                        }
+                }
+            }
+        }
     if (confirmReset) {
         AlertDialog(
             onDismissRequest = { confirmReset = false },
@@ -339,7 +425,13 @@ fun DatabaseRecoveryScreen(
         } else {
             backups.forEach { backup ->
                 TextButton(onClick = { selectedBackup = backup }) {
-                    Text(if (backup == selectedBackup) "✓ $backup" else backup)
+                    val label =
+                        if (backup.startsWith("content://")) {
+                            Uri.parse(backup).lastPathSegment ?: "Saved backup file"
+                        } else {
+                            backup
+                        }
+                    Text(if (backup == selectedBackup) "✓ $label" else label)
                 }
             }
             OutlinedTextField(
@@ -350,6 +442,17 @@ fun DatabaseRecoveryScreen(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
+            OutlinedButton(
+                enabled = pin.isNotEmpty(),
+                onClick = {
+                    pendingRestorePin = pin.toCharArray()
+                    pin = ""
+                    openBackupLauncher.launch(arrayOf("application/octet-stream", "application/*"))
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) {
+                Text("Open backup file")
+            }
             Spacer(modifier = Modifier.padding(4.dp))
             Button(
                 enabled = selectedBackup != null && pin.isNotEmpty(),

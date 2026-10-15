@@ -1,6 +1,7 @@
 package com.jeffers.pantrycraft.data
 
 import android.content.Context
+import android.net.Uri
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -36,6 +37,50 @@ object DatabaseBackupManager {
     private const val IV_LEN = 12
     private const val ITERATIONS = 200_000
     private const val KEY_LEN_BITS = 256
+    private const val PREFS_NAME = "backup_preferences"
+    private const val LAST_EXPORTED_URI = "last_exported_uri"
+
+    fun persistedBackupUri(context: Context): Uri? {
+        val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val value = preferences.getString(LAST_EXPORTED_URI, null)
+        return value?.let(Uri::parse)
+    }
+
+    fun exportBackup(
+        context: Context,
+        backupName: String,
+        destination: Uri,
+    ) {
+        val source = backupFile(context, backupName)
+        if (!source.isFile) throw IOException("Backup not found: $backupName")
+        val output =
+            context.contentResolver.openOutputStream(destination)
+                ?: throw IOException("Unable to open selected backup location")
+        source.inputStream().use { input -> output.use { input.copyTo(it) } }
+        val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        preferences
+            .edit()
+            .putString(LAST_EXPORTED_URI, destination.toString())
+            .apply()
+    }
+
+    fun restoreEncryptedBackupFromUri(
+        context: Context,
+        uri: Uri,
+        pin: CharArray,
+    ) {
+        val backupDir = File(context.filesDir, BACKUP_DIR).apply { mkdirs() }
+        val imported = File.createTempFile(".pantry_import_", ".pcbk", backupDir)
+        try {
+            val input =
+                context.contentResolver.openInputStream(uri)
+                    ?: throw IOException("Unable to open selected backup")
+            input.use { source -> imported.outputStream().use { source.copyTo(it) } }
+            restoreEncryptedBackup(context, imported.name, pin)
+        } finally {
+            imported.delete()
+        }
+    }
 
     fun listBackups(context: Context): List<String> {
         val dir = File(context.filesDir, BACKUP_DIR)

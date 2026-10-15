@@ -61,7 +61,15 @@ fun AppNavigator() {
         DatabaseRecoveryScreen(
             context = context,
             onRestore = { backupName, pin ->
-                DatabaseBackupManager.restoreEncryptedBackup(context, backupName, pin)
+                if (backupName.startsWith("content://")) {
+                    DatabaseBackupManager.restoreEncryptedBackupFromUri(
+                        context,
+                        android.net.Uri.parse(backupName),
+                        pin,
+                    )
+                } else {
+                    DatabaseBackupManager.restoreEncryptedBackup(context, backupName, pin)
+                }
                 (context as? android.app.Activity)?.recreate()
             },
             onReset = {
