@@ -40,7 +40,12 @@ object DatabaseBackupManager {
     fun listBackups(context: Context): List<String> {
         val dir = File(context.filesDir, BACKUP_DIR)
         if (!dir.exists() || !dir.isDirectory) return emptyList()
-        return dir.listFiles()?.sortedByDescending { it.lastModified() }?.map { it.name } ?: emptyList()
+        return dir
+            .listFiles()
+            ?.filter { it.isFile && it.name.endsWith(".pcbk") }
+            ?.sortedByDescending { it.lastModified() }
+            ?.map { it.name }
+            ?: emptyList()
     }
 
     @Throws(IOException::class)
@@ -117,8 +122,7 @@ object DatabaseBackupManager {
         backupName: String,
         pin: CharArray,
     ) {
-        val src =
-            File(context.filesDir, "$BACKUP_DIR/$backupName")
+        val src = backupFile(context, backupName)
         if (!src.exists()) {
             throw IOException("Backup not found: $backupName")
         }
@@ -206,5 +210,15 @@ object DatabaseBackupManager {
         val key = factory.generateSecret(spec).encoded
         spec.clearPassword()
         return key
+    }
+
+    private fun backupFile(
+        context: Context,
+        backupName: String,
+    ): File {
+        if (backupName != File(backupName).name || !backupName.endsWith(".pcbk")) {
+            throw IOException("Invalid backup name")
+        }
+        return File(context.filesDir, "$BACKUP_DIR/$backupName")
     }
 }

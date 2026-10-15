@@ -69,4 +69,19 @@ class DatabaseBackupManagerTest {
                     .single { it.name == marker }
             assertEquals(marker, restored.name)
         }
+
+    @Test
+    fun restoreRejectsPathTraversalBackupNames() {
+        var rejected = false
+        try {
+            DatabaseBackupManager.restoreEncryptedBackup(
+                context,
+                "../not-a-backup.pcbk",
+                "pin".toCharArray(),
+            )
+        } catch (_: Exception) {
+            rejected = true
+        }
+        assertTrue(rejected)
+    }
 }

@@ -101,8 +101,6 @@ fun SettingsScreen(
                         if (file.delete()) {
                             catalogReady = false
                             catalogFileSize = null
-                            catalogDialog =
-                                CatalogDialog("Catalog deleted", "The offline barcode catalog was removed.", false)
                         } else {
                             catalogDialog =
                                 CatalogDialog("Delete failed", "The downloaded catalog could not be removed.", true)
@@ -185,47 +183,53 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Button(
-                        enabled = !catalogDownloading,
-                        onClick = {
-                            catalogDownloading = true
-                            catalogDownloadedBytes = 0L
-                            catalogTotalBytes = -1L
-                            scope.launch {
-                                val result =
-                                    withContext(Dispatchers.IO) {
-                                        runCatching {
-                                            repository.downloadOfflineCatalog { downloaded, total ->
-                                                catalogDownloadedBytes = downloaded
-                                                catalogTotalBytes = total
+                    if (!catalogReady) {
+                        Button(
+                            enabled = !catalogDownloading,
+                            onClick = {
+                                catalogDownloading = true
+                                catalogDownloadedBytes = 0L
+                                catalogTotalBytes = -1L
+                                scope.launch {
+                                    val result =
+                                        withContext(Dispatchers.IO) {
+                                            runCatching {
+                                                repository.downloadOfflineCatalog { downloaded, total ->
+                                                    catalogDownloadedBytes = downloaded
+                                                    catalogTotalBytes = total
+                                                }
                                             }
                                         }
-                                    }
-                                catalogDownloading = false
-                                result.fold(
-                                    onSuccess = { file ->
-                                        catalogReady = true
-                                        catalogFileSize = file.length()
-                                        catalogDialog =
-                                            CatalogDialog(
-                                                "Download complete",
-                                                "The food catalog is ready for offline barcode scans (${formatFileSize(file.length())}).",
-                                                false,
-                                            )
-                                    },
-                                    onFailure = {
-                                        catalogDialog =
-                                            CatalogDialog(
-                                                "Download failed",
-                                                it.message ?: "The catalog could not be downloaded. Check your connection and try again.",
-                                                true,
-                                            )
-                                    },
-                                )
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                    ) { Text(if (catalogReady) "Download again" else "Download food catalog") }
+                                    catalogDownloading = false
+                                    result.fold(
+                                        onSuccess = { file ->
+                                            catalogReady = true
+                                            catalogFileSize = file.length()
+                                            catalogDialog =
+                                                CatalogDialog(
+                                                    "Download complete",
+                                                    "The food catalog is ready for offline barcode scans (${formatFileSize(
+                                                        file.length(),
+                                                    )}).",
+                                                    false,
+                                                )
+                                        },
+                                        onFailure = {
+                                            catalogDialog =
+                                                CatalogDialog(
+                                                    "Download failed",
+                                                    it.message
+                                                        ?: "The catalog could not be downloaded. " +
+                                                        "Check your connection and try again.",
+                                                    true,
+                                                )
+                                        },
+                                    )
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) { Text("Download food catalog") }
+                    }
                     if (catalogReady) {
                         OutlinedButton(
                             onClick = { confirmCatalogDelete = true },
@@ -299,6 +303,27 @@ fun DatabaseRecoveryScreen(
     var selectedBackup by remember { mutableStateOf(backups.firstOrNull()) }
     var pin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var confirmReset by remember { mutableStateOf(false) }
+    if (confirmReset) {
+        AlertDialog(
+            onDismissRequest = { confirmReset = false },
+            title = { Text("Reset local database?") },
+            text = {
+                Text("This permanently deletes the local pantry and grocery database. Restore a backup first if you need to keep it.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmReset = false
+                        onReset()
+                    },
+                ) { Text("Reset database") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmReset = false }) { Text("Cancel") }
+            },
+        )
+    }
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
@@ -346,7 +371,7 @@ fun DatabaseRecoveryScreen(
             }
         }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        Button(onClick = onReset) {
+        OutlinedButton(onClick = { confirmReset = true }) {
             Text("Reset local database")
         }
     }
