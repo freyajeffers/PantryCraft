@@ -62,13 +62,16 @@ fun SettingsScreen(
     repository: Repository,
 ) {
     val scope = rememberCoroutineScope()
-    var pin by remember { mutableStateOf("") }
     var backupResult by remember { mutableStateOf<String?>(null) }
     var pendingBackupName by remember { mutableStateOf<String?>(null) }
     var lastExportedUri by remember { mutableStateOf(DatabaseBackupManager.persistedBackupUri(context)) }
-    var pendingRestorePin by remember { mutableStateOf<CharArray?>(null) }
+
     var restoreResult by remember { mutableStateOf<String?>(null) }
     var confirmDatabaseReset by remember { mutableStateOf(false) }
+
+    var showPinDialog by remember { mutableStateOf(false) }
+    val pinDialogAction = remember { mutableStateOf<(CharArray) -> Unit>({}) }
+    var pinText by remember { mutableStateOf("") }
     val createBackupLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.CreateDocument("application/octet-stream"),
@@ -96,6 +99,40 @@ fun SettingsScreen(
                 }
             }
         }
+    // Pin entry dialog helper
+    if (showPinDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showPinDialog = false
+                pinText = ""
+            },
+            title = { Text("Enter backup PIN") },
+            text = {
+                OutlinedTextField(
+                    value = pinText,
+                    onValueChange = { pinText = it },
+                    label = { Text("PIN") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val pinChars = pinText.toCharArray()
+                    pinText = ""
+                    showPinDialog = false
+                    pinDialogAction.value(pinChars)
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showPinDialog = false
+                    pinText = ""
+                }) { Text("Cancel") }
+            },
+        )
+    }
 
     fun restoreFromUri(
         uri: Uri,
@@ -115,9 +152,11 @@ fun SettingsScreen(
         rememberLauncherForActivityResult(
             ActivityResultContracts.OpenDocument(),
         ) { uri ->
-            val suppliedPin = pendingRestorePin
-            pendingRestorePin = null
-            if (uri != null && suppliedPin != null) restoreFromUri(uri, suppliedPin)
+            if (uri != null) {
+                pinDialogAction.value = { suppliedPin -> restoreFromUri(uri, suppliedPin) }
+                pinText = ""
+                showPinDialog = true
+            }
         }
     var catalogReady by remember {
         mutableStateOf(
@@ -341,42 +380,34 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(top = 12.dp),
                 )
-                OutlinedTextField(
-                    value = pin,
-                    onValueChange = { pin = it },
-                    label = { Text("Backup PIN") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                )
                 Button(
-                    enabled = pin.isNotEmpty(),
                     onClick = {
-                        val suppliedPin = pin.toCharArray()
-                        pin = ""
-                        scope.launch {
-                            backupResult =
-                                withContext(Dispatchers.IO) {
-                                    runCatching {
-                                        DatabaseBackupManager.createEncryptedBackup(
-                                            context,
-                                            suppliedPin,
+                        // prompt for PIN then create backup
+                        pinDialogAction.value = { suppliedPin ->
+                            scope.launch {
+                                backupResult =
+                                    withContext(Dispatchers.IO) {
+                                        runCatching {
+                                            DatabaseBackupManager.createEncryptedBackup(
+                                                context,
+                                                suppliedPin,
+                                            )
+                                        }.fold(
+                                            onSuccess = {
+                                                pendingBackupName = it
+                                                createBackupLauncher.launch(it)
+                                                "Backup created. Choose where to save the encrypted file."
+                                            },
+                                            onFailure = { "Backup failed: ${it.message}" },
                                         )
-                                    }.fold(
-                                        onSuccess = {
-                                            pendingBackupName = it
-                                            createBackupLauncher.launch(it)
-                                            "Backup created. Choose where to save the encrypted file."
-                                        },
-                                        onFailure = { "Backup failed: ${it.message}" },
-                                    )
-                                }
+                                    }
+                            }
                         }
+                        pinText = ""
+                        showPinDialog = true
                     },
                     modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("Save encrypted backup file")
-                }
+                ) { Text("Save encrypted backup file") }
                 Text(
                     if (lastExportedUri != null) {
                         "Saved location remembered for recovery."
@@ -404,20 +435,17 @@ fun SettingsScreen(
                     ) { Text("Share saved backup") }
                 }
                 OutlinedButton(
-                    enabled = lastExportedUri != null && pin.isNotEmpty(),
+                    enabled = lastExportedUri != null,
                     onClick = {
                         val uri = lastExportedUri ?: return@OutlinedButton
-                        val suppliedPin = pin.toCharArray()
-                        pin = ""
-                        restoreFromUri(uri, suppliedPin)
+                        pinDialogAction.value = { suppliedPin -> restoreFromUri(uri, suppliedPin) }
+                        pinText = ""
+                        showPinDialog = true
                     },
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 ) { Text("Restore saved backup") }
                 OutlinedButton(
-                    enabled = pin.isNotEmpty(),
                     onClick = {
-                        pendingRestorePin = pin.toCharArray()
-                        pin = ""
                         openRestoreLauncher.launch(arrayOf("application/octet-stream", "application/*"))
                     },
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
