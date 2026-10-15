@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jeffers.pantrycraft.data.PantryItem
+import com.jeffers.pantrycraft.data.PantryTaxonomy
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
@@ -90,17 +91,7 @@ fun PantryScreen(viewModel: PantryViewModel) {
                     Text("Category", style = MaterialTheme.typography.labelLarge)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(
-                            listOf(
-                                "OTHER",
-                                "PRODUCE",
-                                "DAIRY",
-                                "MEAT",
-                                "BAKERY",
-                                "PANTRY_STAPLE",
-                                "FROZEN",
-                                "SPICE",
-                                "BEVERAGE",
-                            ),
+                            PantryTaxonomy.categories,
                         ) { category ->
                             FilterChip(
                                 selected = newCategory == category,

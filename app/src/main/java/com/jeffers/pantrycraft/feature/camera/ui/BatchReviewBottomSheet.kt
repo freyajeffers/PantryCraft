@@ -34,16 +34,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.jeffers.pantrycraft.data.PantryTaxonomy
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
 import java.math.BigDecimal
-
-private val reviewCategories =
-    listOf("PRODUCE", "DAIRY", "MEAT", "SEAFOOD", "GRAINS", "CANNED", "FROZEN", "SNACKS", "BEVERAGES", "CONDIMENTS", "SPICES", "OTHER")
-
-private val reviewUnits =
-    listOf("COUNT", "EACH", "G", "KG", "ML", "L", "OZ", "LB", "PACKAGE", "CAN", "BOTTLE")
-
-private val integerQuantityUnits = setOf("COUNT", "EACH", "PACKAGE", "CAN", "BOTTLE")
 
 private data class ReviewItem(
     val item: ParsedVisionItem,
@@ -126,7 +119,7 @@ fun BatchReviewBottomSheet(
                             "Confidence ${(reviewItem.item.confidence * 100).toInt()}%",
                             style = MaterialTheme.typography.bodySmall,
                         )
-                        if (reviewItem.item.unit in integerQuantityUnits) {
+                        if (reviewItem.item.unit in PantryTaxonomy.integerQuantityUnits) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("Quantity", modifier = Modifier.weight(1f))
                                 IconButton(
@@ -213,13 +206,13 @@ fun BatchReviewBottomSheet(
                     ReviewDropdown(
                         label = "Category",
                         value = editCategory,
-                        options = reviewCategories,
+                        options = PantryTaxonomy.categories,
                         onSelected = { editCategory = it },
                     )
                     ReviewDropdown(
                         label = "Unit",
                         value = editUnit,
-                        options = reviewUnits,
+                        options = PantryTaxonomy.units,
                         onSelected = { editUnit = it },
                     )
                 }
