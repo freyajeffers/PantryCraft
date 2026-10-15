@@ -28,6 +28,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -73,6 +74,28 @@ fun BatchReviewBottomSheet(
     var editShelfLifeDays by remember { mutableStateOf(0) }
     val quantityTextByIndex = remember { mutableStateMapOf<Int, String>() }
     val selectedItems = reviewItems.filter { it.included }.map { it.item }
+    LaunchedEffect(items) {
+        if (items.size == 1) {
+            val item = items.first()
+            editName = item.name
+            editCategory = item.category
+            editUnit = item.unit
+            editStorageLocation = item.storageLocation
+            editShelfLifeDays = item.estimatedShelfLifeDays
+        }
+    }
+
+    fun applySingleItemEdits(item: ParsedVisionItem) =
+        item.copy(
+            name = editName.trim(),
+            category = editCategory.trim().ifEmpty { "OTHER" },
+            unit = editUnit.trim().ifEmpty { "COUNT" },
+            storageLocation =
+                editStorageLocation.trim().ifEmpty {
+                    PantryTaxonomy.storageLocations.first()
+                },
+            estimatedShelfLifeDays = editShelfLifeDays,
+        )
 
     Column(
         modifier = Modifier.padding(20.dp),
@@ -85,6 +108,7 @@ fun BatchReviewBottomSheet(
         )
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             itemsIndexed(reviewItems) { index, reviewItem ->
+                val displayedUnit = if (items.size == 1) editUnit else reviewItem.item.unit
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(
@@ -97,32 +121,34 @@ fun BatchReviewBottomSheet(
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.weight(1f),
                             )
-                            TextButton(
-                                onClick = {
-                                    editName = reviewItem.item.name
-                                    editCategory = reviewItem.item.category
-                                    editUnit = reviewItem.item.unit
-                                    editStorageLocation = reviewItem.item.storageLocation
-                                    editShelfLifeDays = reviewItem.item.estimatedShelfLifeDays
-                                    quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity)
-                                    editingIndex = index
-                                },
-                            ) {
-                                Text("Edit")
-                            }
-                            TextButton(
-                                onClick = {
-                                    reviewItems =
-                                        reviewItems.toMutableList().also {
-                                            it[index] = reviewItem.copy(included = !reviewItem.included)
-                                        }
-                                },
-                            ) {
-                                Text(if (reviewItem.included) "Remove" else "Add")
+                            if (items.size > 1) {
+                                TextButton(
+                                    onClick = {
+                                        editName = reviewItem.item.name
+                                        editCategory = reviewItem.item.category
+                                        editUnit = reviewItem.item.unit
+                                        editStorageLocation = reviewItem.item.storageLocation
+                                        editShelfLifeDays = reviewItem.item.estimatedShelfLifeDays
+                                        quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity)
+                                        editingIndex = index
+                                    },
+                                ) {
+                                    Text("Edit")
+                                }
+                                TextButton(
+                                    onClick = {
+                                        reviewItems =
+                                            reviewItems.toMutableList().also {
+                                                it[index] = it[index].copy(included = !it[index].included)
+                                            }
+                                    },
+                                ) {
+                                    Text(if (reviewItem.included) "Remove" else "Add")
+                                }
                             }
                         }
                         Text(
-                            "Category: ${reviewItem.item.category} · Unit: ${reviewItem.item.unit}",
+                            "Category: ${reviewItem.item.category} · Unit: $displayedUnit",
                             style = MaterialTheme.typography.bodySmall,
                         )
                         Text(
@@ -137,7 +163,7 @@ fun BatchReviewBottomSheet(
                             "Confidence ${(reviewItem.item.confidence * 100).toInt()}%",
                             style = MaterialTheme.typography.bodySmall,
                         )
-                        if (reviewItem.item.unit in PantryTaxonomy.integerQuantityUnits) {
+                        if (displayedUnit in PantryTaxonomy.integerQuantityUnits) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("Quantity", modifier = Modifier.weight(1f))
                                 IconButton(
@@ -190,7 +216,7 @@ fun BatchReviewBottomSheet(
                                             }
                                     }
                                 },
-                                label = { Text("Quantity (${reviewItem.item.unit})") },
+                                label = { Text("Quantity ($displayedUnit)") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 singleLine = true,
                             )
@@ -199,11 +225,29 @@ fun BatchReviewBottomSheet(
                 }
             }
         }
+        if (items.size == 1) {
+            ReviewEditorFields(
+                name = editName,
+                onNameChange = { editName = it },
+                category = editCategory,
+                onCategoryChange = { editCategory = it },
+                unit = editUnit,
+                onUnitChange = { editUnit = it },
+                storageLocation = editStorageLocation,
+                onStorageLocationChange = { editStorageLocation = it },
+                shelfLifeDays = editShelfLifeDays,
+                onShelfLifeChange = { editShelfLifeDays = it },
+            )
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(onClick = onDismiss) { Text("Cancel") }
             Button(
-                enabled = selectedItems.isNotEmpty() && selectedItems.all { it.name.isNotBlank() },
-                onClick = { onConfirm(selectedItems) },
+                enabled = selectedItems.isNotEmpty() && (items.size > 1 || editName.isNotBlank()),
+                onClick = {
+                    onConfirm(
+                        if (items.size == 1) selectedItems.map(::applySingleItemEdits) else selectedItems,
+                    )
+                },
             ) {
                 Text("Save ${selectedItems.size} selected")
             }
@@ -214,38 +258,18 @@ fun BatchReviewBottomSheet(
             onDismissRequest = { editingIndex = null },
             title = { Text("Edit captured item") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = editName,
-                        onValueChange = { editName = it },
-                        label = { Text("Name") },
-                        singleLine = true,
-                    )
-                    ReviewDropdown(
-                        label = "Category",
-                        value = editCategory,
-                        options = PantryTaxonomy.categories,
-                        onSelected = { editCategory = it },
-                    )
-                    ReviewDropdown(
-                        label = "Unit",
-                        value = editUnit,
-                        options = PantryTaxonomy.units,
-                        onSelected = { editUnit = it },
-                    )
-                    ReviewDropdown(
-                        label = "Storage location",
-                        value = editStorageLocation,
-                        options = PantryTaxonomy.storageLocations,
-                        onSelected = { editStorageLocation = it },
-                    )
-                    ReviewShelfLifeEditor(
-                        label = "Shelf life",
-                        value = editShelfLifeDays,
-                        presets = PantryTaxonomy.shelfLifePresetDays,
-                        onValueChange = { editShelfLifeDays = it },
-                    )
-                }
+                ReviewEditorFields(
+                    name = editName,
+                    onNameChange = { editName = it },
+                    category = editCategory,
+                    onCategoryChange = { editCategory = it },
+                    unit = editUnit,
+                    onUnitChange = { editUnit = it },
+                    storageLocation = editStorageLocation,
+                    onStorageLocationChange = { editStorageLocation = it },
+                    shelfLifeDays = editShelfLifeDays,
+                    onShelfLifeChange = { editShelfLifeDays = it },
+                )
             },
             confirmButton = {
                 TextButton(
@@ -283,6 +307,53 @@ fun BatchReviewBottomSheet(
 }
 
 private fun Int.toShelfLifeLabel() = if (this == 0) "None" else "$this days"
+
+@Composable
+private fun ReviewEditorFields(
+    name: String,
+    onNameChange: (String) -> Unit,
+    category: String,
+    onCategoryChange: (String) -> Unit,
+    unit: String,
+    onUnitChange: (String) -> Unit,
+    storageLocation: String,
+    onStorageLocationChange: (String) -> Unit,
+    shelfLifeDays: Int,
+    onShelfLifeChange: (Int) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = name,
+            onValueChange = onNameChange,
+            label = { Text("Name") },
+            singleLine = true,
+        )
+        ReviewDropdown(
+            label = "Category",
+            value = category,
+            options = PantryTaxonomy.categories,
+            onSelected = onCategoryChange,
+        )
+        ReviewDropdown(
+            label = "Unit",
+            value = unit,
+            options = PantryTaxonomy.units,
+            onSelected = onUnitChange,
+        )
+        ReviewDropdown(
+            label = "Storage location",
+            value = storageLocation,
+            options = PantryTaxonomy.storageLocations,
+            onSelected = onStorageLocationChange,
+        )
+        ReviewShelfLifeEditor(
+            label = "Shelf life",
+            value = shelfLifeDays,
+            presets = PantryTaxonomy.shelfLifePresetDays,
+            onValueChange = onShelfLifeChange,
+        )
+    }
+}
 
 @Composable
 private fun ReviewShelfLifeEditor(
