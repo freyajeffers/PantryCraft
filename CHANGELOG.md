@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### PantryCraft
+- Debug builds now append the current short Git commit ID to the version name for device identification.
 - Added the Botanical Chef's Toque adaptive launcher icon with monochrome and API 23 legacy vector fallbacks.
 - Added user-selected scoped storage for automatic encrypted backups and horizontal backup interval selection with clear selected-state styling.
 - Made the selected bottom-navigation indicator responsive to available screen width and reduced its surrounding spacing.

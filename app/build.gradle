@@ -7,6 +7,10 @@ plugins {
 }
 
 def signingProperties = new Properties()
+def gitCommit = "git rev-parse --short HEAD".execute([], project.rootDir).text.trim()
+if (!gitCommit) {
+    gitCommit = "unknown"
+}
 def signingPropertiesFile = file(
     System.getenv('PANTRYCRAFT_SIGNING_PROPERTIES') ?: "${System.getProperty('user.home')}/.config/pantrycraft/signing.properties",
 )
@@ -49,6 +53,7 @@ android {
     buildTypes {
         debug {
             testCoverageEnabled true
+            versionNameSuffix "-${gitCommit}"
         }
         release {
             minifyEnabled false
