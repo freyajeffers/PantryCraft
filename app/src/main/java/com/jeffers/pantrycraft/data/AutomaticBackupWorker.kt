@@ -28,7 +28,7 @@ class AutomaticBackupWorker(
                     .isNotEmpty()
             val hasUserData = hasPantryData || hasGroceryData
             if (hasUserData) {
-                AppDatabase.closeDatabase()
+                AppDatabase.checkpointForBackup(applicationContext)
                 val checksum = DatabaseBackupManager.dbChecksum(applicationContext)
                 val last = DatabaseBackupManager.lastDbChecksum(applicationContext)
                 if (checksum != null && checksum == last) {

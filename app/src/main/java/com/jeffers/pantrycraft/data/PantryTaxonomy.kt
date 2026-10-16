@@ -29,4 +29,7 @@ object PantryTaxonomy {
     val shelfLifeOptionsDays = listOf(0, 3, 7, 14)
 
     val shelfLifePresetDays = listOf(0, 3, 7, 14, 30, 60, 90, 180, 365)
+
+    fun isAromaticOrSeasoningCategory(category: String): Boolean =
+        category.equals("SPICES", ignoreCase = true) || category.equals("CONDIMENTS", ignoreCase = true)
 }

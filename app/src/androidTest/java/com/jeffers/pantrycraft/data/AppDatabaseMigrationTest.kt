@@ -58,4 +58,31 @@ class AppDatabaseMigrationTest {
         }
         db.close()
     }
+
+    @Test
+    fun migrate2To3_createsCustomBarcodeCacheTable() {
+        helper.createDatabase("migration-test-2-3", 2).apply {
+            close()
+        }
+
+        val db =
+            helper.runMigrationsAndValidate(
+                "migration-test-2-3",
+                3,
+                true,
+                AppDatabase.MIGRATION_2_3,
+            )
+        db.execSQL(
+            "INSERT INTO custom_barcode_cache " +
+                "(barcode, name, category, defaultUnit, estimatedShelfLifeDays, lastScanned) " +
+                "VALUES ('012345678901', 'Test Oats', 'GRAINS', 'COUNT', 180, 1000)",
+        )
+        db.query("SELECT * FROM custom_barcode_cache WHERE barcode = '012345678901'").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Test Oats", cursor.getString(cursor.getColumnIndexOrThrow("name")))
+            assertEquals("GRAINS", cursor.getString(cursor.getColumnIndexOrThrow("category")))
+            assertEquals(180, cursor.getInt(cursor.getColumnIndexOrThrow("estimatedShelfLifeDays")))
+        }
+        db.close()
+    }
 }

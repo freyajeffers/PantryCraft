@@ -39,10 +39,9 @@ class VisionOutputParser {
         if (item == null) return null
         val name = item.optString("name").trim()
         if (name.isEmpty()) return null
-        val box = item.optJSONArray("bounding_box") ?: return null
-        if (box.length() != 4) return null
-        val values = (0 until 4).map { box.optDouble(it, Double.NaN).toFloat() }
-        if (values.any { !it.isFinite() }) return null
+
+        val box = parseBoundingBox(item)
+
         return ParsedVisionItem(
             name = name,
             category = item.optString("category", "OTHER").uppercase(),
@@ -52,21 +51,53 @@ class VisionOutputParser {
             confidence = item.optDouble("confidence", 0.0).toFloat().coerceIn(0f, 1f),
             estimatedShelfLifeDays = item.optInt("estimated_shelf_life_days", 0).coerceAtLeast(0),
             isAromaticOrSeasoning = item.optBoolean("is_aromatic_or_seasoning", false),
-            boundingBox =
-                NormalizedBox(
+            boundingBox = box,
+            conditionNotes = item.optString("condition_notes").takeIf { it.isNotBlank() },
+        )
+    }
+
+    private fun parseBoundingBox(item: JSONObject): NormalizedBox {
+        val arrayBox = item.optJSONArray("bounding_box")
+        if (arrayBox != null && arrayBox.length() == 4) {
+            val values = (0 until 4).map { arrayBox.optDouble(it, Double.NaN).toFloat() }
+            if (values.all { it.isFinite() }) {
+                return NormalizedBox(
                     ymin = values[0].coerceIn(0f, 1f),
                     xmin = values[1].coerceIn(0f, 1f),
                     ymax = values[2].coerceIn(0f, 1f),
                     xmax = values[3].coerceIn(0f, 1f),
-                ),
-            conditionNotes = item.optString("condition_notes").takeIf { it.isNotBlank() },
-        )
+                )
+            }
+        }
+
+        val objectBox = item.optJSONObject("bounding_box")
+        if (objectBox != null) {
+            val ymin =
+                objectBox.optDouble("y_min", objectBox.optDouble("ymin", 0.0)).toFloat()
+            val xmin =
+                objectBox.optDouble("x_min", objectBox.optDouble("xmin", 0.0)).toFloat()
+            val ymax =
+                objectBox.optDouble("y_max", objectBox.optDouble("ymax", 1.0)).toFloat()
+            val xmax =
+                objectBox.optDouble("x_max", objectBox.optDouble("xmax", 1.0)).toFloat()
+            if (listOf(ymin, xmin, ymax, xmax).all { it.isFinite() }) {
+                return NormalizedBox(
+                    ymin = ymin.coerceIn(0f, 1f),
+                    xmin = xmin.coerceIn(0f, 1f),
+                    ymax = ymax.coerceIn(0f, 1f),
+                    xmax = xmax.coerceIn(0f, 1f),
+                )
+            }
+        }
+
+        return NormalizedBox(0f, 0f, 1f, 1f)
     }
 
     private fun sanitize(raw: String): String {
         val trimmed =
             raw
                 .trim()
+                .removePrefix("```json")
                 .removePrefix("```")
                 .removeSuffix("```")
                 .trim()

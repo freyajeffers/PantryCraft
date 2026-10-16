@@ -46,6 +46,12 @@ class GroceryViewModel(
             repo.clearCheckedGrocery()
         }
 
+    fun restockChecked() =
+        launchDatabaseOperation("Unable to restock checked grocery items") {
+            val count = repo.restockCheckedGroceryToPantry()
+            _operationErrors.emit("Restocked $count items to pantry")
+        }
+
     private fun launchDatabaseOperation(
         errorMessage: String,
         operation: suspend () -> Unit,

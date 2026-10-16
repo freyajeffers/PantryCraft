@@ -30,6 +30,29 @@ class OfflineBarcodeResolverTest {
             assertEquals("My Cola", resolver.resolveBarcode("012000001056")?.name)
         }
 
+    @Test
+    fun associateBarcodePersistsAndResolves() =
+        runBlocking {
+            val dao = FakeDao()
+            val resolver = OfflineBarcodeResolver(dao)
+
+            val match =
+                resolver.associateBarcode(
+                    "999999999999",
+                    "Special Blend Coffee",
+                    "BEVERAGES",
+                    "PACKAGE",
+                    180,
+                )
+            assertEquals("Special Blend Coffee", match.name)
+            assertEquals("BEVERAGES", match.category)
+            assertEquals("PACKAGE", match.unit)
+            assertEquals(180, match.estimatedShelfLifeDays)
+
+            val stored = dao.findByBarcode("999999999999")
+            assertEquals("Special Blend Coffee", stored?.name)
+        }
+
     private class FakeDao(
         private var item: CustomBarcodeItem? = null,
     ) : CustomBarcodeDao {

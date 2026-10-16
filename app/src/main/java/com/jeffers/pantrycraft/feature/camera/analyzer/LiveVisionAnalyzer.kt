@@ -13,12 +13,14 @@ import com.google.mlkit.vision.objects.ObjectDetector
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Normalized bounding box in [ymin, xmin, ymax, xmax] order. */
+/** Normalized bounding box in [ymin, xmin, ymax, xmax] order with optional classification. */
 data class NormalizedVisionBox(
     val ymin: Float,
     val xmin: Float,
     val ymax: Float,
     val xmax: Float,
+    val label: String? = null,
+    val confidence: Float? = null,
 )
 
 data class LiveVisionResult(
@@ -56,17 +58,30 @@ class LiveVisionAnalyzer(
             return
         }
 
-        val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+        val rotation = imageProxy.imageInfo.rotationDegrees
+        val inputImage = InputImage.fromMediaImage(mediaImage, rotation)
         val barcodeTask = barcodeScanner.process(inputImage)
         val objectTask = objectDetector.process(inputImage)
         Tasks
             .whenAllComplete(barcodeTask, objectTask)
             .continueWith(executor) {
                 val barcodes = barcodeTask.result.orEmpty().mapNotNull { it.rawValue }
+
+                // ML Kit detects objects in the rotated upright input image coordinate space.
+                // When rotation is 90 or 270 degrees, effective width/height are transposed.
+                val effectiveWidth = if (rotation == 90 || rotation == 270) imageProxy.height else imageProxy.width
+                val effectiveHeight = if (rotation == 90 || rotation == 270) imageProxy.width else imageProxy.height
+
                 val boxes =
-                    objectTask.result.orEmpty().map {
-                        it.boundingBox.toNormalized(imageProxy.width, imageProxy.height)
-                    }
+                    objectTask.result
+                        .orEmpty()
+                        .filter { detected ->
+                            (detected.labels.firstOrNull()?.confidence ?: 1.0f) >= CONFIDENCE_THRESHOLD
+                        }.map { detected ->
+                            val label = detected.labels.firstOrNull()?.text
+                            val confidence = detected.labels.firstOrNull()?.confidence
+                            detected.boundingBox.toNormalized(effectiveWidth, effectiveHeight, label, confidence)
+                        }
                 LiveVisionResult(barcodes, boxes)
             }.addOnSuccessListener(executor) { onResult(it) }
             .addOnFailureListener(executor) { onError(it) }
@@ -88,16 +103,21 @@ class LiveVisionAnalyzer(
     private fun Rect.toNormalized(
         width: Int,
         height: Int,
+        label: String? = null,
+        confidence: Float? = null,
     ): NormalizedVisionBox =
         NormalizedVisionBox(
             ymin = (top.toFloat() / height).coerceIn(0f, 1f),
             xmin = (left.toFloat() / width).coerceIn(0f, 1f),
             ymax = (bottom.toFloat() / height).coerceIn(0f, 1f),
             xmax = (right.toFloat() / width).coerceIn(0f, 1f),
+            label = label,
+            confidence = confidence,
         )
 
     companion object {
-        private const val FRAME_INTERVAL_MS = 66L
+        private const val FRAME_INTERVAL_MS = 66L // ~15 FPS throttle
+        const val CONFIDENCE_THRESHOLD = 0.70f
     }
 }
 

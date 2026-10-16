@@ -1,8 +1,11 @@
 package com.jeffers.pantrycraft.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -160,7 +164,7 @@ fun PantryScreen(viewModel: PantryViewModel) {
                 editorItem = null
                 showAddDialog = true
             }) {
-                androidx.compose.material3.Icon(
+                Icon(
                     imageVector = Icons.Filled.Add,
                     contentDescription = "Add pantry item",
                 )
@@ -246,16 +250,56 @@ fun PantryItemRow(
                 onDecrement()
                 dismissState.reset()
             }
-            SwipeToDismissBoxValue.EndToStart -> onDelete()
+            SwipeToDismissBoxValue.EndToStart -> {
+                onDelete()
+                dismissState.reset()
+            }
             SwipeToDismissBoxValue.Settled -> Unit
         }
     }
     SwipeToDismissBox(
         state = dismissState,
-        backgroundContent = {},
+        backgroundContent = {
+            val direction = dismissState.dismissDirection
+            val color =
+                when (dismissState.targetValue) {
+                    SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
+                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
+                    else -> MaterialTheme.colorScheme.surfaceVariant
+                }
+            val alignment =
+                when (direction) {
+                    SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                    else -> Alignment.CenterEnd
+                }
+            val icon =
+                when (direction) {
+                    SwipeToDismissBoxValue.StartToEnd -> Icons.Filled.Remove
+                    else -> Icons.Filled.Delete
+                }
+            val desc =
+                when (direction) {
+                    SwipeToDismissBoxValue.StartToEnd -> "Use 1"
+                    else -> "Delete"
+                }
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(color)
+                        .padding(horizontal = 20.dp),
+                contentAlignment = alignment,
+            ) {
+                Icon(imageVector = icon, contentDescription = desc)
+            }
+        },
         content = {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {

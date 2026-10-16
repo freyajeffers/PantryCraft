@@ -135,7 +135,7 @@ fun AppNavigator() {
     ) { contentPadding ->
         Box(modifier = Modifier.padding(contentPadding)) {
             when (destination) {
-                "home" -> HomeScreen()
+                "home" -> HomeScreen(repository, onNavigate = { destination = it })
 
                 "pantry" -> {
                     val vm: PantryViewModel =

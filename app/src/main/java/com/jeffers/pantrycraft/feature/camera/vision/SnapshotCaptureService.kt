@@ -3,9 +3,14 @@ package com.jeffers.pantrycraft.feature.camera.vision
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.Arrays
@@ -24,26 +29,31 @@ class SnapshotCaptureService(
     context: Context,
     private val imageCapture: ImageCapture,
 ) {
-    private val scratchDirectory = context.applicationContext.cacheDir.resolve("vision_scratch")
+    private val appContext = context.applicationContext
+    private val scratchDirectory = appContext.cacheDir.resolve("vision_scratch")
 
     suspend fun capture(): SnapshotFrame =
+        withContext(Dispatchers.Default) {
+            val file = captureToFile()
+            try {
+                val bytes = compressForVision(file)
+                SnapshotFrame(bytes)
+            } finally {
+                file.delete()
+            }
+        }
+
+    private suspend fun captureToFile(): File =
         suspendCancellableCoroutine { continuation ->
             scratchDirectory.mkdirs()
             val file = File.createTempFile("snapshot-", ".jpg", scratchDirectory)
             val output = ImageCapture.OutputFileOptions.Builder(file).build()
             imageCapture.takePicture(
                 output,
-                contextExecutor,
+                ContextCompat.getMainExecutor(appContext),
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                        try {
-                            val bytes = compressForVision(file)
-                            if (continuation.isActive) continuation.resume(SnapshotFrame(bytes)) else bytes.fill(0)
-                        } catch (error: Exception) {
-                            if (continuation.isActive) continuation.resumeWithException(error)
-                        } finally {
-                            file.delete()
-                        }
+                        if (continuation.isActive) continuation.resume(file) else file.delete()
                     }
 
                     override fun onError(exception: ImageCaptureException) {
@@ -58,16 +68,19 @@ class SnapshotCaptureService(
     private fun compressForVision(file: File): ByteArray {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.absolutePath, bounds)
+
+        val sampleSize = calculateSampleSize(bounds.outWidth, bounds.outHeight)
         val source =
             BitmapFactory.decodeFile(
                 file.absolutePath,
                 BitmapFactory.Options().apply {
-                    inSampleSize = calculateSampleSize(bounds.outWidth, bounds.outHeight)
+                    inSampleSize = sampleSize
                     inPreferredConfig = Bitmap.Config.RGB_565
                 },
-            )
-                ?: error("Camera returned an unreadable image")
-        val scaled = scale(source)
+            ) ?: error("Camera returned an unreadable image")
+
+        val oriented = applyExifOrientation(file.absolutePath, source)
+        val scaled = scale(oriented)
         return try {
             ByteArrayOutputStream().use { output ->
                 check(scaled.compress(Bitmap.CompressFormat.WEBP, 85, output)) {
@@ -76,8 +89,35 @@ class SnapshotCaptureService(
                 output.toByteArray()
             }
         } finally {
-            if (scaled !== source) scaled.recycle()
+            if (scaled !== oriented && scaled !== source) scaled.recycle()
+            if (oriented !== source) oriented.recycle()
             source.recycle()
+        }
+    }
+
+    private fun applyExifOrientation(
+        filePath: String,
+        source: Bitmap,
+    ): Bitmap {
+        return try {
+            val exif = ExifInterface(filePath)
+            val orientation =
+                exif.getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL,
+                )
+            val matrix = Matrix()
+            when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+                ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+                ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+                ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+                ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+                else -> return source
+            }
+            Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
+        } catch (_: Exception) {
+            source
         }
     }
 
@@ -105,8 +145,5 @@ class SnapshotCaptureService(
     companion object {
         private const val MAX_DIMENSION = 1536
         private const val MAX_DECODE_DIMENSION = 2048
-        private val contextExecutor =
-            java.util.concurrent.Executors
-                .newSingleThreadExecutor()
     }
 }

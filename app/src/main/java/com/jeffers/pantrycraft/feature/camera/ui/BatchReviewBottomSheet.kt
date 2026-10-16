@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
@@ -72,8 +73,12 @@ fun BatchReviewBottomSheet(
     var editUnit by remember { mutableStateOf("") }
     var editStorageLocation by remember { mutableStateOf("") }
     var editShelfLifeDays by remember { mutableStateOf(0) }
+    var editNotes by remember { mutableStateOf("") }
+    var editIsAromatic by remember { mutableStateOf(false) }
+
     val quantityTextByIndex = remember { mutableStateMapOf<Int, String>() }
     val selectedItems = reviewItems.filter { it.included }.map { it.item }
+
     LaunchedEffect(items) {
         if (items.size == 1) {
             val item = items.first()
@@ -82,6 +87,10 @@ fun BatchReviewBottomSheet(
             editUnit = item.unit
             editStorageLocation = item.storageLocation
             editShelfLifeDays = item.estimatedShelfLifeDays
+            editNotes = item.conditionNotes ?: ""
+            editIsAromatic =
+                item.isAromaticOrSeasoning ||
+                PantryTaxonomy.isAromaticOrSeasoningCategory(item.category)
         }
     }
 
@@ -95,6 +104,8 @@ fun BatchReviewBottomSheet(
                     PantryTaxonomy.storageLocations.first()
                 },
             estimatedShelfLifeDays = editShelfLifeDays,
+            conditionNotes = editNotes.trim().takeIf { it.isNotEmpty() },
+            isAromaticOrSeasoning = editIsAromatic,
         )
 
     Column(
@@ -106,9 +117,17 @@ fun BatchReviewBottomSheet(
             description,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyColumn(
+            modifier = Modifier.weight(1f, fill = false),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             itemsIndexed(reviewItems) { index, reviewItem ->
+                val displayedName = if (items.size == 1 && editName.isNotBlank()) editName else reviewItem.item.name
+                val displayedCategory = if (items.size == 1) editCategory else reviewItem.item.category
                 val displayedUnit = if (items.size == 1) editUnit else reviewItem.item.unit
+                val displayedStorage = if (items.size == 1) editStorageLocation else reviewItem.item.storageLocation
+                val displayedShelfLife = if (items.size == 1) editShelfLifeDays else reviewItem.item.estimatedShelfLifeDays
+
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(
@@ -117,7 +136,7 @@ fun BatchReviewBottomSheet(
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             Text(
-                                reviewItem.item.name,
+                                displayedName.ifBlank { "New item" },
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.weight(1f),
                             )
@@ -129,6 +148,8 @@ fun BatchReviewBottomSheet(
                                         editUnit = reviewItem.item.unit
                                         editStorageLocation = reviewItem.item.storageLocation
                                         editShelfLifeDays = reviewItem.item.estimatedShelfLifeDays
+                                        editNotes = reviewItem.item.conditionNotes ?: ""
+                                        editIsAromatic = reviewItem.item.isAromaticOrSeasoning
                                         quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity)
                                         editingIndex = index
                                     },
@@ -148,21 +169,23 @@ fun BatchReviewBottomSheet(
                             }
                         }
                         Text(
-                            "Category: ${reviewItem.item.category} · Unit: $displayedUnit",
+                            "Category: $displayedCategory · Unit: $displayedUnit",
                             style = MaterialTheme.typography.bodySmall,
                         )
                         Text(
-                            "Storage: ${reviewItem.item.storageLocation}",
+                            "Storage: $displayedStorage",
                             style = MaterialTheme.typography.bodySmall,
                         )
                         Text(
-                            "Shelf life: ${reviewItem.item.estimatedShelfLifeDays.toShelfLifeLabel()}",
+                            "Shelf life: ${displayedShelfLife.toShelfLifeLabel()}",
                             style = MaterialTheme.typography.bodySmall,
                         )
-                        Text(
-                            "Confidence ${(reviewItem.item.confidence * 100).toInt()}%",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
+                        if (items.size > 1) {
+                            Text(
+                                "Confidence ${(reviewItem.item.confidence * 100).toInt()}%",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
                         if (displayedUnit in PantryTaxonomy.integerQuantityUnits) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("Quantity", modifier = Modifier.weight(1f))
@@ -230,13 +253,20 @@ fun BatchReviewBottomSheet(
                 name = editName,
                 onNameChange = { editName = it },
                 category = editCategory,
-                onCategoryChange = { editCategory = it },
+                onCategoryChange = {
+                    editCategory = it
+                    if (PantryTaxonomy.isAromaticOrSeasoningCategory(it)) editIsAromatic = true
+                },
                 unit = editUnit,
                 onUnitChange = { editUnit = it },
                 storageLocation = editStorageLocation,
                 onStorageLocationChange = { editStorageLocation = it },
                 shelfLifeDays = editShelfLifeDays,
                 onShelfLifeChange = { editShelfLifeDays = it },
+                notes = editNotes,
+                onNotesChange = { editNotes = it },
+                isAromatic = editIsAromatic,
+                onAromaticChange = { editIsAromatic = it },
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -262,13 +292,20 @@ fun BatchReviewBottomSheet(
                     name = editName,
                     onNameChange = { editName = it },
                     category = editCategory,
-                    onCategoryChange = { editCategory = it },
+                    onCategoryChange = {
+                        editCategory = it
+                        if (PantryTaxonomy.isAromaticOrSeasoningCategory(it)) editIsAromatic = true
+                    },
                     unit = editUnit,
                     onUnitChange = { editUnit = it },
                     storageLocation = editStorageLocation,
                     onStorageLocationChange = { editStorageLocation = it },
                     shelfLifeDays = editShelfLifeDays,
                     onShelfLifeChange = { editShelfLifeDays = it },
+                    notes = editNotes,
+                    onNotesChange = { editNotes = it },
+                    isAromatic = editIsAromatic,
+                    onAromaticChange = { editIsAromatic = it },
                 )
             },
             confirmButton = {
@@ -290,6 +327,8 @@ fun BatchReviewBottomSheet(
                                                         PantryTaxonomy.storageLocations.first()
                                                     },
                                                 estimatedShelfLifeDays = editShelfLifeDays,
+                                                conditionNotes = editNotes.trim().takeIf { it.isNotEmpty() },
+                                                isAromaticOrSeasoning = editIsAromatic,
                                             ),
                                     )
                             }
@@ -320,6 +359,10 @@ private fun ReviewEditorFields(
     onStorageLocationChange: (String) -> Unit,
     shelfLifeDays: Int,
     onShelfLifeChange: (Int) -> Unit,
+    notes: String,
+    onNotesChange: (String) -> Unit,
+    isAromatic: Boolean,
+    onAromaticChange: (Boolean) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
@@ -327,6 +370,7 @@ private fun ReviewEditorFields(
             onValueChange = onNameChange,
             label = { Text("Name") },
             singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
         )
         ReviewDropdown(
             label = "Category",
@@ -352,6 +396,24 @@ private fun ReviewEditorFields(
             presets = PantryTaxonomy.shelfLifePresetDays,
             onValueChange = onShelfLifeChange,
         )
+        OutlinedTextField(
+            value = notes,
+            onValueChange = onNotesChange,
+            label = { Text("Notes / Condition") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = isAromatic,
+                onCheckedChange = onAromaticChange,
+            )
+            Text(
+                "Aromatic / Seasoning (spices, herbs, oils)",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
     }
 }
 

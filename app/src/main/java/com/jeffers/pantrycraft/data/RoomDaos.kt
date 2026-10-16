@@ -18,7 +18,13 @@ interface PantryDao {
     @Query("SELECT * FROM pantry_items WHERE barcode = :barcode AND isDeleted = 0 LIMIT 1")
     suspend fun findByBarcode(barcode: String): PantryItem?
 
-    @Query("SELECT * FROM pantry_items WHERE isDeleted = 0 ORDER BY expirationTimestamp ASC")
+    @Query("SELECT * FROM pantry_items WHERE barcode = :barcode LIMIT 1")
+    suspend fun findAnyByBarcode(barcode: String): PantryItem?
+
+    @Query(
+        "SELECT * FROM pantry_items WHERE isDeleted = 0 AND quantity > 0 " +
+            "ORDER BY CASE WHEN expirationTimestamp IS NULL THEN 1 ELSE 0 END, expirationTimestamp ASC, name COLLATE NOCASE ASC",
+    )
     suspend fun getAvailableIngredients(): List<PantryItem>
 
     @Query("UPDATE pantry_items SET isDeleted = 1, updated_at = :updatedAt WHERE id = :id")

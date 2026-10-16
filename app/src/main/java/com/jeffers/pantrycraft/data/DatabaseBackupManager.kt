@@ -225,7 +225,7 @@ object DatabaseBackupManager {
             // Obtain the SQLCipher passphrase from the KeyProvider. Caller must have unlocked KeyStore.
             passphrase = DatabaseKeyProvider.getKey(context)
 
-            AppDatabase.closeDatabase()
+            AppDatabase.checkpointForBackup(context)
             FileOutputStream(temp).use { fos ->
                 // header
                 fos.write(MAGIC.toByteArray(Charsets.UTF_8))
@@ -358,6 +358,7 @@ object DatabaseBackupManager {
                 }
 
                 AppDatabase.closeDatabase()
+                Repository.resetInstance()
                 DatabaseKeyProvider.reset(context)
                 DatabaseKeyProvider.restorePassphrase(
                     context,

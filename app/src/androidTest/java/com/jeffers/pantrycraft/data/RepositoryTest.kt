@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -54,8 +55,26 @@ class RepositoryTest {
             repository.deletePantry(observed)
             assertFalse(repository.observePantryItems().first().any { it.id == id })
             assertEquals(null, repository.findPantryItemByBarcode(item.barcode!!))
-            repository.restorePantry(observed)
-            assertTrue(repository.observePantryItems().first().any { it.id == id })
+            assertNotNull(repository.findAnyPantryItemByBarcode(item.barcode!!))
+
+            // Re-inserting with the same barcode restores the soft-deleted item
+            val restoredId = repository.insertPantry(item.copy(quantity = 3f))
+            assertEquals(id, restoredId)
+            val restored = repository.observePantryItems().first().single { it.id == id }
+            assertEquals(3f, restored.quantity)
+            assertFalse(restored.isDeleted)
+
+            // Scanning duplicate barcode increments quantity instead of overwriting
+            val incrementedId = repository.insertPantry(item.copy(quantity = 2f))
+            assertEquals(id, incrementedId)
+            val incremented = repository.observePantryItems().first().single { it.id == id }
+            assertEquals(5f, incremented.quantity)
+
+            // Batch insert
+            val batchItem1 = PantryItem(name = "$marker-batch1", quantity = 1f)
+            val batchItem2 = PantryItem(name = "$marker-batch2", quantity = 2f)
+            val batchIds = repository.insertPantryBatch(listOf(batchItem1, batchItem2))
+            assertEquals(2, batchIds.size)
 
             val grocery = GroceryItem(name = marker)
             val groceryId = repository.insertGrocery(grocery)
@@ -63,7 +82,10 @@ class RepositoryTest {
             repository.updateGrocery(grocery.copy(id = groceryId, checked = true))
             val deletedGroceryId = repository.insertGrocery(GroceryItem(name = "$marker-delete"))
             repository.deleteGrocery(grocery.copy(id = deletedGroceryId))
-            repository.clearCheckedGrocery()
+
+            // Restock checked grocery to pantry
+            val restockedCount = repository.restockCheckedGroceryToPantry()
+            assertEquals(1, restockedCount)
             assertFalse(repository.observeGroceryItems().first().any { it.id == groceryId })
 
             assertThrows(IllegalArgumentException::class.java) {

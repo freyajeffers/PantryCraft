@@ -136,10 +136,20 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        fun checkpointForBackup(context: Context) {
+            synchronized(this) {
+                val db = getDatabase(context)
+                db.openHelper.writableDatabase
+                    .query("PRAGMA wal_checkpoint(TRUNCATE)")
+                    .close()
+            }
+        }
+
         fun resetEncryptedDatabase(context: Context) {
             synchronized(this) {
                 INSTANCE?.close()
                 INSTANCE = null
+                Repository.resetInstance()
                 context.applicationContext.deleteDatabase("pantry_grocery_encrypted.db")
                 DatabaseKeyProvider.reset(context)
             }

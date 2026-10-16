@@ -40,11 +40,39 @@ class OfflineBarcodeResolver(
             customBarcodeDao.upsert(item)
         }
 
+    suspend fun associateBarcode(
+        barcode: String,
+        name: String,
+        category: String = "OTHER",
+        defaultUnit: String = "COUNT",
+        estimatedShelfLifeDays: Int = 0,
+    ): BarcodeMatch {
+        val cleanBarcode = barcode.trim()
+        val item =
+            CustomBarcodeItem(
+                barcode = cleanBarcode,
+                name = name.trim(),
+                category = category.trim().ifEmpty { "OTHER" },
+                defaultUnit = defaultUnit.trim().ifEmpty { "COUNT" },
+                estimatedShelfLifeDays = estimatedShelfLifeDays.coerceAtLeast(0),
+                lastScanned = System.currentTimeMillis(),
+            )
+        remember(item)
+        return item.toMatch(cleanBarcode)
+    }
+
     private fun CustomBarcodeItem.toMatch(barcode: String) = BarcodeMatch(barcode, name, category, defaultUnit, estimatedShelfLifeDays)
 
     private fun EmbeddedProduct.toMatch(barcode: String) = BarcodeMatch(barcode, name, category, unit, shelfLifeDays)
 
-    private fun EmbeddedBarcodeMatch.toMatch() = BarcodeMatch(barcode, name, category, "COUNT", shelfLifeDays)
+    private fun EmbeddedBarcodeMatch.toMatch() =
+        BarcodeMatch(
+            barcode = barcode,
+            name = if (brand.isNotBlank() && !name.contains(brand, ignoreCase = true)) "$brand $name" else name,
+            category = category,
+            unit = "COUNT",
+            shelfLifeDays,
+        )
 
     companion object {
         private const val DEBOUNCE_MS = 2_500L

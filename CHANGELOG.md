@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### PantryCraft Phase 2 Improvements & Hardening
+- Added interactive live barcode quick-add card and custom barcode naming dialog to CameraScreen.
+- Implemented unknown barcode memory via OfflineBarcodeResolver.associateBarcode, persisting custom items to SQLite.
+- Fixed CameraX normalized coordinate mapping in LiveVisionAnalyzer for portrait rotation (90°/270°).
+- Added confidence filtering (>= 70%) and on-screen label/confidence badges to live vision HUD bounding boxes.
+- Added EXIF orientation correction and Dispatchers.Default processing to SnapshotCaptureService.
+- Added dual bounding-box schema support (arrays and objects) with fallback handling in VisionOutputParser.
+- Replaced database closure with WAL checkpointing (PRAGMA wal_checkpoint(TRUNCATE)) during encrypted backup creation, preventing Repository disconnection.
+- Added repository reset hooks and atomic batch insertion (insertPantryBatch) in Room database transactions.
+- Hardened barcode inventory persistence to increment quantity or restore soft-deleted items on duplicate scans.
+- Fixed getAvailableIngredients query to exclude depleted stock and sort non-null expiration timestamps first.
+- Automated isAromaticOrSeasoning classification for Spices and Condiments taxonomy categories.
+- Bounded BatchReviewBottomSheet height and synchronized live state during single-item manual add/edit.
+- Added directional visual styling, icons, and state reset on undo to PantryScreen SwipeToDismissBox.
+- Enhanced GroceryScreen with manual item creation dialog, item deletion, clear checked, and one-tap restock to pantry.
+- Upgraded HomeScreen to an active kitchen dashboard displaying real-time metrics, quick actions, and Phase 3 preview.
+- Added MIGRATION_2_3 instrumentation test coverage and expanded unit tests for vision parsing and barcode association.
+- Synced root README.md with the official PantryCraft project landing page and documentation suite.
+
 ### PantryCraft
 - Debug builds now append the current short Git commit ID to the version name for device identification.
 - Replaced the Botanical Chef's Toque launcher icon with the minimalist Viewfinder, Fork & Basil Leaf adaptive icon (`#1E3A2F` forest green background, `#F4F1EA` viewfinder brackets, `#EAA83B` fork, `#4CAF50` basil leaf), including a 48dp safe-zone Material You monochrome stencil and API 23 legacy vector fallbacks.
