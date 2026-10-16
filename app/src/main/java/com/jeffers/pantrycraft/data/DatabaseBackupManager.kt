@@ -226,6 +226,9 @@ object DatabaseBackupManager {
             passphrase = DatabaseKeyProvider.getKey(context)
 
             AppDatabase.checkpointForBackup(context)
+            // Close Room before copying the database file so no open connection can
+            // continue writing after the WAL checkpoint and during the snapshot.
+            AppDatabase.closeDatabase()
             FileOutputStream(temp).use { fos ->
                 // header
                 fos.write(MAGIC.toByteArray(Charsets.UTF_8))
