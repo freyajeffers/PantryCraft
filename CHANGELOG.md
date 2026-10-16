@@ -4,7 +4,7 @@
 
 ### PantryCraft
 - Debug builds now append the current short Git commit ID to the version name for device identification.
-- Added the Botanical Chef's Toque adaptive launcher icon with monochrome and API 23 legacy vector fallbacks.
+- Replaced the Botanical Chef's Toque launcher icon with the minimalist Viewfinder, Fork & Basil Leaf adaptive icon (`#1E3A2F` forest green background, `#F4F1EA` viewfinder brackets, `#EAA83B` fork, `#4CAF50` basil leaf), including a 48dp safe-zone Material You monochrome stencil and API 23 legacy vector fallbacks.
 - Added user-selected scoped storage for automatic encrypted backups and horizontal backup interval selection with clear selected-state styling.
 - Made the selected bottom-navigation indicator responsive to available screen width and reduced its surrounding spacing.
 - Added Room schema v1-to-v2 migration for storage location, category, expiration, opened-state, and notes fields.
