@@ -1,7 +1,9 @@
 package com.jeffers.pantrycraft.feature.camera.core
 
 import android.content.Context
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
@@ -22,6 +24,7 @@ class CameraManager(
     private val appContext = context.applicationContext
     private var cameraProvider: ProcessCameraProvider? = null
     private var imageCapture: ImageCapture? = null
+    private var camera: Camera? = null
 
     fun bind(
         owner: LifecycleOwner,
@@ -46,17 +49,38 @@ class CameraManager(
                 val imageCapture = ImageCapture.Builder().build()
                 this@CameraManager.imageCapture = imageCapture
                 provider.unbindAll()
-                provider.bindToLifecycle(
-                    owner,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    preview,
-                    analysis,
-                    imageCapture,
-                )
+                camera =
+                    provider.bindToLifecycle(
+                        owner,
+                        CameraSelector.DEFAULT_BACK_CAMERA,
+                        preview,
+                        analysis,
+                        imageCapture,
+                    )
             },
             ContextCompat.getMainExecutor(appContext),
         )
     }
+
+    fun setTorch(enabled: Boolean) {
+        camera?.cameraControl?.enableTorch(enabled)
+    }
+
+    fun setLinearZoom(zoom: Float) {
+        camera?.cameraControl?.setLinearZoom(zoom.coerceIn(0f, 1f))
+    }
+
+    fun focusOn(
+        x: Float,
+        y: Float,
+        previewView: PreviewView,
+    ) {
+        val point = previewView.meteringPointFactory.createPoint(x, y)
+        val action = FocusMeteringAction.Builder(point).build()
+        camera?.cameraControl?.startFocusAndMetering(action)
+    }
+
+    fun hasFlash(): Boolean = camera?.cameraInfo?.hasFlashUnit() == true
 
     suspend fun captureSnapshot(): SnapshotFrame =
         SnapshotCaptureService(
@@ -68,5 +92,6 @@ class CameraManager(
         cameraProvider?.unbindAll()
         cameraProvider = null
         imageCapture = null
+        camera = null
     }
 }

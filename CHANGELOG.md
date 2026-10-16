@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### PantryCraft Kitchen Usability & Notifications
+- Added CameraX torch/flashlight toggle for dark kitchen cabinets and refrigerators.
+- Implemented tap-to-focus metering with visual target indicator and pinch-to-zoom on the camera viewfinder.
+- Added custom culinary unit input ("CUSTOM") in review editors and displayed custom units (e.g. sprigs, cloves, bunches) on pantry ledger items.
+- Implemented local daily expiration alerts via WorkManager (ExpirationAlertWorker), notifying users of food expiring within 48 hours without external telemetry.
+- Added POST_NOTIFICATIONS permission and settings toggle for daily expiration reminders.
+
 ### PantryCraft Phase 1 Refinements & Hardening
 - Fixed Expiring Soon filter in PantryViewModel to include already-expired items (<= cutoff) alongside soon-to-expire food.
 - Added multi-attribute ledger sorting supporting Expiration Urgency, Alphabetical (A-Z), Recently Updated, and Category grouping.

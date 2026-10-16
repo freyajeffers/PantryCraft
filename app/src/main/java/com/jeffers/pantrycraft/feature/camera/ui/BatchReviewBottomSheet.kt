@@ -71,6 +71,7 @@ fun BatchReviewBottomSheet(
     var editName by remember { mutableStateOf("") }
     var editCategory by remember { mutableStateOf("") }
     var editUnit by remember { mutableStateOf("") }
+    var editCustomUnitName by remember { mutableStateOf("") }
     var editStorageLocation by remember { mutableStateOf("") }
     var editShelfLifeDays by remember { mutableStateOf(0) }
     var editNotes by remember { mutableStateOf("") }
@@ -85,6 +86,7 @@ fun BatchReviewBottomSheet(
             editName = item.name
             editCategory = item.category
             editUnit = item.unit
+            editCustomUnitName = item.customUnitName ?: ""
             editStorageLocation = item.storageLocation
             editShelfLifeDays = item.estimatedShelfLifeDays
             editNotes = item.conditionNotes ?: ""
@@ -99,6 +101,7 @@ fun BatchReviewBottomSheet(
             name = editName.trim(),
             category = editCategory.trim().ifEmpty { "OTHER" },
             unit = editUnit.trim().ifEmpty { "COUNT" },
+            customUnitName = if (editUnit == "CUSTOM") editCustomUnitName.trim().takeIf { it.isNotEmpty() } else null,
             storageLocation =
                 editStorageLocation.trim().ifEmpty {
                     PantryTaxonomy.storageLocations.first()
@@ -267,6 +270,8 @@ fun BatchReviewBottomSheet(
                 onNotesChange = { editNotes = it },
                 isAromatic = editIsAromatic,
                 onAromaticChange = { editIsAromatic = it },
+                customUnitName = editCustomUnitName,
+                onCustomUnitNameChange = { editCustomUnitName = it },
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -363,6 +368,8 @@ private fun ReviewEditorFields(
     onNotesChange: (String) -> Unit,
     isAromatic: Boolean,
     onAromaticChange: (Boolean) -> Unit,
+    customUnitName: String = "",
+    onCustomUnitNameChange: (String) -> Unit = {},
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
@@ -384,6 +391,15 @@ private fun ReviewEditorFields(
             options = PantryTaxonomy.units,
             onSelected = onUnitChange,
         )
+        if (unit == "CUSTOM") {
+            OutlinedTextField(
+                value = customUnitName,
+                onValueChange = onCustomUnitNameChange,
+                label = { Text("Custom unit (e.g. bunch, cloves, stalks)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         ReviewDropdown(
             label = "Storage location",
             value = storageLocation,

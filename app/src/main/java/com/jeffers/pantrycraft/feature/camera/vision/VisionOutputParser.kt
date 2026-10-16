@@ -15,6 +15,7 @@ data class ParsedVisionItem(
     val isAromaticOrSeasoning: Boolean,
     val boundingBox: NormalizedBox,
     val conditionNotes: String?,
+    val customUnitName: String? = null,
 )
 
 data class NormalizedBox(
@@ -53,6 +54,7 @@ class VisionOutputParser {
             isAromaticOrSeasoning = item.optBoolean("is_aromatic_or_seasoning", false),
             boundingBox = box,
             conditionNotes = item.optString("condition_notes").takeIf { it.isNotBlank() },
+            customUnitName = item.optString("custom_unit_name").takeIf { it.isNotBlank() },
         )
     }
 

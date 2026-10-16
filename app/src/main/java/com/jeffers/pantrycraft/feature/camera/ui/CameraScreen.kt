@@ -10,6 +10,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FlashOff
+import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.AlertDialog
@@ -40,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
@@ -72,6 +78,7 @@ import com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
 import com.jeffers.pantrycraft.feature.camera.vision.SnapshotVisionService
 import com.jeffers.pantrycraft.feature.camera.vision.toPantryItem
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
@@ -130,6 +137,16 @@ fun CameraScreen() {
     var latestResult by remember { mutableStateOf<LiveVisionResult?>(null) }
     val frameTimingStats = remember { FrameTimingStats() }
     var latestFrameTime by remember { mutableStateOf<Long?>(null) }
+    var isTorchOn by remember { mutableStateOf(false) }
+    var focusPoint by remember { mutableStateOf<androidx.compose.ui.geometry.Offset?>(null) }
+    var zoomRatio by remember { mutableStateOf(0f) }
+
+    LaunchedEffect(focusPoint) {
+        if (focusPoint != null) {
+            delay(1200)
+            focusPoint = null
+        }
+    }
 
     val labelPaint =
         remember {
@@ -205,7 +222,22 @@ fun CameraScreen() {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .pointerInput(previewView) {
+                    detectTransformGestures { _, _, zoom, _ ->
+                        zoomRatio = (zoomRatio + (zoom - 1f) * 0.5f).coerceIn(0f, 1f)
+                        cameraManager.setLinearZoom(zoomRatio)
+                    }
+                }.pointerInput(previewView) {
+                    detectTapGestures { offset ->
+                        cameraManager.focusOn(offset.x, offset.y, previewView)
+                        focusPoint = offset
+                    }
+                },
+    ) {
         AndroidView(
             factory = { previewView },
             modifier = Modifier.fillMaxSize(),
@@ -252,36 +284,71 @@ fun CameraScreen() {
                     )
                 }
             }
+            focusPoint?.let { pt ->
+                drawCircle(
+                    color = androidx.compose.ui.graphics.Color.White,
+                    radius = 48f,
+                    center = pt,
+                    style =
+                        androidx.compose.ui.graphics.drawscope
+                            .Stroke(width = 3f),
+                )
+            }
         }
 
-        // Top Status HUD
-        Box(
+        // Top Status HUD & Torch Button
+        Row(
             modifier =
                 Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 16.dp, start = 16.dp, end = 16.dp)
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .fillMaxWidth()
+                    .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text =
-                    latestResult
-                        ?.let { result ->
-                            buildString {
-                                append("Objects: ")
-                                append(result.objectBoxes.size)
-                                if (result.barcodes.isNotEmpty()) {
-                                    append("  Barcodes: ")
-                                    append(result.barcodes.joinToString())
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text =
+                        latestResult
+                            ?.let { result ->
+                                buildString {
+                                    append("Objects: ")
+                                    append(result.objectBoxes.size)
+                                    if (result.barcodes.isNotEmpty()) {
+                                        append("  Barcodes: ")
+                                        append(result.barcodes.joinToString())
+                                    }
+                                    latestFrameTime?.let { append("  Analysis: ${it}ms") }
                                 }
-                                latestFrameTime?.let { append("  Analysis: ${it}ms") }
-                            }
-                        }?.let { text ->
-                            barcodeMatch?.let { match -> "$text · ${match.name}" } ?: text
-                        } ?: snapshotStatus ?: "Scanning…",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+                            }?.let { text ->
+                                barcodeMatch?.let { match -> "$text · ${match.name}" } ?: text
+                            } ?: snapshotStatus ?: "Scanning…",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            IconButton(
+                onClick = {
+                    isTorchOn = !isTorchOn
+                    cameraManager.setTorch(isTorchOn)
+                },
+                modifier =
+                    Modifier
+                        .padding(start = 8.dp)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f), RoundedCornerShape(12.dp)),
+            ) {
+                Icon(
+                    imageVector = if (isTorchOn) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
+                    contentDescription = "Toggle flashlight",
+                    tint = if (isTorchOn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
 
         // Live Barcode Match Quick-Add Card

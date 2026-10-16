@@ -7,6 +7,7 @@ fun ParsedVisionItem.toPantryItem(now: Long = System.currentTimeMillis()): Pantr
         name = name,
         quantity = quantity,
         unit = unit,
+        customUnitName = customUnitName,
         storageLocation = storageLocation,
         category = category,
         expirationTimestamp =
@@ -27,6 +28,7 @@ fun PantryItem.toParsedVisionItem(now: Long = System.currentTimeMillis()): Parse
         storageLocation = storageLocation,
         quantity = quantity,
         unit = unit ?: "COUNT",
+        customUnitName = customUnitName,
         confidence = 1f,
         estimatedShelfLifeDays =
             expirationTimestamp?.let { ((it - now) / MILLIS_PER_DAY).toInt().coerceAtLeast(0) } ?: 0,

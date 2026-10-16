@@ -355,7 +355,15 @@ fun PantryItemRow(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(item.name, style = MaterialTheme.typography.titleMedium)
-                    Text("${item.quantity} ${item.unit.orEmpty()}", style = MaterialTheme.typography.bodySmall)
+                    val unitDisplay =
+                        if (item.unit == "CUSTOM" &&
+                            !item.customUnitName.isNullOrBlank()
+                        ) {
+                            item.customUnitName
+                        } else {
+                            item.unit.orEmpty()
+                        }
+                    Text("${item.quantity} $unitDisplay", style = MaterialTheme.typography.bodySmall)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp),

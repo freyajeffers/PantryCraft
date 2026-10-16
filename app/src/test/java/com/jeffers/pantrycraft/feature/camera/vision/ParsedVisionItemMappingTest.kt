@@ -50,4 +50,28 @@ class ParsedVisionItemMappingTest {
 
         assertEquals(null, item.toPantryItem(1_000L).expirationTimestamp)
     }
+
+    @Test
+    fun mapsCustomUnitNameToPantryItem() {
+        val item =
+            ParsedVisionItem(
+                name = "Rosemary",
+                category = "SPICES",
+                storageLocation = "PANTRY",
+                quantity = 3f,
+                unit = "CUSTOM",
+                confidence = 1f,
+                estimatedShelfLifeDays = 30,
+                isAromaticOrSeasoning = true,
+                boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+                conditionNotes = null,
+                customUnitName = "sprigs",
+            )
+        val pantryItem = item.toPantryItem(1_000L)
+        assertEquals("CUSTOM", pantryItem.unit)
+        assertEquals("sprigs", pantryItem.customUnitName)
+
+        val mappedBack = pantryItem.toParsedVisionItem(1_000L)
+        assertEquals("sprigs", mappedBack.customUnitName)
+    }
 }

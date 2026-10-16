@@ -41,6 +41,7 @@ import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.AutomaticBackupPreferences
 import com.jeffers.pantrycraft.data.AutomaticBackupScheduler
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
+import com.jeffers.pantrycraft.data.ExpirationAlertWorker
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
 import kotlinx.coroutines.Dispatchers
@@ -79,6 +80,9 @@ fun SettingsScreen(
     }
     var automaticBackupsEnabled by remember {
         mutableStateOf(AutomaticBackupPreferences.isEnabled(context))
+    }
+    var expirationAlertsEnabled by remember {
+        mutableStateOf(ExpirationAlertWorker.isEnabled(context))
     }
     var automaticBackupIntervalMinutes by remember {
         mutableStateOf(AutomaticBackupPreferences.intervalMinutes(context))
@@ -507,6 +511,37 @@ fun SettingsScreen(
                             enabled = !catalogDownloading,
                         ) { Text("Delete") }
                     }
+                }
+            }
+        }
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Notifications & Alerts", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "Receive a private, local daily notification on this device if any pantry items are expiring within 48 hours. No external servers or cloud services are contacted.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Daily expiration alerts")
+                        Text(
+                            "Checks once daily for expiring food",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    Switch(
+                        checked = expirationAlertsEnabled,
+                        onCheckedChange = { enabled ->
+                            expirationAlertsEnabled = enabled
+                            ExpirationAlertWorker.setEnabled(context, enabled)
+                        },
+                        modifier = Modifier.padding(start = 12.dp),
+                    )
                 }
             }
         }
