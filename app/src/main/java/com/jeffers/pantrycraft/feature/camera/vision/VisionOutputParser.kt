@@ -16,6 +16,7 @@ data class ParsedVisionItem(
     val boundingBox: NormalizedBox,
     val conditionNotes: String?,
     val customUnitName: String? = null,
+    val lowStockThreshold: Float = 0f,
 )
 
 data class NormalizedBox(
@@ -55,6 +56,7 @@ class VisionOutputParser {
             boundingBox = box,
             conditionNotes = item.optString("condition_notes").takeIf { it.isNotBlank() },
             customUnitName = item.optString("custom_unit_name").takeIf { it.isNotBlank() },
+            lowStockThreshold = item.optDouble("low_stock_threshold", 0.0).toFloat().coerceAtLeast(0f),
         )
     }
 

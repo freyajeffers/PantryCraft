@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -76,6 +77,8 @@ fun BatchReviewBottomSheet(
     var editShelfLifeDays by remember { mutableStateOf(0) }
     var editNotes by remember { mutableStateOf("") }
     var editIsAromatic by remember { mutableStateOf(false) }
+    var editThreshold by remember { mutableStateOf(0f) }
+    var showEmbeddedScanner by remember { mutableStateOf(false) }
 
     val quantityTextByIndex = remember { mutableStateMapOf<Int, String>() }
     val selectedItems = reviewItems.filter { it.included }.map { it.item }
@@ -90,6 +93,7 @@ fun BatchReviewBottomSheet(
             editStorageLocation = item.storageLocation
             editShelfLifeDays = item.estimatedShelfLifeDays
             editNotes = item.conditionNotes ?: ""
+            editThreshold = item.lowStockThreshold
             editIsAromatic =
                 item.isAromaticOrSeasoning ||
                 PantryTaxonomy.isAromaticOrSeasoningCategory(item.category)
@@ -109,6 +113,7 @@ fun BatchReviewBottomSheet(
             estimatedShelfLifeDays = editShelfLifeDays,
             conditionNotes = editNotes.trim().takeIf { it.isNotEmpty() },
             isAromaticOrSeasoning = editIsAromatic,
+            lowStockThreshold = editThreshold.coerceAtLeast(0f),
         )
 
     Column(
@@ -272,6 +277,9 @@ fun BatchReviewBottomSheet(
                 onAromaticChange = { editIsAromatic = it },
                 customUnitName = editCustomUnitName,
                 onCustomUnitNameChange = { editCustomUnitName = it },
+                onScanBarcode = { showEmbeddedScanner = true },
+                lowStockThreshold = editThreshold,
+                onLowStockThresholdChange = { editThreshold = it },
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -311,6 +319,7 @@ fun BatchReviewBottomSheet(
                     onNotesChange = { editNotes = it },
                     isAromatic = editIsAromatic,
                     onAromaticChange = { editIsAromatic = it },
+                    onScanBarcode = { showEmbeddedScanner = true },
                 )
             },
             confirmButton = {
@@ -348,6 +357,16 @@ fun BatchReviewBottomSheet(
             },
         )
     }
+    if (showEmbeddedScanner) {
+        EmbeddedBarcodeScannerDialog(
+            onDismiss = { showEmbeddedScanner = false },
+            onBarcode = { barcode ->
+                editName = barcode
+                editNotes = "Barcode: $barcode"
+                showEmbeddedScanner = false
+            },
+        )
+    }
 }
 
 private fun Int.toShelfLifeLabel() = if (this == 0) "None" else "$this days"
@@ -370,6 +389,9 @@ private fun ReviewEditorFields(
     onAromaticChange: (Boolean) -> Unit,
     customUnitName: String = "",
     onCustomUnitNameChange: (String) -> Unit = {},
+    onScanBarcode: () -> Unit = {},
+    lowStockThreshold: Float = 0f,
+    onLowStockThresholdChange: (Float) -> Unit = {},
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
@@ -378,6 +400,11 @@ private fun ReviewEditorFields(
             label = { Text("Name") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(onClick = onScanBarcode) {
+                    Icon(Icons.Filled.QrCode, contentDescription = "Scan barcode")
+                }
+            },
         )
         ReviewDropdown(
             label = "Category",
@@ -400,6 +427,14 @@ private fun ReviewEditorFields(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+        OutlinedTextField(
+            value = if (lowStockThreshold == 0f) "" else lowStockThreshold.toString(),
+            onValueChange = { onLowStockThresholdChange(it.toFloatOrNull()?.coerceAtLeast(0f) ?: 0f) },
+            label = { Text("Low-stock alert threshold (optional)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
         ReviewDropdown(
             label = "Storage location",
             value = storageLocation,

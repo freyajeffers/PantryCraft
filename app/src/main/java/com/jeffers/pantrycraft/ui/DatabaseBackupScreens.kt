@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.AutomaticBackupPreferences
 import com.jeffers.pantrycraft.data.AutomaticBackupScheduler
+import com.jeffers.pantrycraft.data.ByokPreferences
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
 import com.jeffers.pantrycraft.data.ExpirationAlertWorker
 import com.jeffers.pantrycraft.data.Repository
@@ -87,6 +88,10 @@ fun SettingsScreen(
     var automaticBackupIntervalMinutes by remember {
         mutableStateOf(AutomaticBackupPreferences.intervalMinutes(context))
     }
+    val byokConfiguration = remember { ByokPreferences.read(context) }
+    var byokProvider by remember { mutableStateOf(byokConfiguration.provider) }
+    var byokEndpoint by remember { mutableStateOf(byokConfiguration.endpoint.orEmpty()) }
+    var byokApiKey by remember { mutableStateOf("") }
 
     var restoreResult by remember { mutableStateOf<String?>(null) }
     var confirmDatabaseReset by remember { mutableStateOf(false) }
@@ -511,6 +516,70 @@ fun SettingsScreen(
                             enabled = !catalogDownloading,
                         ) { Text("Delete") }
                     }
+                }
+            }
+        }
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Optional AI model", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "PantryCraft stays offline unless you choose a provider. API keys are encrypted with Android Keystore and are never logged.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text("Provider: ${byokProvider.name}")
+                    OutlinedButton(
+                        onClick = {
+                            val providers = ByokPreferences.Provider.entries
+                            byokProvider = providers[(providers.indexOf(byokProvider) + 1) % providers.size]
+                        },
+                    ) { Text("Change") }
+                }
+                if (byokProvider != ByokPreferences.Provider.OFFLINE && byokProvider != ByokPreferences.Provider.OLLAMA) {
+                    OutlinedTextField(
+                        value = byokApiKey,
+                        onValueChange = { byokApiKey = it },
+                        label = { Text("API key") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    )
+                }
+                if (byokProvider == ByokPreferences.Provider.OLLAMA) {
+                    OutlinedTextField(
+                        value = byokEndpoint,
+                        onValueChange = { byokEndpoint = it },
+                        label = { Text("Ollama endpoint") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    Button(
+                        onClick = {
+                            ByokPreferences.save(
+                                context,
+                                byokProvider,
+                                byokApiKey.takeIf { it.isNotBlank() },
+                                byokEndpoint.takeIf { it.isNotBlank() },
+                            )
+                            byokApiKey = ""
+                            Toast.makeText(context, "AI model settings saved", Toast.LENGTH_SHORT).show()
+                        },
+                    ) { Text("Save") }
+                    OutlinedButton(
+                        onClick = {
+                            ByokPreferences.clear(context)
+                            byokProvider = ByokPreferences.Provider.OFFLINE
+                            byokEndpoint = ""
+                            byokApiKey = ""
+                            Toast.makeText(context, "AI model disabled", Toast.LENGTH_SHORT).show()
+                        },
+                    ) { Text("Disable") }
                 }
             }
         }

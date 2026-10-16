@@ -6,6 +6,7 @@ fun ParsedVisionItem.toPantryItem(now: Long = System.currentTimeMillis()): Pantr
     PantryItem(
         name = name,
         quantity = quantity,
+        threshold = lowStockThreshold,
         unit = unit,
         customUnitName = customUnitName,
         storageLocation = storageLocation,
@@ -35,6 +36,7 @@ fun PantryItem.toParsedVisionItem(now: Long = System.currentTimeMillis()): Parse
         isAromaticOrSeasoning = isAromaticOrSeasoning,
         boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
         conditionNotes = notes,
+        lowStockThreshold = threshold,
     )
 
 fun ParsedVisionItem.toUpdatedPantryItem(

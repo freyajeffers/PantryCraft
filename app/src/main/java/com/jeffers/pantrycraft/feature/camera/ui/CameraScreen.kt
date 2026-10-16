@@ -74,6 +74,7 @@ import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult
 import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
 import com.jeffers.pantrycraft.feature.camera.core.CameraManager
 import com.jeffers.pantrycraft.feature.camera.vision.MlKitSnapshotModel
+import com.jeffers.pantrycraft.feature.camera.vision.ModelRouter
 import com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
 import com.jeffers.pantrycraft.feature.camera.vision.SnapshotVisionService
@@ -116,14 +117,17 @@ fun CameraScreen() {
     val snapshotVisionService =
         remember {
             SnapshotVisionService(
-                MlKitSnapshotModel(
-                    ObjectDetection.getClient(
-                        ObjectDetectorOptions
-                            .Builder()
-                            .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
-                            .enableMultipleObjects()
-                            .enableClassification()
-                            .build(),
+                ModelRouter(
+                    context,
+                    MlKitSnapshotModel(
+                        ObjectDetection.getClient(
+                            ObjectDetectorOptions
+                                .Builder()
+                                .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
+                                .enableMultipleObjects()
+                                .enableClassification()
+                                .build(),
+                        ),
                     ),
                 ),
             )

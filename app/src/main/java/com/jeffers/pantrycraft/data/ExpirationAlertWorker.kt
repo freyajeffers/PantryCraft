@@ -5,12 +5,14 @@ import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import kotlinx.coroutines.flow.first
+import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 class ExpirationAlertWorker(
@@ -35,7 +37,7 @@ class ExpirationAlertWorker(
                         !item.isDeleted
                 }.sortedBy { it.expirationTimestamp }
 
-        if (expiringItems.isNotEmpty()) {
+        if (expiringItems.isNotEmpty() && NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) {
             ensureNotificationChannel(applicationContext)
             val summary =
                 expiringItems
@@ -70,7 +72,7 @@ class ExpirationAlertWorker(
         private const val WORK_NAME = "pantrycraft_expiration_alerts"
         private const val CHANNEL_ID = "pantrycraft_expiration_alerts"
         private const val NOTIFICATION_ID = 4101
-        private const val ALERT_WINDOW_MILLIS = 3L * 24L * 60L * 60L * 1000L
+        const val ALERT_WINDOW_MILLIS = 2L * 24L * 60L * 60L * 1000L
         private const val MAX_ITEMS_IN_NOTIFICATION = 4
 
         fun isEnabled(context: Context): Boolean =
@@ -100,12 +102,27 @@ class ExpirationAlertWorker(
 
         private fun schedule(context: Context) {
             val request =
-                PeriodicWorkRequestBuilder<ExpirationAlertWorker>(1, TimeUnit.DAYS).build()
+                PeriodicWorkRequestBuilder<ExpirationAlertWorker>(1, TimeUnit.DAYS)
+                    .setInitialDelay(calculateInitialDelayToNineAmMillis(), TimeUnit.MILLISECONDS)
+                    .build()
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 WORK_NAME,
                 ExistingPeriodicWorkPolicy.UPDATE,
                 request,
             )
+        }
+
+        fun calculateInitialDelayToNineAmMillis(nowMillis: Long = System.currentTimeMillis()): Long {
+            val now = Calendar.getInstance().apply { timeInMillis = nowMillis }
+            val nextNine =
+                (now.clone() as Calendar).apply {
+                    set(Calendar.HOUR_OF_DAY, 9)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                    if (timeInMillis <= nowMillis) add(Calendar.DAY_OF_YEAR, 1)
+                }
+            return (nextNine.timeInMillis - nowMillis).coerceAtLeast(0L)
         }
 
         private fun ensureNotificationChannel(context: Context) {

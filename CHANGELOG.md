@@ -3,11 +3,14 @@
 ## Unreleased
 
 ### PantryCraft Kitchen Usability & Notifications
+- Added encrypted BYOKey settings using Android Keystore AES-GCM, with offline mode as the default.
+- Added a dual-inference model router that falls back to the local ML Kit model when cloud inference is unavailable.
+- Added an embedded one-shot barcode scanner to the review editor.
 - Added CameraX torch/flashlight toggle for dark kitchen cabinets and refrigerators.
 - Implemented tap-to-focus metering with visual target indicator and pinch-to-zoom on the camera viewfinder.
 - Added custom culinary unit input ("CUSTOM") in review editors and displayed custom units (e.g. sprigs, cloves, bunches) on pantry ledger items.
-- Implemented local daily expiration alerts via WorkManager (ExpirationAlertWorker), notifying users of food expiring within 48 hours without external telemetry.
-- Added POST_NOTIFICATIONS permission and settings toggle for daily expiration reminders.
+- Implemented local daily expiration alerts via WorkManager (ExpirationAlertWorker), scheduled for the next local 9:00 AM and notifying users of food expiring within 48 hours without external telemetry.
+- Added POST_NOTIFICATIONS runtime permission handling and settings toggle for daily expiration reminders.
 
 ### PantryCraft Phase 1 Refinements & Hardening
 - Fixed Expiring Soon filter in PantryViewModel to include already-expired items (<= cutoff) alongside soon-to-expire food.
