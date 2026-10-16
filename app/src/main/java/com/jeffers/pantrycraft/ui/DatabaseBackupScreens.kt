@@ -207,6 +207,60 @@ fun SettingsScreen(
                 showPinDialog = true
             }
         }
+    val exportJsonLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument("application/json"),
+        ) { uri ->
+            if (uri != null) {
+                scope.launch {
+                    runCatching {
+                        val json = withContext(Dispatchers.IO) { repository.exportInventoryToJson() }
+                        context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
+                    }.onSuccess {
+                        Toast.makeText(context, "Inventory exported to JSON", Toast.LENGTH_SHORT).show()
+                    }.onFailure {
+                        Toast.makeText(context, "JSON export failed: ${it.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+    val exportCsvLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument("text/csv"),
+        ) { uri ->
+            if (uri != null) {
+                scope.launch {
+                    runCatching {
+                        val csv = withContext(Dispatchers.IO) { repository.exportPantryToCsv() }
+                        context.contentResolver.openOutputStream(uri)?.use { it.write(csv.toByteArray()) }
+                    }.onSuccess {
+                        Toast.makeText(context, "Pantry exported to CSV", Toast.LENGTH_SHORT).show()
+                    }.onFailure {
+                        Toast.makeText(context, "CSV export failed: ${it.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+    val importJsonLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            if (uri != null) {
+                scope.launch {
+                    runCatching {
+                        val content =
+                            context.contentResolver.openInputStream(uri)?.use {
+                                it.reader().readText()
+                            } ?: error("Unable to read selected JSON file")
+                        withContext(Dispatchers.IO) { repository.importInventoryFromJson(content) }
+                    }.onSuccess { count ->
+                        Toast.makeText(context, "Imported $count items from JSON", Toast.LENGTH_SHORT).show()
+                    }.onFailure {
+                        Toast.makeText(context, "JSON import failed: ${it.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
     var catalogReady by remember {
         mutableStateOf(
             File(context.noBackupFilesDir, CatalogDownloadService.CATALOG_FILE_NAME).isFile,
@@ -646,6 +700,33 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 ) { Text("Reset local database") }
                 backupResult?.let { Text(it, modifier = Modifier.padding(top = 12.dp)) }
+            }
+        }
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Data Sovereignty & Portability", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "Export your inventory in human-readable and standard formats (JSON or CSV) for backup, " +
+                        "spreadsheets, or data migration. You can also import previously exported JSON inventory files.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = { exportJsonLauncher.launch("pantrycraft_inventory.json") },
+                        modifier = Modifier.weight(1f),
+                    ) { Text("Export JSON") }
+                    OutlinedButton(
+                        onClick = { exportCsvLauncher.launch("pantrycraft_pantry.csv") },
+                        modifier = Modifier.weight(1f),
+                    ) { Text("Export CSV") }
+                }
+                OutlinedButton(
+                    onClick = { importJsonLauncher.launch(arrayOf("application/json", "text/*")) },
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                ) { Text("Import from JSON") }
             }
         }
     }

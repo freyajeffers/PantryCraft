@@ -38,6 +38,25 @@ data class PantryItem(
     @ColumnInfo(name = "updated_at") val updatedAt: Long = lastUpdated,
 )
 
+fun PantryItem.markOpened(now: Long = System.currentTimeMillis()): PantryItem {
+    if (isOpened) return this
+    val openedDays = PantryTaxonomy.openedShelfLifeDays(category)
+    val openedExpiration = now + openedDays * 86_400_000L
+    val adjustedExpiration =
+        if (expirationTimestamp == null) {
+            openedExpiration
+        } else {
+            minOf(expirationTimestamp, openedExpiration)
+        }
+    return copy(
+        isOpened = true,
+        openedTimestamp = now,
+        expirationTimestamp = adjustedExpiration,
+        lastUpdated = now,
+        updatedAt = now,
+    )
+}
+
 @Entity(tableName = "grocery_items")
 data class GroceryItem(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

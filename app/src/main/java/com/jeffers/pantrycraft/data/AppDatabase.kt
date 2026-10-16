@@ -73,6 +73,7 @@ abstract class AppDatabase : RoomDatabase() {
                     db.execSQL("CREATE INDEX index_pantry_items_expirationTimestamp ON pantry_items(expirationTimestamp)")
                     db.execSQL("CREATE UNIQUE INDEX index_pantry_items_barcode ON pantry_items(barcode)")
                     db.execSQL("CREATE INDEX index_pantry_items_isDeleted ON pantry_items(isDeleted)")
+                    configureSearchIndex(db)
                 }
             }
 
@@ -158,7 +159,7 @@ abstract class AppDatabase : RoomDatabase() {
         fun getDatabase(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
                 val passphrase = DatabaseKeyProvider.getKey(context)
-                val factory = SupportOpenHelperFactory(passphrase.copyOf())
+                val factory = SupportOpenHelperFactory(passphrase)
                 Arrays.fill(passphrase, 0.toByte())
 
                 INSTANCE ?: Room

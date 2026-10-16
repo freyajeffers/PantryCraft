@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### PantryCraft Phase 1 Refinements & Hardening
+- Fixed Expiring Soon filter in PantryViewModel to include already-expired items (<= cutoff) alongside soon-to-expire food.
+- Added multi-attribute ledger sorting supporting Expiration Urgency, Alphabetical (A-Z), Recently Updated, and Category grouping.
+- Added interactive "Mark Opened" workflow with automatic perishability acceleration curves across food categories.
+- Added low-stock warning badges on pantry item rows when quantity <= threshold with a 1-tap shortcut to the grocery checklist.
+- Embedded FTS5 table and synchronization triggers directly within MIGRATION_1_2 script per Skill 1 invariants.
+- Hardened FTS5 prefix search query parser to sanitize standalone wildcards, punctuation, and boolean operators.
+- Added complete local data sovereignty with human-readable JSON and CSV inventory export and JSON import in SettingsScreen.
+- Tightened SQLCipher passphrase memory hygiene during database builder initialization.
+- Expanded unit and instrumentation tests covering FTS5 sanitization, sorting orders, and JSON/CSV export roundtrips.
+
 ### PantryCraft Phase 2 Improvements & Hardening
 - Added interactive live barcode quick-add card and custom barcode naming dialog to CameraScreen.
 - Implemented unknown barcode memory via OfflineBarcodeResolver.associateBarcode, persisting custom items to SQLite.

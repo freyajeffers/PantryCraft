@@ -32,4 +32,14 @@ object PantryTaxonomy {
 
     fun isAromaticOrSeasoningCategory(category: String): Boolean =
         category.equals("SPICES", ignoreCase = true) || category.equals("CONDIMENTS", ignoreCase = true)
+
+    fun openedShelfLifeDays(category: String): Int =
+        when (category.uppercase()) {
+            "MEAT", "SEAFOOD" -> 3
+            "DAIRY", "PRODUCE", "BAKERY", "BEVERAGES", "CANNED" -> 7
+            "CONDIMENTS", "SNACKS" -> 14
+            "FROZEN" -> 30
+            "SPICES", "GRAINS", "PANTRY_STAPLE" -> 90
+            else -> 14
+        }
 }

@@ -46,6 +46,13 @@ class RepositoryTest {
             assertEquals(1, repository.searchPantryItems("searchable note").first().count { it.id == id })
             assertEquals(1, repository.searchPantryItems("  ").first().count { it.id == id })
 
+            // FTS5 search query sanitization (symbols, wildcards, operators do not crash)
+            assertEquals(1, repository.searchPantryItems("***").first().count { it.id == id })
+            assertEquals(1, repository.searchPantryItems("---").first().count { it.id == id })
+            assertEquals(1, repository.searchPantryItems("OR").first().count { it.id == id })
+            assertEquals(1, repository.searchPantryItems("\"\"").first().count { it.id == id })
+            assertEquals(1, repository.searchPantryItems("(()").first().count { it.id == id })
+
             repository.decrementQuantity(observed, 5f)
             val depleted = repository.observePantryItems().first().single { it.id == id }
             assertEquals(0f, depleted.quantity)
@@ -75,6 +82,15 @@ class RepositoryTest {
             val batchItem2 = PantryItem(name = "$marker-batch2", quantity = 2f)
             val batchIds = repository.insertPantryBatch(listOf(batchItem1, batchItem2))
             assertEquals(2, batchIds.size)
+
+            // Data Sovereignty: JSON and CSV export/import
+            val exportedJson = repository.exportInventoryToJson()
+            assertTrue(exportedJson.contains(marker))
+            val exportedCsv = repository.exportPantryToCsv()
+            assertTrue(exportedCsv.contains(marker))
+
+            val importedCount = repository.importInventoryFromJson(exportedJson)
+            assertTrue(importedCount > 0)
 
             val grocery = GroceryItem(name = marker)
             val groceryId = repository.insertGrocery(grocery)

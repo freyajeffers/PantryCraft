@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.PantryTaxonomy
 import com.jeffers.pantrycraft.data.Repository
+import com.jeffers.pantrycraft.data.markOpened
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -37,6 +38,9 @@ class PantryViewModel(
     private val _selectedLocation = MutableStateFlow(PantryLocationFilter.ALL)
     val selectedLocation: StateFlow<PantryLocationFilter> = _selectedLocation
 
+    private val _selectedSortOrder = MutableStateFlow(PantrySortOrder.NAME_ASC)
+    val selectedSortOrder: StateFlow<PantrySortOrder> = _selectedSortOrder
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
@@ -48,7 +52,9 @@ class PantryViewModel(
         )
 
     val visibleItems: StateFlow<List<PantryItem>> =
-        combine(searchedItems, _selectedLocation, ::filterPantryItems).stateIn(
+        combine(searchedItems, _selectedLocation, _selectedSortOrder) { items, location, sortOrder ->
+            sortPantryItems(filterPantryItems(items, location), sortOrder)
+        }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptyList(),
@@ -58,6 +64,10 @@ class PantryViewModel(
         _selectedLocation.value = filter
     }
 
+    fun selectSortOrder(order: PantrySortOrder) {
+        _selectedSortOrder.value = order
+    }
+
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
@@ -65,6 +75,11 @@ class PantryViewModel(
     fun add(item: PantryItem) = launchDatabaseOperation("Unable to add pantry item") { repo.insertPantry(item) }
 
     fun update(item: PantryItem) = launchDatabaseOperation("Unable to update pantry item") { repo.updatePantry(item) }
+
+    fun markOpened(item: PantryItem) =
+        launchDatabaseOperation("Unable to mark item as opened") {
+            repo.updatePantry(item.markOpened())
+        }
 
     fun decrement(
         item: PantryItem,
@@ -82,6 +97,23 @@ class PantryViewModel(
         launchDatabaseOperation("Unable to restore pantry item") {
             repo.restorePantry(item)
         }
+
+    fun addGroceryItem(
+        name: String,
+        quantity: Float = 1f,
+        unit: String? = null,
+        fromPantryId: Long? = null,
+    ) = launchDatabaseOperation("Unable to add grocery item") {
+        repo.insertGrocery(
+            com.jeffers.pantrycraft.data.GroceryItem(
+                name = name,
+                quantity = quantity,
+                unit = unit,
+                fromPantryId = fromPantryId,
+            ),
+        )
+        _operationErrors.emit("Added $name to grocery list")
+    }
 
     private fun launchDatabaseOperation(
         errorMessage: String,
@@ -112,6 +144,15 @@ enum class PantryLocationFilter(
     EXPIRING_SOON("Expiring soon", null),
 }
 
+enum class PantrySortOrder(
+    val label: String,
+) {
+    NAME_ASC("Name (A-Z)"),
+    EXPIRATION_SOONEST("Expiring soonest"),
+    RECENTLY_UPDATED("Recently updated"),
+    CATEGORY("Category"),
+}
+
 fun filterPantryItems(
     items: List<PantryItem>,
     filter: PantryLocationFilter,
@@ -122,11 +163,31 @@ fun filterPantryItems(
         PantryLocationFilter.EXPIRING_SOON -> {
             val cutoff = now + 5 * 24 * 60 * 60 * 1_000L
             items.filter { item ->
-                item.expirationTimestamp?.let { it in now..cutoff } == true
+                item.expirationTimestamp?.let { it <= cutoff } == true
             }
         }
         else -> {
             val location = requireNotNull(filter.storageLocation)
             items.filter { it.storageLocation.equals(location, ignoreCase = true) }
         }
+    }
+
+fun sortPantryItems(
+    items: List<PantryItem>,
+    sortOrder: PantrySortOrder,
+): List<PantryItem> =
+    when (sortOrder) {
+        PantrySortOrder.NAME_ASC -> items.sortedBy { it.name.lowercase() }
+        PantrySortOrder.EXPIRATION_SOONEST ->
+            items.sortedWith(
+                compareBy<PantryItem> { it.expirationTimestamp == null }
+                    .thenBy { it.expirationTimestamp }
+                    .thenBy { it.name.lowercase() },
+            )
+        PantrySortOrder.RECENTLY_UPDATED -> items.sortedByDescending { it.updatedAt }
+        PantrySortOrder.CATEGORY ->
+            items.sortedWith(
+                compareBy<PantryItem> { it.category }
+                    .thenBy { it.name.lowercase() },
+            )
     }

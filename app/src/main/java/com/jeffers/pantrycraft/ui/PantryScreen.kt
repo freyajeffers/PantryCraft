@@ -14,9 +14,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -84,12 +88,14 @@ private fun newPantryDraft() =
 fun PantryScreen(viewModel: PantryViewModel) {
     val items by viewModel.visibleItems.collectAsStateWithLifecycle()
     val selectedLocation by viewModel.selectedLocation.collectAsStateWithLifecycle()
+    val selectedSortOrder by viewModel.selectedSortOrder.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var editorItem by remember { mutableStateOf<PantryItem?>(null) }
     var useItem by remember { mutableStateOf<PantryItem?>(null) }
     var useAmount by rememberSaveable { mutableStateOf("") }
     var storageError by rememberSaveable { mutableStateOf<String?>(null) }
+    var sortMenuExpanded by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -158,7 +164,39 @@ fun PantryScreen(viewModel: PantryViewModel) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = { TopAppBar(title = { Text("Pantry") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Pantry") },
+                actions = {
+                    Box {
+                        IconButton(onClick = { sortMenuExpanded = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.Sort,
+                                contentDescription = "Sort pantry items",
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = sortMenuExpanded,
+                            onDismissRequest = { sortMenuExpanded = false },
+                        ) {
+                            PantrySortOrder.entries.forEach { order ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            if (selectedSortOrder == order) "✓ ${order.label}" else order.label,
+                                        )
+                                    },
+                                    onClick = {
+                                        viewModel.selectSortOrder(order)
+                                        sortMenuExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                    }
+                },
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = {
                 editorItem = null
@@ -209,6 +247,15 @@ fun PantryScreen(viewModel: PantryViewModel) {
                                 editorItem = item
                                 showAddDialog = true
                             },
+                            onMarkOpened = { viewModel.markOpened(item) },
+                            onAddToGrocery = {
+                                viewModel.addGroceryItem(
+                                    name = item.name,
+                                    quantity = 1f,
+                                    unit = item.unit,
+                                    fromPantryId = item.id,
+                                )
+                            },
                         ) {
                             viewModel.delete(item)
                             scope.launch {
@@ -237,9 +284,13 @@ fun PantryItemRow(
     onIncrement: () -> Unit,
     onUse: () -> Unit,
     onEdit: () -> Unit,
+    onMarkOpened: () -> Unit,
+    onAddToGrocery: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val expiration = expirationStatus(item.expirationTimestamp)
+    val isLowStock = item.threshold > 0f && item.quantity <= item.threshold
+
     val dismissState =
         rememberSwipeToDismissBoxState(confirmValueChange = { value ->
             value != SwipeToDismissBoxValue.Settled
@@ -305,11 +356,42 @@ fun PantryItemRow(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(item.name, style = MaterialTheme.typography.titleMedium)
                     Text("${item.quantity} ${item.unit.orEmpty()}", style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        text = "${item.storageLocation} • ${expiration.label}",
-                        color = expiration.color,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = "${item.storageLocation} • ${expiration.label}",
+                            color = expiration.color,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        if (item.isOpened) {
+                            Text(
+                                text = "• Opened",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                        if (isLowStock) {
+                            Text(
+                                text = "• Low Stock",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+                }
+                if (!item.isOpened) {
+                    TextButton(onClick = onMarkOpened) { Text("Open") }
+                }
+                if (isLowStock) {
+                    IconButton(onClick = onAddToGrocery) {
+                        Icon(
+                            imageVector = Icons.Filled.AddShoppingCart,
+                            contentDescription = "Add to grocery list",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
                 if (item.unit.orEmpty() in PantryTaxonomy.integerQuantityUnits) {
                     IconButton(onClick = onDecrement, enabled = item.quantity > 0f) {
