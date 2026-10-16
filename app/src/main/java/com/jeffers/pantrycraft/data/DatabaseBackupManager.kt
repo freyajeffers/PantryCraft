@@ -45,6 +45,7 @@ object DatabaseBackupManager {
     private const val LAST_EXPORTED_URI = "last_exported_uri"
     private const val LAST_DB_CHECKSUM = "last_db_checksum"
     private const val BACKUP_RECORDS = "backup_records"
+    private const val AUTO_BACKUP_TREE_URI = "auto_backup_tree_uri"
 
     data class BackupRecord(
         val backupName: String,
@@ -91,6 +92,19 @@ object DatabaseBackupManager {
         val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val value = preferences.getString(LAST_EXPORTED_URI, null)
         return value?.let(Uri::parse)
+    }
+
+    fun persistedAutoBackupTreeUri(context: Context): Uri? {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(AUTO_BACKUP_TREE_URI, null)?.let { Uri.parse(it) }
+    }
+
+    fun persistAutoBackupTreeUri(
+        context: Context,
+        uri: Uri?,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(AUTO_BACKUP_TREE_URI, uri?.toString()).apply()
     }
 
     fun exportBackup(

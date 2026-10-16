@@ -5,6 +5,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,6 +74,9 @@ fun SettingsScreen(
     var pendingBackupName by remember { mutableStateOf<String?>(null) }
     var lastExportedUri by remember { mutableStateOf(DatabaseBackupManager.persistedBackupUri(context)) }
     var backupRecords by remember { mutableStateOf(DatabaseBackupManager.backupRecords(context)) }
+    var autoBackupTreeUri by remember {
+        mutableStateOf(DatabaseBackupManager.persistedAutoBackupTreeUri(context))
+    }
     var automaticBackupsEnabled by remember {
         mutableStateOf(AutomaticBackupPreferences.isEnabled(context))
     }
@@ -113,6 +117,19 @@ fun SettingsScreen(
                         backupResult = "Backup export failed: ${it.message}"
                     }
                 }
+            }
+        }
+    val autoBackupTreeLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            if (uri != null) {
+                runCatching {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                    )
+                }
+                DatabaseBackupManager.persistAutoBackupTreeUri(context, uri)
+                autoBackupTreeUri = uri
             }
         }
     // Pin entry dialog helper
@@ -502,7 +519,8 @@ fun SettingsScreen(
                 if (automaticBackupsEnabled) {
                     Text("Backup interval", modifier = Modifier.padding(top = 12.dp))
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier =
+                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         listOf(
@@ -514,15 +532,28 @@ fun SettingsScreen(
                             7 * 24 * 60L to "Weekly",
                             30 * 24 * 60L to "Monthly",
                         ).forEach { interval ->
-                            TextButton(onClick = {
-                                automaticBackupIntervalMinutes = interval.first
-                                AutomaticBackupPreferences.setSchedule(
-                                    context,
-                                    enabled = true,
-                                    intervalMinutes = interval.first,
-                                )
-                                AutomaticBackupScheduler.schedule(context, interval.first)
-                            }) { Text(interval.second) }
+                            val selected = automaticBackupIntervalMinutes == interval.first
+                            if (selected) {
+                                Button(onClick = {
+                                    automaticBackupIntervalMinutes = interval.first
+                                    AutomaticBackupPreferences.setSchedule(
+                                        context,
+                                        enabled = true,
+                                        intervalMinutes = interval.first,
+                                    )
+                                    AutomaticBackupScheduler.schedule(context, interval.first)
+                                }) { Text("✓ ${interval.second}") }
+                            } else {
+                                OutlinedButton(onClick = {
+                                    automaticBackupIntervalMinutes = interval.first
+                                    AutomaticBackupPreferences.setSchedule(
+                                        context,
+                                        enabled = true,
+                                        intervalMinutes = interval.first,
+                                    )
+                                    AutomaticBackupScheduler.schedule(context, interval.first)
+                                }) { Text(interval.second) }
+                            }
                         }
                     }
                 }
@@ -591,6 +622,18 @@ fun SettingsScreen(
                         },
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     ) { Text("Restore saved backup") }
+                }
+                OutlinedButton(
+                    onClick = { autoBackupTreeLauncher.launch(null) },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) {
+                    Text(
+                        if (autoBackupTreeUri == null) {
+                            "Set auto-backup location"
+                        } else {
+                            "Change auto-backup location"
+                        },
+                    )
                 }
                 OutlinedButton(
                     onClick = {

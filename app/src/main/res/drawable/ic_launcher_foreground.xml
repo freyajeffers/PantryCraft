@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Golden 4-Point AI Spark (Top Left) -->
+    <path
+        android:fillColor="#F4B832"
+        android:pathData="M35.5,22.5 L37.5,27.7 L42.7,29.7 L37.5,31.7 L35.5,36.9 L33.5,31.7 L28.3,29.7 L33.5,27.7 Z" />
+
+    <!-- Chef Toque Left Puff, Center Puff & Right Lower Fold (Warm Cream) -->
+    <path
+        android:fillColor="#F7F2DC"
+        android:pathData="M37,63.5 C26.5,62 21,53.5 23,43.5 C25,34.5 34.5,33.5 40.5,38 C42.5,28 53,24.5 62.5,29.5 C54.5,36.5 52.5,46.5 54,56 L45.5,44.5 L47.5,59 L34,50 L39.5,61.5 L38,63.5 L38,74.5 C48,70.5 60,70.5 70,74.5 L70,64 L62,60 C72.5,62 82,55.5 83.5,45.5 C84.2,41.5 82.5,38.5 81,37.5 C78,48 70,54 58,54 L58,63.5 Z" />
+
+    <!-- Toque Base Inner Oval (Warm Cream) -->
+    <path
+        android:fillColor="#F7F2DC"
+        android:pathData="M39.5,76.5 C48.5,73 59.5,73 68.5,76.5 C59.5,79 48.5,79 39.5,76.5 Z" />
+
+    <!-- Right Pleat Morphing into Fresh Sage Basil Leaf -->
+    <path
+        android:fillColor="#6BA668"
+        android:pathData="M56,54 C54,38 64,27.5 80.5,27.5 C82,44 72,54 56,54 Z" />
+
+    <!-- Basil Leaf Stem -->
+    <path
+        android:pathData="M54,61.5 Q56,52 73.5,34.5"
+        android:strokeWidth="2.8"
+        android:strokeColor="#6BA668"
+        android:strokeLineCap="round" />
+
+    <!-- Basil Leaf Center Vein Highlight -->
+    <path
+        android:pathData="M57,52 L73.5,34.5"
+        android:strokeWidth="1.8"
+        android:strokeColor="#F7F2DC"
+        android:strokeLineCap="round" />
+
+</vector>

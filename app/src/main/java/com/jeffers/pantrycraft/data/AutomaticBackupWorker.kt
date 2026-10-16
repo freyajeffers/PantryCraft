@@ -1,6 +1,7 @@
 package com.jeffers.pantrycraft.data
 
 import android.content.Context
+import androidx.documentfile.provider.DocumentFile
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
@@ -33,7 +34,18 @@ class AutomaticBackupWorker(
                 if (checksum != null && checksum == last) {
                     // no changes since last backup; skip
                 } else {
-                    DatabaseBackupManager.createEncryptedBackup(applicationContext, pin)
+                    val treeUri = DatabaseBackupManager.persistedAutoBackupTreeUri(applicationContext)
+                    val backupName = DatabaseBackupManager.createEncryptedBackup(applicationContext, pin)
+                    if (treeUri != null) {
+                        val tree = DocumentFile.fromTreeUri(applicationContext, treeUri)
+                        if (tree == null) {
+                            throw IllegalStateException("Automatic backup location is unavailable")
+                        }
+                        val destination =
+                            tree.createFile("application/octet-stream", backupName)
+                                ?: error("Unable to create automatic backup file")
+                        DatabaseBackupManager.exportBackup(applicationContext, backupName, destination.uri)
+                    }
                     DatabaseBackupManager.saveLastDbChecksum(applicationContext, checksum)
                 }
             }

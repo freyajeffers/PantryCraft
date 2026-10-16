@@ -1,12 +1,20 @@
 package com.jeffers.pantrycraft.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory2
@@ -15,7 +23,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -87,27 +94,41 @@ fun AppNavigator() {
     Scaffold(
         bottomBar = {
             NavigationBar {
-                BottomDestination.entries.forEach { item ->
-                    NavigationBarItem(
-                        selected = destination == item.route,
-                        onClick = { destination = item.route },
-                        icon = {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    BottomDestination.entries.forEach { item ->
+                        val selected = destination == item.route
+                        BoxWithConstraints(
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .height(64.dp)
+                                    .clickable { destination = item.route },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            val bubbleWidth = minOf(54.dp, maxWidth - 8.dp)
                             Box(
                                 modifier =
                                     Modifier
-                                        .size(40.dp)
-                                        .semantics { contentDescription = item.label },
+                                        .width(bubbleWidth)
+                                        .height(32.dp)
+                                        .background(
+                                            if (selected) {
+                                                MaterialTheme.colorScheme.secondaryContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.surface
+                                            },
+                                            RoundedCornerShape(16.dp),
+                                        ).semantics { contentDescription = item.label },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 androidx.compose.material3.Icon(
-                                    imageVector = if (destination == item.route) item.selectedIcon else item.icon,
+                                    imageVector = if (selected) item.selectedIcon else item.icon,
                                     contentDescription = null,
-                                    modifier = Modifier.size(32.dp),
+                                    modifier = Modifier.size(28.dp),
                                 )
                             }
-                        },
-                        label = null,
-                    )
+                        }
+                    }
                 }
             }
         },

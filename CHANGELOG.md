@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### PantryCraft
+- Added the Botanical Chef's Toque adaptive launcher icon with monochrome and API 23 legacy vector fallbacks.
+- Added user-selected scoped storage for automatic encrypted backups and horizontal backup interval selection with clear selected-state styling.
+- Made the selected bottom-navigation indicator responsive to available screen width and reduced its surrounding spacing.
 - Added Room schema v1-to-v2 migration for storage location, category, expiration, opened-state, and notes fields.
 - Added indexes for pantry location, expiration, and barcode lookup.
 - Enabled Room write-ahead logging for concurrent UI and background access.
