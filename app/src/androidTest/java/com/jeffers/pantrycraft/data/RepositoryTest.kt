@@ -91,6 +91,8 @@ class RepositoryTest {
 
             val importedCount = repository.importInventoryFromJson(exportedJson)
             assertTrue(importedCount > 0)
+            val importedCsvCount = repository.importPantryFromCsv(exportedCsv)
+            assertTrue(importedCsvCount > 0)
 
             val grocery = GroceryItem(name = marker)
             val groceryId = repository.insertGrocery(grocery)

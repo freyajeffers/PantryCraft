@@ -11,9 +11,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -77,8 +78,10 @@ fun BatchReviewBottomSheet(
     var editShelfLifeDays by remember { mutableStateOf(0) }
     var editNotes by remember { mutableStateOf("") }
     var editIsAromatic by remember { mutableStateOf(false) }
-    var editThreshold by remember { mutableStateOf(0f) }
-    var showEmbeddedScanner by remember { mutableStateOf(false) }
+    var editIsOpened by remember { mutableStateOf(false) }
+    var editThresholdText by remember { mutableStateOf("0") }
+    var editBarcode by remember { mutableStateOf<String?>(null) }
+    var showEmbeddedBarcodeScanner by remember { mutableStateOf(false) }
 
     val quantityTextByIndex = remember { mutableStateMapOf<Int, String>() }
     val selectedItems = reviewItems.filter { it.included }.map { it.item }
@@ -93,14 +96,16 @@ fun BatchReviewBottomSheet(
             editStorageLocation = item.storageLocation
             editShelfLifeDays = item.estimatedShelfLifeDays
             editNotes = item.conditionNotes ?: ""
-            editThreshold = item.lowStockThreshold
             editIsAromatic =
                 item.isAromaticOrSeasoning ||
                 PantryTaxonomy.isAromaticOrSeasoningCategory(item.category)
+            editIsOpened = item.isOpened
+            editThresholdText = formatQuantity(item.threshold)
+            editBarcode = item.barcode
         }
     }
 
-    fun applySingleItemEdits(item: ParsedVisionItem) =
+    fun applyEditsTo(item: ParsedVisionItem) =
         item.copy(
             name = editName.trim(),
             category = editCategory.trim().ifEmpty { "OTHER" },
@@ -113,8 +118,29 @@ fun BatchReviewBottomSheet(
             estimatedShelfLifeDays = editShelfLifeDays,
             conditionNotes = editNotes.trim().takeIf { it.isNotEmpty() },
             isAromaticOrSeasoning = editIsAromatic,
-            lowStockThreshold = editThreshold.coerceAtLeast(0f),
+            isOpened = editIsOpened,
+            threshold = editThresholdText.toFloatOrNull()?.coerceAtLeast(0f) ?: 0f,
+            barcode = editBarcode,
         )
+
+    if (showEmbeddedBarcodeScanner) {
+        EmbeddedBarcodeScannerDialog(
+            onDismiss = { showEmbeddedBarcodeScanner = false },
+            onBarcodeResolved = { scannedCode, match ->
+                editBarcode = scannedCode
+                if (match != null) {
+                    if (editName.isBlank()) editName = match.name
+                    editCategory = match.category
+                    editUnit = match.unit
+                    editShelfLifeDays = match.estimatedShelfLifeDays
+                    if (PantryTaxonomy.isAromaticOrSeasoningCategory(match.category)) {
+                        editIsAromatic = true
+                    }
+                }
+                showEmbeddedBarcodeScanner = false
+            },
+        )
+    }
 
     Column(
         modifier = Modifier.padding(20.dp),
@@ -132,7 +158,15 @@ fun BatchReviewBottomSheet(
             itemsIndexed(reviewItems) { index, reviewItem ->
                 val displayedName = if (items.size == 1 && editName.isNotBlank()) editName else reviewItem.item.name
                 val displayedCategory = if (items.size == 1) editCategory else reviewItem.item.category
-                val displayedUnit = if (items.size == 1) editUnit else reviewItem.item.unit
+                val rawUnit = if (items.size == 1) editUnit else reviewItem.item.unit
+                val displayedUnit =
+                    if (items.size == 1 && editUnit == "CUSTOM" && editCustomUnitName.isNotBlank()) {
+                        editCustomUnitName
+                    } else if (reviewItem.item.unit == "CUSTOM" && !reviewItem.item.customUnitName.isNullOrBlank()) {
+                        reviewItem.item.customUnitName
+                    } else {
+                        rawUnit
+                    }
                 val displayedStorage = if (items.size == 1) editStorageLocation else reviewItem.item.storageLocation
                 val displayedShelfLife = if (items.size == 1) editShelfLifeDays else reviewItem.item.estimatedShelfLifeDays
 
@@ -154,10 +188,14 @@ fun BatchReviewBottomSheet(
                                         editName = reviewItem.item.name
                                         editCategory = reviewItem.item.category
                                         editUnit = reviewItem.item.unit
+                                        editCustomUnitName = reviewItem.item.customUnitName ?: ""
                                         editStorageLocation = reviewItem.item.storageLocation
                                         editShelfLifeDays = reviewItem.item.estimatedShelfLifeDays
                                         editNotes = reviewItem.item.conditionNotes ?: ""
                                         editIsAromatic = reviewItem.item.isAromaticOrSeasoning
+                                        editIsOpened = reviewItem.item.isOpened
+                                        editThresholdText = formatQuantity(reviewItem.item.threshold)
+                                        editBarcode = reviewItem.item.barcode
                                         quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity)
                                         editingIndex = index
                                     },
@@ -194,7 +232,7 @@ fun BatchReviewBottomSheet(
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         }
-                        if (displayedUnit in PantryTaxonomy.integerQuantityUnits) {
+                        if (rawUnit in PantryTaxonomy.integerQuantityUnits) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("Quantity", modifier = Modifier.weight(1f))
                                 IconButton(
@@ -257,50 +295,9 @@ fun BatchReviewBottomSheet(
             }
         }
         if (items.size == 1) {
-            ReviewEditorFields(
-                name = editName,
-                onNameChange = { editName = it },
-                category = editCategory,
-                onCategoryChange = {
-                    editCategory = it
-                    if (PantryTaxonomy.isAromaticOrSeasoningCategory(it)) editIsAromatic = true
-                },
-                unit = editUnit,
-                onUnitChange = { editUnit = it },
-                storageLocation = editStorageLocation,
-                onStorageLocationChange = { editStorageLocation = it },
-                shelfLifeDays = editShelfLifeDays,
-                onShelfLifeChange = { editShelfLifeDays = it },
-                notes = editNotes,
-                onNotesChange = { editNotes = it },
-                isAromatic = editIsAromatic,
-                onAromaticChange = { editIsAromatic = it },
-                customUnitName = editCustomUnitName,
-                onCustomUnitNameChange = { editCustomUnitName = it },
-                onScanBarcode = { showEmbeddedScanner = true },
-                lowStockThreshold = editThreshold,
-                onLowStockThresholdChange = { editThreshold = it },
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = onDismiss) { Text("Cancel") }
-            Button(
-                enabled = selectedItems.isNotEmpty() && (items.size > 1 || editName.isNotBlank()),
-                onClick = {
-                    onConfirm(
-                        if (items.size == 1) selectedItems.map(::applySingleItemEdits) else selectedItems,
-                    )
-                },
+            Column(
+                modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
             ) {
-                Text(if (items.size == 1) "Save" else "Save ${selectedItems.size} selected")
-            }
-        }
-    }
-    editingIndex?.let { index ->
-        AlertDialog(
-            onDismissRequest = { editingIndex = null },
-            title = { Text("Edit captured item") },
-            text = {
                 ReviewEditorFields(
                     name = editName,
                     onNameChange = { editName = it },
@@ -319,8 +316,70 @@ fun BatchReviewBottomSheet(
                     onNotesChange = { editNotes = it },
                     isAromatic = editIsAromatic,
                     onAromaticChange = { editIsAromatic = it },
-                    onScanBarcode = { showEmbeddedScanner = true },
+                    customUnitName = editCustomUnitName,
+                    onCustomUnitNameChange = { editCustomUnitName = it },
+                    thresholdText = editThresholdText,
+                    onThresholdTextChange = { editThresholdText = it },
+                    isOpened = editIsOpened,
+                    onOpenedChange = {
+                        editIsOpened = it
+                        if (it && editShelfLifeDays == 0) {
+                            editShelfLifeDays = PantryTaxonomy.openedShelfLifeDays(editCategory)
+                        }
+                    },
+                    barcode = editBarcode,
+                    onScanBarcodeClick = { showEmbeddedBarcodeScanner = true },
                 )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Button(onClick = onDismiss) { Text("Cancel") }
+            Button(
+                enabled = selectedItems.isNotEmpty() && (items.size > 1 || editName.isNotBlank()),
+                onClick = {
+                    onConfirm(
+                        if (items.size == 1) selectedItems.map(::applyEditsTo) else selectedItems,
+                    )
+                },
+            ) {
+                Text(if (items.size == 1) "Save" else "Save ${selectedItems.size} selected")
+            }
+        }
+    }
+    editingIndex?.let { index ->
+        AlertDialog(
+            onDismissRequest = { editingIndex = null },
+            title = { Text("Edit captured item") },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    ReviewEditorFields(
+                        name = editName,
+                        onNameChange = { editName = it },
+                        category = editCategory,
+                        onCategoryChange = {
+                            editCategory = it
+                            if (PantryTaxonomy.isAromaticOrSeasoningCategory(it)) editIsAromatic = true
+                        },
+                        unit = editUnit,
+                        onUnitChange = { editUnit = it },
+                        storageLocation = editStorageLocation,
+                        onStorageLocationChange = { editStorageLocation = it },
+                        shelfLifeDays = editShelfLifeDays,
+                        onShelfLifeChange = { editShelfLifeDays = it },
+                        notes = editNotes,
+                        onNotesChange = { editNotes = it },
+                        isAromatic = editIsAromatic,
+                        onAromaticChange = { editIsAromatic = it },
+                        customUnitName = editCustomUnitName,
+                        onCustomUnitNameChange = { editCustomUnitName = it },
+                        thresholdText = editThresholdText,
+                        onThresholdTextChange = { editThresholdText = it },
+                        isOpened = editIsOpened,
+                        onOpenedChange = { editIsOpened = it },
+                        barcode = editBarcode,
+                        onScanBarcodeClick = { showEmbeddedBarcodeScanner = true },
+                    )
+                }
             },
             confirmButton = {
                 TextButton(
@@ -329,22 +388,7 @@ fun BatchReviewBottomSheet(
                         reviewItems =
                             reviewItems.toMutableList().also {
                                 val current = it[index]
-                                it[index] =
-                                    current.copy(
-                                        item =
-                                            current.item.copy(
-                                                name = editName.trim(),
-                                                category = editCategory.trim().ifEmpty { "OTHER" },
-                                                unit = editUnit.trim().ifEmpty { "COUNT" },
-                                                storageLocation =
-                                                    editStorageLocation.trim().ifEmpty {
-                                                        PantryTaxonomy.storageLocations.first()
-                                                    },
-                                                estimatedShelfLifeDays = editShelfLifeDays,
-                                                conditionNotes = editNotes.trim().takeIf { it.isNotEmpty() },
-                                                isAromaticOrSeasoning = editIsAromatic,
-                                            ),
-                                    )
+                                it[index] = current.copy(item = applyEditsTo(current.item))
                             }
                         editingIndex = null
                     },
@@ -354,16 +398,6 @@ fun BatchReviewBottomSheet(
             },
             dismissButton = {
                 TextButton(onClick = { editingIndex = null }) { Text("Cancel") }
-            },
-        )
-    }
-    if (showEmbeddedScanner) {
-        EmbeddedBarcodeScannerDialog(
-            onDismiss = { showEmbeddedScanner = false },
-            onBarcode = { barcode ->
-                editName = barcode
-                editNotes = "Barcode: $barcode"
-                showEmbeddedScanner = false
             },
         )
     }
@@ -389,9 +423,12 @@ private fun ReviewEditorFields(
     onAromaticChange: (Boolean) -> Unit,
     customUnitName: String = "",
     onCustomUnitNameChange: (String) -> Unit = {},
-    onScanBarcode: () -> Unit = {},
-    lowStockThreshold: Float = 0f,
-    onLowStockThresholdChange: (Float) -> Unit = {},
+    thresholdText: String = "0",
+    onThresholdTextChange: (String) -> Unit = {},
+    isOpened: Boolean = false,
+    onOpenedChange: (Boolean) -> Unit = {},
+    barcode: String? = null,
+    onScanBarcodeClick: () -> Unit = {},
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
@@ -401,11 +438,21 @@ private fun ReviewEditorFields(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             trailingIcon = {
-                IconButton(onClick = onScanBarcode) {
-                    Icon(Icons.Filled.QrCode, contentDescription = "Scan barcode")
+                IconButton(onClick = onScanBarcodeClick) {
+                    Icon(
+                        imageVector = Icons.Filled.QrCodeScanner,
+                        contentDescription = "Scan barcode to fill item",
+                    )
                 }
             },
         )
+        if (!barcode.isNullOrBlank()) {
+            Text(
+                "Barcode: $barcode",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
         ReviewDropdown(
             label = "Category",
             value = category,
@@ -427,14 +474,6 @@ private fun ReviewEditorFields(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        OutlinedTextField(
-            value = if (lowStockThreshold == 0f) "" else lowStockThreshold.toString(),
-            onValueChange = { onLowStockThresholdChange(it.toFloatOrNull()?.coerceAtLeast(0f) ?: 0f) },
-            label = { Text("Low-stock alert threshold (optional)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
         ReviewDropdown(
             label = "Storage location",
             value = storageLocation,
@@ -448,12 +487,31 @@ private fun ReviewEditorFields(
             onValueChange = onShelfLifeChange,
         )
         OutlinedTextField(
+            value = thresholdText,
+            onValueChange = onThresholdTextChange,
+            label = { Text("Low-stock alert threshold") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(
             value = notes,
             onValueChange = onNotesChange,
             label = { Text("Notes / Condition") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = isOpened,
+                onCheckedChange = onOpenedChange,
+            )
+            Text(
+                "Already opened (accelerates perishability)",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
                 checked = isAromatic,

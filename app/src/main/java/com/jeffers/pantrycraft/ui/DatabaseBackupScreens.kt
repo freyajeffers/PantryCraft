@@ -1,7 +1,10 @@
 package com.jeffers.pantrycraft.ui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,6 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.jeffers.pantrycraft.data.AiProvider
 import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.AutomaticBackupPreferences
 import com.jeffers.pantrycraft.data.AutomaticBackupScheduler
@@ -88,10 +93,6 @@ fun SettingsScreen(
     var automaticBackupIntervalMinutes by remember {
         mutableStateOf(AutomaticBackupPreferences.intervalMinutes(context))
     }
-    val byokConfiguration = remember { ByokPreferences.read(context) }
-    var byokProvider by remember { mutableStateOf(byokConfiguration.provider) }
-    var byokEndpoint by remember { mutableStateOf(byokConfiguration.endpoint.orEmpty()) }
-    var byokApiKey by remember { mutableStateOf("") }
 
     var restoreResult by remember { mutableStateOf<String?>(null) }
     var confirmDatabaseReset by remember { mutableStateOf(false) }
@@ -270,6 +271,38 @@ fun SettingsScreen(
                 }
             }
         }
+    val importCsvLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            if (uri != null) {
+                scope.launch {
+                    runCatching {
+                        val csvText =
+                            context.contentResolver.openInputStream(uri)?.use {
+                                it.reader().readText()
+                            } ?: error("Unable to read selected CSV file")
+                        withContext(Dispatchers.IO) { repository.importPantryFromCsv(csvText) }
+                    }.onSuccess { count ->
+                        Toast.makeText(context, "Imported $count pantry items from CSV", Toast.LENGTH_SHORT).show()
+                    }.onFailure {
+                        Toast.makeText(context, "CSV import failed: ${it.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            expirationAlertsEnabled = granted
+            ExpirationAlertWorker.setEnabled(context, granted)
+        }
+    var selectedAiProvider by remember { mutableStateOf(ByokPreferences.selectedProvider(context)) }
+    var aiModelName by remember { mutableStateOf(ByokPreferences.selectedModel(context)) }
+    var aiEndpointUrl by remember { mutableStateOf(ByokPreferences.selectedEndpoint(context)) }
+    var aiApiKeyInput by remember { mutableStateOf("") }
+    var hasStoredApiKey by remember { mutableStateOf(ByokPreferences.hasApiKey(context)) }
     var catalogReady by remember {
         mutableStateOf(
             File(context.noBackupFilesDir, CatalogDownloadService.CATALOG_FILE_NAME).isFile,
@@ -521,70 +554,6 @@ fun SettingsScreen(
         }
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Optional AI model", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    "PantryCraft stays offline unless you choose a provider. API keys are encrypted with Android Keystore and are never logged.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text("Provider: ${byokProvider.name}")
-                    OutlinedButton(
-                        onClick = {
-                            val providers = ByokPreferences.Provider.entries
-                            byokProvider = providers[(providers.indexOf(byokProvider) + 1) % providers.size]
-                        },
-                    ) { Text("Change") }
-                }
-                if (byokProvider != ByokPreferences.Provider.OFFLINE && byokProvider != ByokPreferences.Provider.OLLAMA) {
-                    OutlinedTextField(
-                        value = byokApiKey,
-                        onValueChange = { byokApiKey = it },
-                        label = { Text("API key") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    )
-                }
-                if (byokProvider == ByokPreferences.Provider.OLLAMA) {
-                    OutlinedTextField(
-                        value = byokEndpoint,
-                        onValueChange = { byokEndpoint = it },
-                        label = { Text("Ollama endpoint") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                    Button(
-                        onClick = {
-                            ByokPreferences.save(
-                                context,
-                                byokProvider,
-                                byokApiKey.takeIf { it.isNotBlank() },
-                                byokEndpoint.takeIf { it.isNotBlank() },
-                            )
-                            byokApiKey = ""
-                            Toast.makeText(context, "AI model settings saved", Toast.LENGTH_SHORT).show()
-                        },
-                    ) { Text("Save") }
-                    OutlinedButton(
-                        onClick = {
-                            ByokPreferences.clear(context)
-                            byokProvider = ByokPreferences.Provider.OFFLINE
-                            byokEndpoint = ""
-                            byokApiKey = ""
-                            Toast.makeText(context, "AI model disabled", Toast.LENGTH_SHORT).show()
-                        },
-                    ) { Text("Disable") }
-                }
-            }
-        }
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
                 Text("Notifications & Alerts", style = MaterialTheme.typography.titleLarge)
                 Text(
                     "Receive a private, local daily notification on this device if any pantry items are expiring within 48 hours. No external servers or cloud services are contacted.",
@@ -606,8 +575,19 @@ fun SettingsScreen(
                     Switch(
                         checked = expirationAlertsEnabled,
                         onCheckedChange = { enabled ->
-                            expirationAlertsEnabled = enabled
-                            ExpirationAlertWorker.setEnabled(context, enabled)
+                            if (
+                                enabled &&
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.POST_NOTIFICATIONS,
+                                ) != PackageManager.PERMISSION_GRANTED
+                            ) {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                expirationAlertsEnabled = enabled
+                                ExpirationAlertWorker.setEnabled(context, enabled)
+                            }
                         },
                         modifier = Modifier.padding(start = 12.dp),
                     )
@@ -827,10 +807,121 @@ fun SettingsScreen(
                         modifier = Modifier.weight(1f),
                     ) { Text("Export CSV") }
                 }
-                OutlinedButton(
-                    onClick = { importJsonLauncher.launch(arrayOf("application/json", "text/*")) },
+                Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                ) { Text("Import from JSON") }
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = { importJsonLauncher.launch(arrayOf("application/json", "text/*")) },
+                        modifier = Modifier.weight(1f),
+                    ) { Text("Import JSON") }
+                    OutlinedButton(
+                        onClick = { importCsvLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/*")) },
+                        modifier = Modifier.weight(1f),
+                    ) { Text("Import CSV") }
+                }
+            }
+        }
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("AI Vision & Meal Engine (BYOKey / Local)", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "Choose between 100% offline on-device ML Kit inference or your own personal API key (BYOKey) " +
+                        "for shelf snapshot decomposition and Phase 3 meal synthesis. API keys are encrypted with " +
+                        "Android KeyStore StrongBox/TEE and never routed through proxy servers.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    AiProvider.entries.forEach { provider ->
+                        val selected = selectedAiProvider == provider
+                        if (selected) {
+                            Button(
+                                onClick = {
+                                    selectedAiProvider = provider
+                                    aiModelName = provider.defaultModel
+                                    aiEndpointUrl = provider.defaultEndpoint
+                                },
+                            ) { Text("✓ ${provider.label}") }
+                        } else {
+                            OutlinedButton(
+                                onClick = {
+                                    selectedAiProvider = provider
+                                    aiModelName = provider.defaultModel
+                                    aiEndpointUrl = provider.defaultEndpoint
+                                },
+                            ) { Text(provider.label) }
+                        }
+                    }
+                }
+                if (selectedAiProvider != AiProvider.OFFLINE_MLKIT) {
+                    OutlinedTextField(
+                        value = aiModelName,
+                        onValueChange = { aiModelName = it },
+                        label = { Text("Model Name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = aiEndpointUrl,
+                        onValueChange = { aiEndpointUrl = it },
+                        label = { Text("Endpoint URL") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    if (selectedAiProvider.requiresApiKey) {
+                        OutlinedTextField(
+                            value = aiApiKeyInput,
+                            onValueChange = { aiApiKeyInput = it },
+                            label = {
+                                Text(
+                                    if (hasStoredApiKey) {
+                                        "API Key (Encrypted key saved · enter new key to replace)"
+                                    } else {
+                                        "API Key"
+                                    },
+                                )
+                            },
+                            visualTransformation = PasswordVisualTransformation(),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Button(
+                        onClick = {
+                            ByokPreferences.saveConfiguration(
+                                context = context,
+                                provider = selectedAiProvider,
+                                modelName = aiModelName,
+                                endpointUrl = aiEndpointUrl,
+                            )
+                            if (aiApiKeyInput.isNotBlank()) {
+                                ByokPreferences.saveApiKey(context, aiApiKeyInput.toCharArray())
+                                aiApiKeyInput = ""
+                                hasStoredApiKey = ByokPreferences.hasApiKey(context)
+                            }
+                            Toast.makeText(context, "AI engine configuration saved", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) { Text("Save AI Settings") }
+                    if (hasStoredApiKey) {
+                        OutlinedButton(
+                            onClick = {
+                                ByokPreferences.clearApiKey(context)
+                                hasStoredApiKey = false
+                                aiApiKeyInput = ""
+                                Toast.makeText(context, "Stored API key cleared", Toast.LENGTH_SHORT).show()
+                            },
+                        ) { Text("Clear Key") }
+                    }
+                }
             }
         }
     }

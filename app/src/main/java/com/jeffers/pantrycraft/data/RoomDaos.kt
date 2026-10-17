@@ -42,6 +42,10 @@ interface PantryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: PantryItem): Long
 
+    @Transaction
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBatch(items: List<PantryItem>): List<Long>
+
     @Update
     suspend fun update(item: PantryItem)
 

@@ -3,6 +3,7 @@ package com.jeffers.pantrycraft.ui
 import android.database.sqlite.SQLiteFullException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jeffers.pantrycraft.data.GroceryItem
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.PantryTaxonomy
 import com.jeffers.pantrycraft.data.Repository
@@ -105,7 +106,7 @@ class PantryViewModel(
         fromPantryId: Long? = null,
     ) = launchDatabaseOperation("Unable to add grocery item") {
         repo.insertGrocery(
-            com.jeffers.pantrycraft.data.GroceryItem(
+            GroceryItem(
                 name = name,
                 quantity = quantity,
                 unit = unit,
@@ -151,6 +152,7 @@ enum class PantrySortOrder(
     EXPIRATION_SOONEST("Expiring soonest"),
     RECENTLY_UPDATED("Recently updated"),
     CATEGORY("Category"),
+    STORAGE_LOCATION("Storage zone"),
 }
 
 fun filterPantryItems(
@@ -188,6 +190,11 @@ fun sortPantryItems(
         PantrySortOrder.CATEGORY ->
             items.sortedWith(
                 compareBy<PantryItem> { it.category }
+                    .thenBy { it.name.lowercase() },
+            )
+        PantrySortOrder.STORAGE_LOCATION ->
+            items.sortedWith(
+                compareBy<PantryItem> { it.storageLocation }
                     .thenBy { it.name.lowercase() },
             )
     }

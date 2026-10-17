@@ -15,8 +15,9 @@ data class BarcodeMatch(
 
 class OfflineBarcodeResolver(
     private val customBarcodeDao: CustomBarcodeDao,
-    private val assetBarcodeDatabase: AssetBarcodeDatabase? = null,
-) {
+    private var assetBarcodeDatabase: AssetBarcodeDatabase? = null,
+    private val assetBarcodeDatabaseProvider: () -> AssetBarcodeDatabase? = { null },
+) : AutoCloseable {
     private var lastScannedBarcode: String? = null
     private var lastScannedAt = 0L
 
@@ -29,7 +30,7 @@ class OfflineBarcodeResolver(
         lastScannedAt = now
         return withContext(Dispatchers.IO) {
             customBarcodeDao.findByBarcode(barcode)?.toMatch(barcode)
-                ?: assetBarcodeDatabase?.findByBarcode(barcode)?.toMatch()
+                ?: activeAssetDatabase()?.findByBarcode(barcode)?.toMatch()
                 ?: EmbeddedBarcodeCatalog.products[barcode]?.toMatch(barcode)
         }
     }
@@ -61,6 +62,26 @@ class OfflineBarcodeResolver(
         return item.toMatch(cleanBarcode)
     }
 
+    @Synchronized
+    fun reloadCatalog() {
+        runCatching { assetBarcodeDatabase?.close() }
+        assetBarcodeDatabase = runCatching { assetBarcodeDatabaseProvider() }.getOrNull()
+    }
+
+    @Synchronized
+    private fun activeAssetDatabase(): AssetBarcodeDatabase? {
+        if (assetBarcodeDatabase == null) {
+            assetBarcodeDatabase = runCatching { assetBarcodeDatabaseProvider() }.getOrNull()
+        }
+        return assetBarcodeDatabase
+    }
+
+    @Synchronized
+    override fun close() {
+        runCatching { assetBarcodeDatabase?.close() }
+        assetBarcodeDatabase = null
+    }
+
     private fun CustomBarcodeItem.toMatch(barcode: String) = BarcodeMatch(barcode, name, category, defaultUnit, estimatedShelfLifeDays)
 
     private fun EmbeddedProduct.toMatch(barcode: String) = BarcodeMatch(barcode, name, category, unit, shelfLifeDays)
@@ -71,7 +92,7 @@ class OfflineBarcodeResolver(
             name = if (brand.isNotBlank() && !name.contains(brand, ignoreCase = true)) "$brand $name" else name,
             category = category,
             unit = "COUNT",
-            shelfLifeDays,
+            estimatedShelfLifeDays = shelfLifeDays,
         )
 
     companion object {

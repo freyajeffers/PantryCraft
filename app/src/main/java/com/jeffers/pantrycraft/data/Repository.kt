@@ -24,6 +24,7 @@ class Repository private constructor(
         OfflineBarcodeResolver(
             customBarcodeDao = db.customBarcodeDao(),
             assetBarcodeDatabase = runCatching { AssetBarcodeDatabase(appContext) }.getOrNull(),
+            assetBarcodeDatabaseProvider = { runCatching { AssetBarcodeDatabase(appContext) }.getOrNull() },
         )
 
     suspend fun downloadOfflineCatalog(onProgress: (downloadedBytes: Long, totalBytes: Long) -> Unit = { _, _ -> }) =
@@ -193,6 +194,7 @@ class Repository private constructor(
             obj.put("name", item.name)
             obj.put("quantity", item.quantity.toDouble())
             obj.put("unit", item.unit ?: "COUNT")
+            obj.put("customUnitName", item.customUnitName ?: JSONObject.NULL)
             obj.put("threshold", item.threshold.toDouble())
             obj.put("barcode", item.barcode ?: "")
             obj.put("storageLocation", item.storageLocation)
@@ -233,11 +235,18 @@ class Repository private constructor(
                 if (name.isNotEmpty()) {
                     val exp = if (obj.isNull("expirationTimestamp")) null else obj.optLong("expirationTimestamp")
                     val openedTs = if (obj.isNull("openedTimestamp")) null else obj.optLong("openedTimestamp")
+                    val customUnit =
+                        if (obj.isNull("customUnitName")) {
+                            null
+                        } else {
+                            obj.optString("customUnitName").trim().takeIf { it.isNotEmpty() }
+                        }
                     val item =
                         PantryItem(
                             name = name,
                             quantity = obj.optDouble("quantity", 1.0).toFloat().coerceAtLeast(0f),
                             unit = obj.optString("unit", "COUNT").takeIf { it.isNotBlank() },
+                            customUnitName = customUnit,
                             threshold = obj.optDouble("threshold", 0.0).toFloat().coerceAtLeast(0f),
                             barcode = obj.optString("barcode").trim().takeIf { it.isNotEmpty() },
                             storageLocation = obj.optString("storageLocation", "PANTRY").uppercase(),
@@ -274,19 +283,122 @@ class Repository private constructor(
     suspend fun exportPantryToCsv(): String {
         val pantry = pantryDao.observeAllPantryItems().first()
         return buildString {
-            append("Name,Category,StorageLocation,Quantity,Unit,ExpirationDate,IsOpened,Notes\n")
+            append("Name,Category,StorageLocation,Quantity,Unit,CustomUnitName,Threshold,ExpirationDate,IsOpened,Notes\n")
             pantry.forEach { item ->
                 val expDate =
                     item.expirationTimestamp?.let {
                         java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date(it))
                     } ?: ""
                 val escapedName = "\"${item.name.replace("\"", "\"\"")}\""
+                val escapedCustomUnit = "\"${(item.customUnitName ?: "").replace("\"", "\"\"")}\""
                 val escapedNotes = "\"${(item.notes ?: "").replace("\"", "\"\"")}\""
                 append(
-                    "$escapedName,${item.category},${item.storageLocation},${item.quantity},${item.unit.orEmpty()},$expDate,${item.isOpened},$escapedNotes\n",
+                    "$escapedName,${item.category},${item.storageLocation},${item.quantity}," +
+                        "${item.unit.orEmpty()},$escapedCustomUnit,${item.threshold},$expDate,${item.isOpened},$escapedNotes\n",
                 )
             }
         }
+    }
+
+    suspend fun importPantryFromCsv(csvString: String): Int =
+        db.withTransaction {
+            val lines = csvString.lines().filter { it.isNotBlank() }
+            if (lines.size <= 1) return@withTransaction 0
+            val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            var importedCount = 0
+            lines.drop(1).forEach { line ->
+                val cols = parseCsvLine(line)
+                val name = cols.getOrNull(0)?.trim().orEmpty()
+                if (name.isNotEmpty()) {
+                    val category =
+                        cols
+                            .getOrNull(1)
+                            ?.trim()
+                            ?.uppercase()
+                            ?.takeIf { it.isNotEmpty() } ?: "OTHER"
+                    val location =
+                        cols
+                            .getOrNull(2)
+                            ?.trim()
+                            ?.uppercase()
+                            ?.takeIf { it in PantryTaxonomy.storageLocations }
+                            ?: "PANTRY"
+                    val quantity =
+                        cols
+                            .getOrNull(3)
+                            ?.trim()
+                            ?.toFloatOrNull()
+                            ?.coerceAtLeast(0f) ?: 1f
+                    val unit =
+                        cols
+                            .getOrNull(4)
+                            ?.trim()
+                            ?.uppercase()
+                            ?.takeIf { it.isNotEmpty() } ?: "COUNT"
+                    val hasExtendedCols = cols.size >= 10
+                    val customUnit = if (hasExtendedCols) cols.getOrNull(5)?.trim()?.takeIf { it.isNotEmpty() } else null
+                    val threshold =
+                        if (hasExtendedCols) {
+                            cols
+                                .getOrNull(6)
+                                ?.trim()
+                                ?.toFloatOrNull()
+                                ?.coerceAtLeast(0f) ?: 0f
+                        } else {
+                            0f
+                        }
+                    val expDateStr = (if (hasExtendedCols) cols.getOrNull(7) else cols.getOrNull(5))?.trim().orEmpty()
+                    val expTimestamp =
+                        expDateStr.takeIf { it.isNotEmpty() }?.let {
+                            runCatching { dateFormat.parse(it)?.time }.getOrNull()
+                        }
+                    val isOpened = (if (hasExtendedCols) cols.getOrNull(8) else cols.getOrNull(6))?.trim()?.toBoolean() ?: false
+                    val notes = (if (hasExtendedCols) cols.getOrNull(9) else cols.getOrNull(7))?.trim()?.takeIf { it.isNotEmpty() }
+                    insertPantry(
+                        PantryItem(
+                            name = name,
+                            category = category,
+                            storageLocation = location,
+                            quantity = quantity,
+                            unit = unit,
+                            customUnitName = customUnit,
+                            threshold = threshold,
+                            expirationTimestamp = expTimestamp,
+                            isOpened = isOpened,
+                            openedTimestamp = if (isOpened) System.currentTimeMillis() else null,
+                            notes = notes,
+                        ),
+                    )
+                    importedCount++
+                }
+            }
+            importedCount
+        }
+
+    private fun parseCsvLine(line: String): List<String> {
+        val result = mutableListOf<String>()
+        val current = StringBuilder()
+        var inQuotes = false
+        var index = 0
+        while (index < line.length) {
+            val ch = line[index]
+            if (ch == '"') {
+                if (inQuotes && index + 1 < line.length && line[index + 1] == '"') {
+                    current.append('"')
+                    index++
+                } else {
+                    inQuotes = !inQuotes
+                }
+            } else if (ch == ',' && !inQuotes) {
+                result.add(current.toString())
+                current.clear()
+            } else {
+                current.append(ch)
+            }
+            index++
+        }
+        result.add(current.toString())
+        return result
     }
 
     fun reclaimTemporaryMedia(): Int {

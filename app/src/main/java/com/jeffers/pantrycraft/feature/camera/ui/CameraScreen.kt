@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -52,11 +53,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -118,17 +124,18 @@ fun CameraScreen() {
         remember {
             SnapshotVisionService(
                 ModelRouter(
-                    context,
-                    MlKitSnapshotModel(
-                        ObjectDetection.getClient(
-                            ObjectDetectorOptions
-                                .Builder()
-                                .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
-                                .enableMultipleObjects()
-                                .enableClassification()
-                                .build(),
+                    context = context.applicationContext,
+                    localFallbackModel =
+                        MlKitSnapshotModel(
+                            ObjectDetection.getClient(
+                                ObjectDetectorOptions
+                                    .Builder()
+                                    .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
+                                    .enableMultipleObjects()
+                                    .enableClassification()
+                                    .build(),
+                            ),
                         ),
-                    ),
                 ),
             )
         }
@@ -136,13 +143,14 @@ fun CameraScreen() {
         remember(context) {
             PreviewView(context).apply {
                 implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+                scaleType = PreviewView.ScaleType.FILL_CENTER
             }
         }
     var latestResult by remember { mutableStateOf<LiveVisionResult?>(null) }
     val frameTimingStats = remember { FrameTimingStats() }
     var latestFrameTime by remember { mutableStateOf<Long?>(null) }
     var isTorchOn by remember { mutableStateOf(false) }
-    var focusPoint by remember { mutableStateOf<androidx.compose.ui.geometry.Offset?>(null) }
+    var focusPoint by remember { mutableStateOf<Offset?>(null) }
     var zoomRatio by remember { mutableStateOf(0f) }
 
     LaunchedEffect(focusPoint) {
@@ -197,11 +205,11 @@ fun CameraScreen() {
                     latestResult = result
                     result.barcodes.firstOrNull()?.let { barcode ->
                         scope.launch {
-                            val match = barcodeResolver.resolveBarcode(barcode)
+                            val match = runCatching { barcodeResolver.resolveBarcode(barcode) }.getOrNull()
                             if (match != null) {
                                 barcodeMatch = match
                                 unresolvedBarcode = null
-                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                triggerBarcodeHapticTick(context, view)
                             } else {
                                 unresolvedBarcode = barcode
                             }
@@ -221,6 +229,7 @@ fun CameraScreen() {
         onDispose {
             cameraManager.unbind()
             analyzer.close()
+            barcodeResolver.close()
             snapshotVisionService.close()
             analysisExecutor.shutdown()
         }
@@ -247,23 +256,27 @@ fun CameraScreen() {
             modifier = Modifier.fillMaxSize(),
         )
         Canvas(modifier = Modifier.fillMaxSize()) {
-            latestResult?.objectBoxes?.forEach { box ->
-                val left = box.xmin * size.width
-                val top = box.ymin * size.height
-                val right = box.xmax * size.width
-                val bottom = box.ymax * size.height
+            val result = latestResult
+            // Map normalized sensor coordinates through PreviewView FILL_CENTER center-crop transform
+            val imgW = result?.imageWidth?.takeIf { it > 0 }?.toFloat() ?: size.width
+            val imgH = result?.imageHeight?.takeIf { it > 0 }?.toFloat() ?: size.height
+            val scale = maxOf(size.width / imgW, size.height / imgH)
+            val scaledW = imgW * scale
+            val scaledH = imgH * scale
+            val offsetX = (size.width - scaledW) / 2f
+            val offsetY = (size.height - scaledH) / 2f
+
+            result?.objectBoxes?.forEach { box ->
+                val left = (box.xmin * scaledW + offsetX).coerceIn(0f, size.width)
+                val top = (box.ymin * scaledH + offsetY).coerceIn(0f, size.height)
+                val right = (box.xmax * scaledW + offsetX).coerceIn(0f, size.width)
+                val bottom = (box.ymax * scaledH + offsetY).coerceIn(0f, size.height)
 
                 drawRect(
-                    color = androidx.compose.ui.graphics.Color.Cyan,
-                    topLeft =
-                        androidx.compose.ui.geometry
-                            .Offset(left, top),
-                    size =
-                        androidx.compose.ui.geometry
-                            .Size(right - left, bottom - top),
-                    style =
-                        androidx.compose.ui.graphics.drawscope
-                            .Stroke(width = 4f),
+                    color = Color.Cyan,
+                    topLeft = Offset(left, top),
+                    size = Size((right - left).coerceAtLeast(1f), (bottom - top).coerceAtLeast(1f)),
+                    style = Stroke(width = 4f),
                 )
 
                 box.label?.let { label ->
@@ -290,12 +303,10 @@ fun CameraScreen() {
             }
             focusPoint?.let { pt ->
                 drawCircle(
-                    color = androidx.compose.ui.graphics.Color.White,
+                    color = Color.White,
                     radius = 48f,
                     center = pt,
-                    style =
-                        androidx.compose.ui.graphics.drawscope
-                            .Stroke(width = 3f),
+                    style = Stroke(width = 3f),
                 )
             }
         }
@@ -440,6 +451,7 @@ fun CameraScreen() {
                                                 PantryTaxonomy.isAromaticOrSeasoningCategory(match.category),
                                             boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
                                             conditionNotes = null,
+                                            barcode = match.barcode,
                                         ),
                                     )
                                 barcodeMatch = null
@@ -590,7 +602,7 @@ private fun AssociateBarcodeDialog(
     var category by remember { mutableStateOf("OTHER") }
     var unit by remember { mutableStateOf("COUNT") }
     var storageLocation by remember { mutableStateOf(PantryTaxonomy.storageLocations.first()) }
-    var shelfLifeDays by remember { mutableStateOf(0) }
+    var shelfLifeDaysText by remember { mutableStateOf("14") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -619,13 +631,41 @@ private fun AssociateBarcodeDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                OutlinedTextField(
+                    value = storageLocation,
+                    onValueChange = { storageLocation = it },
+                    label = { Text("Storage (PANTRY, FRIDGE, FREEZER, COUNTER)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = shelfLifeDaysText,
+                    onValueChange = { shelfLifeDaysText = it },
+                    label = { Text("Estimated Shelf Life (Days)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         },
         confirmButton = {
             Button(
                 enabled = name.isNotBlank(),
                 onClick = {
-                    onSave(name.trim(), category.trim().uppercase(), unit.trim().uppercase(), storageLocation, shelfLifeDays)
+                    val cleanStorage =
+                        storageLocation
+                            .trim()
+                            .uppercase()
+                            .takeIf { it in PantryTaxonomy.storageLocations }
+                            ?: PantryTaxonomy.storageLocations.first()
+                    val cleanDays = shelfLifeDaysText.toIntOrNull()?.coerceAtLeast(0) ?: 0
+                    onSave(
+                        name.trim(),
+                        category.trim().uppercase().ifEmpty { "OTHER" },
+                        unit.trim().uppercase().ifEmpty { "COUNT" },
+                        cleanStorage,
+                        cleanDays,
+                    )
                 },
             ) {
                 Text("Save & Remember")

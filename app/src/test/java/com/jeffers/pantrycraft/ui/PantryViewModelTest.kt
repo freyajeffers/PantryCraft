@@ -72,16 +72,19 @@ class PantryViewModelTest {
     }
 
     @Test
-    fun sortPantryItems_sortsByRecentlyUpdated() {
-        val itemA = PantryItem(id = 1, name = "Item A", updatedAt = 100L)
-        val itemB = PantryItem(id = 2, name = "Item B", updatedAt = 500L)
-        val itemC = PantryItem(id = 3, name = "Item C", updatedAt = 200L)
+    fun sortPantryItems_sortsByRecentlyUpdatedAndCategoryAndStorageZone() {
+        val itemA = PantryItem(id = 1, name = "Yogurt", category = "DAIRY", storageLocation = "FRIDGE", updatedAt = 100L)
+        val itemB = PantryItem(id = 2, name = "Apples", category = "PRODUCE", storageLocation = "COUNTER", updatedAt = 500L)
+        val itemC = PantryItem(id = 3, name = "Beans", category = "CANNED", storageLocation = "PANTRY", updatedAt = 200L)
 
-        val sorted = sortPantryItems(listOf(itemA, itemB, itemC), PantrySortOrder.RECENTLY_UPDATED)
+        val byUpdated = sortPantryItems(listOf(itemA, itemB, itemC), PantrySortOrder.RECENTLY_UPDATED)
+        assertEquals(listOf(2L, 3L, 1L), byUpdated.map { it.id })
 
-        assertEquals(2L, sorted[0].id)
-        assertEquals(3L, sorted[1].id)
-        assertEquals(1L, sorted[2].id)
+        val byCategory = sortPantryItems(listOf(itemA, itemB, itemC), PantrySortOrder.CATEGORY)
+        assertEquals(listOf("CANNED", "DAIRY", "PRODUCE"), byCategory.map { it.category })
+
+        val byZone = sortPantryItems(listOf(itemA, itemB, itemC), PantrySortOrder.STORAGE_LOCATION)
+        assertEquals(listOf("COUNTER", "FRIDGE", "PANTRY"), byZone.map { it.storageLocation })
     }
 
     private fun sampleItems() =

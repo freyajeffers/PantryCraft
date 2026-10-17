@@ -50,6 +50,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -135,6 +137,12 @@ fun PantryScreen(viewModel: PantryViewModel) {
     }
 
     useItem?.let { item ->
+        val unitLabel =
+            if (item.unit == "CUSTOM" && !item.customUnitName.isNullOrBlank()) {
+                item.customUnitName
+            } else {
+                item.unit.orEmpty()
+            }
         AlertDialog(
             onDismissRequest = { useItem = null },
             title = { Text("Use ${item.name}") },
@@ -142,7 +150,7 @@ fun PantryScreen(viewModel: PantryViewModel) {
                 OutlinedTextField(
                     value = useAmount,
                     onValueChange = { useAmount = it },
-                    label = { Text("Amount (${item.unit.orEmpty()})") },
+                    label = { Text("Amount ($unitLabel)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                 )
@@ -290,6 +298,7 @@ fun PantryItemRow(
 ) {
     val expiration = expirationStatus(item.expirationTimestamp)
     val isLowStock = item.threshold > 0f && item.quantity <= item.threshold
+    val haptics = LocalHapticFeedback.current
 
     val dismissState =
         rememberSwipeToDismissBoxState(confirmValueChange = { value ->
@@ -298,10 +307,12 @@ fun PantryItemRow(
     LaunchedEffect(dismissState.currentValue) {
         when (dismissState.currentValue) {
             SwipeToDismissBoxValue.StartToEnd -> {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 onDecrement()
                 dismissState.reset()
             }
             SwipeToDismissBoxValue.EndToStart -> {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 onDelete()
                 dismissState.reset()
             }
@@ -356,9 +367,7 @@ fun PantryItemRow(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(item.name, style = MaterialTheme.typography.titleMedium)
                     val unitDisplay =
-                        if (item.unit == "CUSTOM" &&
-                            !item.customUnitName.isNullOrBlank()
-                        ) {
+                        if (item.unit == "CUSTOM" && !item.customUnitName.isNullOrBlank()) {
                             item.customUnitName
                         } else {
                             item.unit.orEmpty()

@@ -3,14 +3,14 @@
 ## Unreleased
 
 ### PantryCraft Kitchen Usability & Notifications
-- Added encrypted BYOKey settings using Android Keystore AES-GCM, with offline mode as the default.
-- Added a dual-inference model router that falls back to the local ML Kit model when cloud inference is unavailable.
-- Added an embedded one-shot barcode scanner to the review editor.
+- Added EmbeddedBarcodeScannerDialog and a trailing barcode scanner button inside BatchReviewBottomSheet to auto-fill items during manual add/edit.
+- Added ByokPreferences (Android KeyStore StrongBox AES-256-GCM API key storage) and ModelRouter (Gemini, OpenAI, Anthropic, Ollama VLMs with offline MlKitSnapshotModel fallback) plus an AI Engine configuration card in SettingsScreen.
+- Added two-way CSV import (importPantryFromCsv), Storage Zone sorting, low-stock threshold editing, PreviewView center-crop coordinate scaling, and VibrationEffect.EFFECT_TICK haptics.
 - Added CameraX torch/flashlight toggle for dark kitchen cabinets and refrigerators.
 - Implemented tap-to-focus metering with visual target indicator and pinch-to-zoom on the camera viewfinder.
 - Added custom culinary unit input ("CUSTOM") in review editors and displayed custom units (e.g. sprigs, cloves, bunches) on pantry ledger items.
-- Implemented local daily expiration alerts via WorkManager (ExpirationAlertWorker), scheduled for the next local 9:00 AM and notifying users of food expiring within 48 hours without external telemetry.
-- Added POST_NOTIFICATIONS runtime permission handling and settings toggle for daily expiration reminders.
+- Implemented local daily expiration alerts via WorkManager (ExpirationAlertWorker), notifying users of food expiring within 48 hours without external telemetry.
+- Added POST_NOTIFICATIONS permission and settings toggle for daily expiration reminders.
 
 ### PantryCraft Phase 1 Refinements & Hardening
 - Fixed Expiring Soon filter in PantryViewModel to include already-expired items (<= cutoff) alongside soon-to-expire food.
@@ -44,7 +44,7 @@
 
 ### PantryCraft
 - Debug builds now append the current short Git commit ID to the version name for device identification.
-- Replaced the Botanical Chef's Toque launcher icon with the minimalist Viewfinder, Fork & Basil Leaf adaptive icon (`#1E3A2F` forest green background, `#F4F1EA` viewfinder brackets, `#EAA83B` fork, `#4CAF50` basil leaf), including a 48dp safe-zone Material You monochrome stencil and API 23 legacy vector fallbacks.
+- Added the Botanical Chef's Toque adaptive launcher icon with monochrome and API 23 legacy vector fallbacks.
 - Added user-selected scoped storage for automatic encrypted backups and horizontal backup interval selection with clear selected-state styling.
 - Made the selected bottom-navigation indicator responsive to available screen width and reduced its surrounding spacing.
 - Added Room schema v1-to-v2 migration for storage location, category, expiration, opened-state, and notes fields.

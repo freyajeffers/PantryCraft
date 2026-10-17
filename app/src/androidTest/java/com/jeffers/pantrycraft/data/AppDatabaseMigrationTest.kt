@@ -85,4 +85,40 @@ class AppDatabaseMigrationTest {
         }
         db.close()
     }
+
+    @Test
+    fun migrate1To3_preservesLegacyDataAndCreatesCustomBarcodeCache() {
+        helper.createDatabase("migration-test-1-3", 1).apply {
+            execSQL(
+                "INSERT INTO pantry_items " +
+                    "(id, name, quantity, unit, threshold, barcode, lastUpdated) " +
+                    "VALUES (7, 'Spinach', 2.0, 'COUNT', 1.0, '987654321012', 2000)",
+            )
+            close()
+        }
+
+        val db =
+            helper.runMigrationsAndValidate(
+                "migration-test-1-3",
+                3,
+                true,
+                AppDatabase.MIGRATION_1_2,
+                AppDatabase.MIGRATION_2_3,
+            )
+        db.query("SELECT * FROM pantry_items WHERE id = 7").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Spinach", cursor.getString(cursor.getColumnIndexOrThrow("name")))
+            assertEquals("spinach", cursor.getString(cursor.getColumnIndexOrThrow("normalized_name")))
+        }
+        db.execSQL(
+            "INSERT INTO custom_barcode_cache " +
+                "(barcode, name, category, defaultUnit, estimatedShelfLifeDays, lastScanned) " +
+                "VALUES ('987654321012', 'Baby Spinach', 'PRODUCE', 'COUNT', 5, 3000)",
+        )
+        db.query("SELECT * FROM custom_barcode_cache WHERE barcode = '987654321012'").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Baby Spinach", cursor.getString(cursor.getColumnIndexOrThrow("name")))
+        }
+        db.close()
+    }
 }

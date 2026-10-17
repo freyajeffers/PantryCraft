@@ -26,6 +26,8 @@ data class NormalizedVisionBox(
 data class LiveVisionResult(
     val barcodes: List<String>,
     val objectBoxes: List<NormalizedVisionBox>,
+    val imageWidth: Int = 0,
+    val imageHeight: Int = 0,
 )
 
 class LiveVisionAnalyzer(
@@ -69,20 +71,26 @@ class LiveVisionAnalyzer(
 
                 // ML Kit detects objects in the rotated upright input image coordinate space.
                 // When rotation is 90 or 270 degrees, effective width/height are transposed.
-                val effectiveWidth = if (rotation == 90 || rotation == 270) imageProxy.height else imageProxy.width
-                val effectiveHeight = if (rotation == 90 || rotation == 270) imageProxy.width else imageProxy.height
+                val effectiveWidth = if (rotation % 180 != 0) imageProxy.height else imageProxy.width
+                val effectiveHeight = if (rotation % 180 != 0) imageProxy.width else imageProxy.height
 
                 val boxes =
                     objectTask.result
                         .orEmpty()
                         .filter { detected ->
-                            (detected.labels.firstOrNull()?.confidence ?: 1.0f) >= CONFIDENCE_THRESHOLD
+                            val topLabel = detected.labels.firstOrNull()
+                            topLabel == null || topLabel.confidence >= CONFIDENCE_THRESHOLD
                         }.map { detected ->
                             val label = detected.labels.firstOrNull()?.text
                             val confidence = detected.labels.firstOrNull()?.confidence
                             detected.boundingBox.toNormalized(effectiveWidth, effectiveHeight, label, confidence)
                         }
-                LiveVisionResult(barcodes, boxes)
+                LiveVisionResult(
+                    barcodes = barcodes,
+                    objectBoxes = boxes,
+                    imageWidth = effectiveWidth,
+                    imageHeight = effectiveHeight,
+                )
             }.addOnSuccessListener(executor) { onResult(it) }
             .addOnFailureListener(executor) { onError(it) }
             .addOnCompleteListener(executor) {
