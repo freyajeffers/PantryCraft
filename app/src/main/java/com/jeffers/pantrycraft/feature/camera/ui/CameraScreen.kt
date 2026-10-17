@@ -549,9 +549,9 @@ fun CameraScreen() {
             }
         }
 
-        // Unknown Barcode Association Dialog
+        // Unknown Barcode Association Dialog — use the extracted implementation to keep this file small
         associateDialogBarcode?.let { barcode ->
-            AssociateBarcodeDialog(
+            AssociateBarcodeDialogImpl(
                 barcode = barcode,
                 onDismiss = {
                     associateDialogBarcode = null
@@ -577,8 +577,7 @@ fun CameraScreen() {
                                 category = category,
                                 storageLocation = storageLocation,
                                 expirationTimestamp = exp,
-                                isAromaticOrSeasoning =
-                                    PantryTaxonomy.isAromaticOrSeasoningCategory(category),
+                                isAromaticOrSeasoning = PantryTaxonomy.isAromaticOrSeasoningCategory(category),
                             ),
                         )
                         snapshotStatus = "Saved and remembered $name"
