@@ -89,6 +89,22 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
+private const val FOCUS_CLEAR_DELAY_MILLIS = 1_200L
+private const val LABEL_TEXT_SIZE = 34f
+private const val BADGE_ALPHA = 200
+private const val BADGE_COLOR_RED = 20
+private const val BADGE_COLOR_GREEN = 30
+private const val BADGE_COLOR_BLUE = 45
+private const val BOX_STROKE_WIDTH = 4f
+private const val BADGE_HORIZONTAL_PADDING = 24f
+private const val BADGE_HEIGHT = 44f
+private const val BADGE_CORNER_RADIUS = 12f
+private const val BADGE_TEXT_Y_OFFSET = 32f
+private const val BADGE_TOP_OFFSET = 40f
+private const val FOCUS_CIRCLE_RADIUS = 48f
+private const val FOCUS_CIRCLE_STROKE = 3f
+private const val ZOOM_SENSITIVITY = 0.5f
+
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun CameraScreen() {
@@ -155,7 +171,7 @@ fun CameraScreen() {
 
     LaunchedEffect(focusPoint) {
         if (focusPoint != null) {
-            delay(1200)
+            delay(FOCUS_CLEAR_DELAY_MILLIS)
             focusPoint = null
         }
     }
@@ -164,7 +180,7 @@ fun CameraScreen() {
         remember {
             Paint().apply {
                 color = android.graphics.Color.WHITE
-                textSize = 34f
+                textSize = LABEL_TEXT_SIZE
                 isAntiAlias = true
                 typeface = Typeface.DEFAULT_BOLD
             }
@@ -172,7 +188,13 @@ fun CameraScreen() {
     val badgePaint =
         remember {
             Paint().apply {
-                color = android.graphics.Color.argb(200, 20, 30, 45)
+                color =
+                    android.graphics.Color.argb(
+                        BADGE_ALPHA,
+                        BADGE_COLOR_RED,
+                        BADGE_COLOR_GREEN,
+                        BADGE_COLOR_BLUE,
+                    )
                 style = Paint.Style.FILL
                 isAntiAlias = true
             }
@@ -241,7 +263,7 @@ fun CameraScreen() {
                 .fillMaxSize()
                 .pointerInput(previewView) {
                     detectTransformGestures { _, _, zoom, _ ->
-                        zoomRatio = (zoomRatio + (zoom - 1f) * 0.5f).coerceIn(0f, 1f)
+                        zoomRatio = (zoomRatio + (zoom - 1f) * ZOOM_SENSITIVITY).coerceIn(0f, 1f)
                         cameraManager.setLinearZoom(zoomRatio)
                     }
                 }.pointerInput(previewView) {
@@ -276,27 +298,27 @@ fun CameraScreen() {
                     color = Color.Cyan,
                     topLeft = Offset(left, top),
                     size = Size((right - left).coerceAtLeast(1f), (bottom - top).coerceAtLeast(1f)),
-                    style = Stroke(width = 4f),
+                    style = Stroke(width = BOX_STROKE_WIDTH),
                 )
 
                 box.label?.let { label ->
                     val confPercent = box.confidence?.let { " ${(it * 100).toInt()}%" } ?: ""
                     val text = "$label$confPercent"
                     val textWidth = labelPaint.measureText(text)
-                    val badgeTop = (top - 40f).coerceAtLeast(8f)
+                    val badgeTop = (top - BADGE_TOP_OFFSET).coerceAtLeast(8f)
                     drawContext.canvas.nativeCanvas.drawRoundRect(
                         left,
                         badgeTop,
-                        left + textWidth + 24f,
-                        badgeTop + 44f,
-                        12f,
-                        12f,
+                        left + textWidth + BADGE_HORIZONTAL_PADDING,
+                        badgeTop + BADGE_HEIGHT,
+                        BADGE_CORNER_RADIUS,
+                        BADGE_CORNER_RADIUS,
                         badgePaint,
                     )
                     drawContext.canvas.nativeCanvas.drawText(
                         text,
-                        left + 12f,
-                        badgeTop + 32f,
+                        left + (BADGE_HORIZONTAL_PADDING / 2f),
+                        badgeTop + BADGE_TEXT_Y_OFFSET,
                         labelPaint,
                     )
                 }
@@ -304,9 +326,9 @@ fun CameraScreen() {
             focusPoint?.let { pt ->
                 drawCircle(
                     color = Color.White,
-                    radius = 48f,
+                    radius = FOCUS_CIRCLE_RADIUS,
                     center = pt,
-                    style = Stroke(width = 3f),
+                    style = Stroke(width = FOCUS_CIRCLE_STROKE),
                 )
             }
         }
