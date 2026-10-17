@@ -76,6 +76,16 @@ private val FreshColor = Color(FRESH_COLOR_VALUE)
 private const val EXPIRING_SOON_HOURS = 48L
 private const val EXPIRING_SOON_DAYS = 5L
 
+private data class PantryItemRowActions(
+    val onDecrement: () -> Unit,
+    val onIncrement: () -> Unit,
+    val onUse: () -> Unit,
+    val onEdit: () -> Unit,
+    val onMarkOpened: () -> Unit,
+    val onAddToGrocery: () -> Unit,
+    val onDelete: () -> Unit,
+)
+
 private fun newPantryDraft() =
     ParsedVisionItem(
         name = "",
@@ -250,38 +260,42 @@ fun PantryScreen(viewModel: PantryViewModel) {
                     items(items, key = { it.id }) { item ->
                         PantryItemRow(
                             item = item,
-                            onDecrement = { viewModel.decrement(item, 1f) },
-                            onIncrement = { viewModel.update(item.copy(quantity = item.quantity + 1f)) },
-                            onUse = {
-                                useAmount = ""
-                                useItem = item
-                            },
-                            onEdit = {
-                                editorItem = item
-                                showAddDialog = true
-                            },
-                            onMarkOpened = { viewModel.markOpened(item) },
-                            onAddToGrocery = {
-                                viewModel.addGroceryItem(
-                                    name = item.name,
-                                    quantity = 1f,
-                                    unit = item.unit,
-                                    fromPantryId = item.id,
-                                )
-                            },
-                        ) {
-                            viewModel.delete(item)
-                            scope.launch {
-                                val result =
-                                    snackbarHostState.showSnackbar(
-                                        message = "${item.name} deleted",
-                                        actionLabel = "Undo",
-                                    )
-                                if (result == SnackbarResult.ActionPerformed) {
-                                    viewModel.restore(item)
-                                }
-                            }
-                        }
+                            actions =
+                                PantryItemRowActions(
+                                    onDecrement = { viewModel.decrement(item, 1f) },
+                                    onIncrement = { viewModel.update(item.copy(quantity = item.quantity + 1f)) },
+                                    onUse = {
+                                        useAmount = ""
+                                        useItem = item
+                                    },
+                                    onEdit = {
+                                        editorItem = item
+                                        showAddDialog = true
+                                    },
+                                    onMarkOpened = { viewModel.markOpened(item) },
+                                    onAddToGrocery = {
+                                        viewModel.addGroceryItem(
+                                            name = item.name,
+                                            quantity = 1f,
+                                            unit = item.unit,
+                                            fromPantryId = item.id,
+                                        )
+                                    },
+                                    onDelete = {
+                                        viewModel.delete(item)
+                                        scope.launch {
+                                            val result =
+                                                snackbarHostState.showSnackbar(
+                                                    message = "${item.name} deleted",
+                                                    actionLabel = "Undo",
+                                                )
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                viewModel.restore(item)
+                                            }
+                                        }
+                                    },
+                                ),
+                        )
                     }
                 }
             }
@@ -291,15 +305,9 @@ fun PantryScreen(viewModel: PantryViewModel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PantryItemRow(
+private fun PantryItemRow(
     item: PantryItem,
-    onDecrement: () -> Unit,
-    onIncrement: () -> Unit,
-    onUse: () -> Unit,
-    onEdit: () -> Unit,
-    onMarkOpened: () -> Unit,
-    onAddToGrocery: () -> Unit,
-    onDelete: () -> Unit,
+    actions: PantryItemRowActions,
 ) {
     val expiration = expirationStatus(item.expirationTimestamp)
     val isLowStock = item.threshold > 0f && item.quantity <= item.threshold
@@ -313,12 +321,12 @@ fun PantryItemRow(
         when (dismissState.currentValue) {
             SwipeToDismissBoxValue.StartToEnd -> {
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                onDecrement()
+                actions.onDecrement()
                 dismissState.reset()
             }
             SwipeToDismissBoxValue.EndToStart -> {
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                onDelete()
+                actions.onDelete()
                 dismissState.reset()
             }
             SwipeToDismissBoxValue.Settled -> Unit
@@ -404,10 +412,10 @@ fun PantryItemRow(
                     }
                 }
                 if (!item.isOpened) {
-                    TextButton(onClick = onMarkOpened) { Text("Open") }
+                    TextButton(onClick = actions.onMarkOpened) { Text("Open") }
                 }
                 if (isLowStock) {
-                    IconButton(onClick = onAddToGrocery) {
+                    IconButton(onClick = actions.onAddToGrocery) {
                         Icon(
                             imageVector = Icons.Filled.AddShoppingCart,
                             contentDescription = "Add to grocery list",
@@ -416,18 +424,18 @@ fun PantryItemRow(
                     }
                 }
                 if (item.unit.orEmpty() in PantryTaxonomy.integerQuantityUnits) {
-                    IconButton(onClick = onDecrement, enabled = item.quantity > 0f) {
+                    IconButton(onClick = actions.onDecrement, enabled = item.quantity > 0f) {
                         Icon(Icons.Filled.Remove, contentDescription = "Decrease quantity")
                     }
                     Text(formatPantryQuantity(item.quantity))
-                    IconButton(onClick = onIncrement) {
+                    IconButton(onClick = actions.onIncrement) {
                         Icon(Icons.Filled.Add, contentDescription = "Increase quantity")
                     }
                 } else {
-                    TextButton(onClick = onUse, enabled = item.quantity > 0f) { Text("Use") }
+                    TextButton(onClick = actions.onUse, enabled = item.quantity > 0f) { Text("Use") }
                 }
-                TextButton(onClick = onEdit) { Text("Edit") }
-                TextButton(onClick = onDelete) { Text("Delete") }
+                TextButton(onClick = actions.onEdit) { Text("Edit") }
+                TextButton(onClick = actions.onDelete) { Text("Delete") }
             }
         },
     )
