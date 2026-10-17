@@ -61,6 +61,9 @@ private const val MINUTES_PER_HOUR = 60L
 private const val HOURS_PER_DAY = 24L
 private const val DAYS_PER_WEEK = 7L
 private const val DAYS_PER_MONTH = 30L
+private const val THREE_HOURS = 3L
+private const val SIX_HOURS = 6L
+private const val TWELVE_HOURS = 12L
 
 private data class CatalogDialog(
     val title: String,
@@ -670,9 +673,9 @@ fun SettingsScreen(
                     ) {
                         listOf(
                             MINUTES_PER_HOUR to "1 hour",
-                            3 * MINUTES_PER_HOUR to "3 hours",
-                            6 * MINUTES_PER_HOUR to "6 hours",
-                            12 * MINUTES_PER_HOUR to "12 hours",
+                            THREE_HOURS * MINUTES_PER_HOUR to "3 hours",
+                            SIX_HOURS * MINUTES_PER_HOUR to "6 hours",
+                            TWELVE_HOURS * MINUTES_PER_HOUR to "12 hours",
                             HOURS_PER_DAY * MINUTES_PER_HOUR to "Daily",
                             DAYS_PER_WEEK * HOURS_PER_DAY * MINUTES_PER_HOUR to "Weekly",
                             DAYS_PER_MONTH * HOURS_PER_DAY * MINUTES_PER_HOUR to "Monthly",

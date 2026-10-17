@@ -406,7 +406,7 @@ object DatabaseBackupManager {
                 val lengthHigh = cis.read()
                 val lengthLow = cis.read()
                 if (lengthHigh < 0 || lengthLow < 0) throw IOException("Truncated backup payload")
-                val passphraseLength = (lengthHigh shl 8) or lengthLow
+                val passphraseLength = (lengthHigh shl BYTE_SHIFT) or lengthLow
                 passphrase = ByteArray(passphraseLength)
                 var offset = 0
                 while (offset < passphraseLength) {

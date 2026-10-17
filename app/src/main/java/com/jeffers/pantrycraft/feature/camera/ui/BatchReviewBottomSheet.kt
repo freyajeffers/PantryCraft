@@ -46,6 +46,8 @@ import com.jeffers.pantrycraft.data.PantryTaxonomy
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
 import java.math.BigDecimal
 
+private const val PERCENT_SCALE = 100
+
 private data class ReviewItem(
     val item: ParsedVisionItem,
     val included: Boolean,
@@ -228,7 +230,7 @@ fun BatchReviewBottomSheet(
                         )
                         if (items.size > 1) {
                             Text(
-                                "Confidence ${(reviewItem.item.confidence * 100).toInt()}%",
+                                "Confidence ${(reviewItem.item.confidence * PERCENT_SCALE).toInt()}%",
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         }

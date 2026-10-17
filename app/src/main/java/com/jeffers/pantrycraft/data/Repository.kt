@@ -344,7 +344,7 @@ class Repository private constructor(
                             ?.trim()
                             ?.uppercase()
                             ?.takeIf { it.isNotEmpty() } ?: "COUNT"
-                    val hasExtendedCols = cols.size >= 10
+                    val hasExtendedCols = cols.size >= EXTENDED_CSV_COLUMN_COUNT
                     val customUnit =
                         if (hasExtendedCols) {
                             cols
@@ -452,6 +452,7 @@ class Repository private constructor(
         private const val CSV_HEADER =
             "Name,Category,StorageLocation,Quantity,Unit,CustomUnitName," +
                 "Threshold,ExpirationDate,IsOpened,Notes\n"
+        private const val EXTENDED_CSV_COLUMN_COUNT = 10
         private const val DATE_PATTERN = "yyyy-MM-dd"
         private const val CUSTOM_UNIT_COLUMN = 5
         private const val QUANTITY_COLUMN = 3

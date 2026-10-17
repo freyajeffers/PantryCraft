@@ -26,6 +26,10 @@ private const val SEARCH_DEBOUNCE_MILLIS = 50L
 private const val EXPIRING_SOON_DAYS = 5L
 private const val MILLIS_PER_DAY = 24L * 60L * 60L * 1_000L
 private const val STATE_TIMEOUT_MILLIS = 5_000L
+private const val PANTRY_LOCATION_INDEX_PANTRY = 0
+private const val PANTRY_LOCATION_INDEX_FRIDGE = 1
+private const val PANTRY_LOCATION_INDEX_FREEZER = 2
+private const val PANTRY_LOCATION_INDEX_COUNTER = 3
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class PantryViewModel(
@@ -143,10 +147,10 @@ enum class PantryLocationFilter(
     val storageLocation: String?,
 ) {
     ALL("All", null),
-    PANTRY("Pantry", PantryTaxonomy.storageLocations[0]),
-    FRIDGE("Fridge", PantryTaxonomy.storageLocations[1]),
-    FREEZER("Freezer", PantryTaxonomy.storageLocations[2]),
-    COUNTER("Counter", PantryTaxonomy.storageLocations[3]),
+    PANTRY("Pantry", PantryTaxonomy.storageLocations[PANTRY_LOCATION_INDEX_PANTRY]),
+    FRIDGE("Fridge", PantryTaxonomy.storageLocations[PANTRY_LOCATION_INDEX_FRIDGE]),
+    FREEZER("Freezer", PantryTaxonomy.storageLocations[PANTRY_LOCATION_INDEX_FREEZER]),
+    COUNTER("Counter", PantryTaxonomy.storageLocations[PANTRY_LOCATION_INDEX_COUNTER]),
     EXPIRING_SOON("Expiring soon", null),
 }
 
