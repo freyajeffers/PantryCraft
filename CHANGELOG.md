@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added the Detekt Kotlin static-analysis plugin and Gradle task for app quality checks.
+
 ### PantryCraft Kitchen Usability & Notifications
 - Added EmbeddedBarcodeScannerDialog and a trailing barcode scanner button inside BatchReviewBottomSheet to auto-fill items during manual add/edit.
 - Added ByokPreferences (Android KeyStore StrongBox AES-256-GCM API key storage) and ModelRouter (Gemini, OpenAI, Anthropic, Ollama VLMs with offline MlKitSnapshotModel fallback) plus an AI Engine configuration card in SettingsScreen.
