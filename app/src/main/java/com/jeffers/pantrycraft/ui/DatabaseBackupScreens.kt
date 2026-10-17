@@ -55,6 +55,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
+private const val BYTES_IN_KB = 1024L
+private const val BYTES_IN_MB = BYTES_IN_KB * 1024L
+
 private data class CatalogDialog(
     val title: String,
     val message: String,
@@ -63,9 +66,9 @@ private data class CatalogDialog(
 
 private fun formatFileSize(bytes: Long): String =
     when {
-        bytes < 1024L -> "$bytes B"
-        bytes < 1024L * 1024L -> "%.1f KB".format(bytes / 1024.0)
-        else -> "%.1f MB".format(bytes / (1024.0 * 1024.0))
+        bytes < BYTES_IN_KB -> "$bytes B"
+        bytes < BYTES_IN_MB -> "%.1f KB".format(bytes / BYTES_IN_KB.toDouble())
+        else -> "%.1f MB".format(bytes / BYTES_IN_MB.toDouble())
     }
 
 @Composable
