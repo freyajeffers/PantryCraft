@@ -299,36 +299,38 @@ fun BatchReviewBottomSheet(
                 modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
             ) {
                 ReviewEditorFields(
-                    name = editName,
-                    onNameChange = { editName = it },
-                    category = editCategory,
-                    onCategoryChange = {
-                        editCategory = it
-                        if (PantryTaxonomy.isAromaticOrSeasoningCategory(it)) editIsAromatic = true
-                    },
-                    unit = editUnit,
-                    onUnitChange = { editUnit = it },
-                    storageLocation = editStorageLocation,
-                    onStorageLocationChange = { editStorageLocation = it },
-                    shelfLifeDays = editShelfLifeDays,
-                    onShelfLifeChange = { editShelfLifeDays = it },
-                    notes = editNotes,
-                    onNotesChange = { editNotes = it },
-                    isAromatic = editIsAromatic,
-                    onAromaticChange = { editIsAromatic = it },
-                    customUnitName = editCustomUnitName,
-                    onCustomUnitNameChange = { editCustomUnitName = it },
-                    thresholdText = editThresholdText,
-                    onThresholdTextChange = { editThresholdText = it },
-                    isOpened = editIsOpened,
-                    onOpenedChange = {
-                        editIsOpened = it
-                        if (it && editShelfLifeDays == 0) {
-                            editShelfLifeDays = PantryTaxonomy.openedShelfLifeDays(editCategory)
-                        }
-                    },
-                    barcode = editBarcode,
-                    onScanBarcodeClick = { showEmbeddedBarcodeScanner = true },
+                    ReviewEditorProps(
+                        name = editName,
+                        onNameChange = { editName = it },
+                        category = editCategory,
+                        onCategoryChange = {
+                            editCategory = it
+                            if (PantryTaxonomy.isAromaticOrSeasoningCategory(it)) editIsAromatic = true
+                        },
+                        unit = editUnit,
+                        onUnitChange = { editUnit = it },
+                        storageLocation = editStorageLocation,
+                        onStorageLocationChange = { editStorageLocation = it },
+                        shelfLifeDays = editShelfLifeDays,
+                        onShelfLifeChange = { editShelfLifeDays = it },
+                        notes = editNotes,
+                        onNotesChange = { editNotes = it },
+                        isAromatic = editIsAromatic,
+                        onAromaticChange = { editIsAromatic = it },
+                        customUnitName = editCustomUnitName,
+                        onCustomUnitNameChange = { editCustomUnitName = it },
+                        thresholdText = editThresholdText,
+                        onThresholdTextChange = { editThresholdText = it },
+                        isOpened = editIsOpened,
+                        onOpenedChange = {
+                            editIsOpened = it
+                            if (it && editShelfLifeDays == 0) {
+                                editShelfLifeDays = PantryTaxonomy.openedShelfLifeDays(editCategory)
+                            }
+                        },
+                        barcode = editBarcode,
+                        onScanBarcodeClick = { showEmbeddedBarcodeScanner = true },
+                    ),
                 )
             }
         }
@@ -353,31 +355,33 @@ fun BatchReviewBottomSheet(
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     ReviewEditorFields(
-                        name = editName,
-                        onNameChange = { editName = it },
-                        category = editCategory,
-                        onCategoryChange = {
-                            editCategory = it
-                            if (PantryTaxonomy.isAromaticOrSeasoningCategory(it)) editIsAromatic = true
-                        },
-                        unit = editUnit,
-                        onUnitChange = { editUnit = it },
-                        storageLocation = editStorageLocation,
-                        onStorageLocationChange = { editStorageLocation = it },
-                        shelfLifeDays = editShelfLifeDays,
-                        onShelfLifeChange = { editShelfLifeDays = it },
-                        notes = editNotes,
-                        onNotesChange = { editNotes = it },
-                        isAromatic = editIsAromatic,
-                        onAromaticChange = { editIsAromatic = it },
-                        customUnitName = editCustomUnitName,
-                        onCustomUnitNameChange = { editCustomUnitName = it },
-                        thresholdText = editThresholdText,
-                        onThresholdTextChange = { editThresholdText = it },
-                        isOpened = editIsOpened,
-                        onOpenedChange = { editIsOpened = it },
-                        barcode = editBarcode,
-                        onScanBarcodeClick = { showEmbeddedBarcodeScanner = true },
+                        ReviewEditorProps(
+                            name = editName,
+                            onNameChange = { editName = it },
+                            category = editCategory,
+                            onCategoryChange = {
+                                editCategory = it
+                                if (PantryTaxonomy.isAromaticOrSeasoningCategory(it)) editIsAromatic = true
+                            },
+                            unit = editUnit,
+                            onUnitChange = { editUnit = it },
+                            storageLocation = editStorageLocation,
+                            onStorageLocationChange = { editStorageLocation = it },
+                            shelfLifeDays = editShelfLifeDays,
+                            onShelfLifeChange = { editShelfLifeDays = it },
+                            notes = editNotes,
+                            onNotesChange = { editNotes = it },
+                            isAromatic = editIsAromatic,
+                            onAromaticChange = { editIsAromatic = it },
+                            customUnitName = editCustomUnitName,
+                            onCustomUnitNameChange = { editCustomUnitName = it },
+                            thresholdText = editThresholdText,
+                            onThresholdTextChange = { editThresholdText = it },
+                            isOpened = editIsOpened,
+                            onOpenedChange = { editIsOpened = it },
+                            barcode = editBarcode,
+                            onScanBarcodeClick = { showEmbeddedBarcodeScanner = true },
+                        ),
                     )
                 }
             },
@@ -405,31 +409,55 @@ fun BatchReviewBottomSheet(
 
 private fun Int.toShelfLifeLabel() = if (this == 0) "None" else "$this days"
 
+private data class ReviewEditorProps(
+    val name: String,
+    val onNameChange: (String) -> Unit,
+    val category: String,
+    val onCategoryChange: (String) -> Unit,
+    val unit: String,
+    val onUnitChange: (String) -> Unit,
+    val storageLocation: String,
+    val onStorageLocationChange: (String) -> Unit,
+    val shelfLifeDays: Int,
+    val onShelfLifeChange: (Int) -> Unit,
+    val notes: String,
+    val onNotesChange: (String) -> Unit,
+    val isAromatic: Boolean,
+    val onAromaticChange: (Boolean) -> Unit,
+    val customUnitName: String = "",
+    val onCustomUnitNameChange: (String) -> Unit = {},
+    val thresholdText: String = "0",
+    val onThresholdTextChange: (String) -> Unit = {},
+    val isOpened: Boolean = false,
+    val onOpenedChange: (Boolean) -> Unit = {},
+    val barcode: String? = null,
+    val onScanBarcodeClick: () -> Unit = {},
+)
+
 @Composable
-private fun ReviewEditorFields(
-    name: String,
-    onNameChange: (String) -> Unit,
-    category: String,
-    onCategoryChange: (String) -> Unit,
-    unit: String,
-    onUnitChange: (String) -> Unit,
-    storageLocation: String,
-    onStorageLocationChange: (String) -> Unit,
-    shelfLifeDays: Int,
-    onShelfLifeChange: (Int) -> Unit,
-    notes: String,
-    onNotesChange: (String) -> Unit,
-    isAromatic: Boolean,
-    onAromaticChange: (Boolean) -> Unit,
-    customUnitName: String = "",
-    onCustomUnitNameChange: (String) -> Unit = {},
-    thresholdText: String = "0",
-    onThresholdTextChange: (String) -> Unit = {},
-    isOpened: Boolean = false,
-    onOpenedChange: (Boolean) -> Unit = {},
-    barcode: String? = null,
-    onScanBarcodeClick: () -> Unit = {},
-) {
+private fun ReviewEditorFields(props: ReviewEditorProps) {
+    val name = props.name
+    val onNameChange = props.onNameChange
+    val category = props.category
+    val onCategoryChange = props.onCategoryChange
+    val unit = props.unit
+    val onUnitChange = props.onUnitChange
+    val storageLocation = props.storageLocation
+    val onStorageLocationChange = props.onStorageLocationChange
+    val shelfLifeDays = props.shelfLifeDays
+    val onShelfLifeChange = props.onShelfLifeChange
+    val notes = props.notes
+    val onNotesChange = props.onNotesChange
+    val isAromatic = props.isAromatic
+    val onAromaticChange = props.onAromaticChange
+    val customUnitName = props.customUnitName
+    val onCustomUnitNameChange = props.onCustomUnitNameChange
+    val thresholdText = props.thresholdText
+    val onThresholdTextChange = props.onThresholdTextChange
+    val isOpened = props.isOpened
+    val onOpenedChange = props.onOpenedChange
+    val barcode = props.barcode
+    val onScanBarcodeClick = props.onScanBarcodeClick
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
             value = name,
