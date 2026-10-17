@@ -22,16 +22,13 @@ class ModelRouter(
         prompt: String,
     ): String {
         val provider = ByokPreferences.selectedProvider(context)
-        if (provider == AiProvider.OFFLINE_MLKIT) {
-            return localFallbackModel.analyze(webpBytes, prompt)
-        }
-        if (provider.requiresApiKey && !ByokPreferences.hasApiKey(context)) {
-            return localFallbackModel.analyze(webpBytes, prompt)
-        }
-        return runCatching {
-            cloudModel.analyze(webpBytes, prompt)
-        }.getOrElse {
+        val useFallback = provider == AiProvider.OFFLINE_MLKIT ||
+            (provider.requiresApiKey && !ByokPreferences.hasApiKey(context))
+        return if (useFallback) {
             localFallbackModel.analyze(webpBytes, prompt)
+        } else {
+            runCatching { cloudModel.analyze(webpBytes, prompt) }
+                .getOrElse { localFallbackModel.analyze(webpBytes, prompt) }
         }
     }
 
@@ -159,7 +156,7 @@ class ByokCloudVisionModel(
         val payload =
             JSONObject().apply {
                 put("model", model)
-                put("max_tokens", 1024)
+                put("max_tokens", ANTHROPIC_MAX_TOKENS)
                 put(
                     "messages",
                     JSONArray().put(
@@ -223,8 +220,8 @@ class ByokCloudVisionModel(
     ): String {
         val connection = URL(url).openConnection() as HttpURLConnection
         return try {
-            connection.connectTimeout = 15_000
-            connection.readTimeout = 45_000
+            connection.connectTimeout = CONNECT_TIMEOUT_MILLIS
+            connection.readTimeout = READ_TIMEOUT_MILLIS
             connection.requestMethod = "POST"
             connection.doOutput = true
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
@@ -232,8 +229,8 @@ class ByokCloudVisionModel(
             connection.outputStream.use { output ->
                 output.write(body.toByteArray(Charsets.UTF_8))
             }
-            if (connection.responseCode !in 200..299) {
-                throw IllegalStateException("Vision API error: HTTP ${connection.responseCode}")
+            check(connection.responseCode in HTTP_SUCCESS_RANGE) {
+                "Vision API error: HTTP ${connection.responseCode}"
             }
             connection.inputStream.use { input ->
                 input.reader(Charsets.UTF_8).readText()
@@ -241,5 +238,12 @@ class ByokCloudVisionModel(
         } finally {
             connection.disconnect()
         }
+    }
+
+    private companion object {
+        const val ANTHROPIC_MAX_TOKENS = 1024
+        const val CONNECT_TIMEOUT_MILLIS = 15_000
+        const val READ_TIMEOUT_MILLIS = 45_000
+        val HTTP_SUCCESS_RANGE = 200..299
     }
 }

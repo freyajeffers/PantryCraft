@@ -40,56 +40,63 @@ class VisionOutputParser {
     }
 
     private fun parseItem(item: JSONObject?): ParsedVisionItem? {
-        if (item == null) return null
-        val name = item.optString("name").trim()
-        if (name.isEmpty()) return null
-
-        val box = parseBoundingBox(item)
-
-        return ParsedVisionItem(
-            name = name,
-            category = item.optString("category", "OTHER").uppercase(),
-            storageLocation = item.optString("storage_location", "PANTRY").uppercase(),
-            quantity = item.optDouble("quantity", 1.0).toFloat().coerceAtLeast(0f),
-            unit = item.optString("unit", "COUNT").uppercase(),
-            confidence = item.optDouble("confidence", 0.0).toFloat().coerceIn(0f, 1f),
-            estimatedShelfLifeDays = item.optInt("estimated_shelf_life_days", 0).coerceAtLeast(0),
-            isAromaticOrSeasoning = item.optBoolean("is_aromatic_or_seasoning", false),
-            boundingBox = box,
-            conditionNotes = item.optString("condition_notes").takeIf { it.isNotBlank() },
-            customUnitName = item.optString("custom_unit_name").takeIf { it.isNotBlank() },
-            barcode = item.optString("barcode").takeIf { it.isNotBlank() },
-            threshold = item.optDouble("threshold", 0.0).toFloat().coerceAtLeast(0f),
-            isOpened = item.optBoolean("is_opened", false),
-        )
+        return item?.let { json ->
+            val name = json.optString("name").trim()
+            name.takeIf(String::isNotEmpty)?.let {
+                ParsedVisionItem(
+                    name = it,
+                    category = json.optString("category", DEFAULT_CATEGORY).uppercase(),
+                    storageLocation = json.optString("storage_location", DEFAULT_STORAGE).uppercase(),
+                    quantity = json.optDouble("quantity", DEFAULT_QUANTITY)
+                        .toFloat().coerceAtLeast(MIN_QUANTITY_FLOAT),
+                    unit = json.optString("unit", DEFAULT_UNIT).uppercase(),
+                    confidence = json.optDouble("confidence", MIN_CONFIDENCE_DOUBLE)
+                        .toFloat().coerceIn(MIN_CONFIDENCE_FLOAT, MAX_CONFIDENCE_FLOAT),
+                    estimatedShelfLifeDays = json.optInt("estimated_shelf_life_days", MIN_DAYS)
+                        .coerceAtLeast(MIN_DAYS),
+                    isAromaticOrSeasoning = json.optBoolean("is_aromatic_or_seasoning", false),
+                    boundingBox = parseBoundingBox(json),
+                    conditionNotes = json.optString("condition_notes").takeIf(String::isNotBlank),
+                    customUnitName = json.optString("custom_unit_name").takeIf(String::isNotBlank),
+                    barcode = json.optString("barcode").takeIf(String::isNotBlank),
+                    threshold = json.optDouble("threshold", MIN_THRESHOLD_DOUBLE)
+                        .toFloat().coerceAtLeast(MIN_THRESHOLD_FLOAT),
+                    isOpened = json.optBoolean("is_opened", false),
+                )
+            }
+        }
     }
 
     private fun parseBoundingBox(item: JSONObject): NormalizedBox {
         val arrayBox = item.optJSONArray("bounding_box")
-        if (arrayBox != null && arrayBox.length() == 4) {
-            val values = (0 until 4).map { arrayBox.optDouble(it, Double.NaN).toFloat() }
-            if (values.all { it.isFinite() }) {
-                return NormalizedBox(
+        val arrayResult = arrayBox
+            ?.takeIf { it.length() == BOX_VALUE_COUNT }
+            ?.let { jsonArray ->
+                (0 until BOX_VALUE_COUNT).map { index ->
+                    jsonArray.optDouble(index, Double.NaN).toFloat()
+                }
+            }?.takeIf { values -> values.all(Float::isFinite) }
+            ?.let { values ->
+                NormalizedBox(
                     ymin = values[0].coerceIn(0f, 1f),
                     xmin = values[1].coerceIn(0f, 1f),
                     ymax = values[2].coerceIn(0f, 1f),
                     xmax = values[3].coerceIn(0f, 1f),
                 )
             }
-        }
 
         val objectBox = item.optJSONObject("bounding_box")
-        if (objectBox != null) {
+        val objectResult = objectBox?.let { box ->
             val ymin =
-                objectBox.optDouble("y_min", objectBox.optDouble("ymin", 0.0)).toFloat()
+                box.optDouble("y_min", box.optDouble("ymin", MIN_BOUND)).toFloat()
             val xmin =
-                objectBox.optDouble("x_min", objectBox.optDouble("xmin", 0.0)).toFloat()
+                box.optDouble("x_min", box.optDouble("xmin", MIN_BOUND)).toFloat()
             val ymax =
-                objectBox.optDouble("y_max", objectBox.optDouble("ymax", 1.0)).toFloat()
+                box.optDouble("y_max", box.optDouble("ymax", MAX_BOUND)).toFloat()
             val xmax =
-                objectBox.optDouble("x_max", objectBox.optDouble("xmax", 1.0)).toFloat()
-            if (listOf(ymin, xmin, ymax, xmax).all { it.isFinite() }) {
-                return NormalizedBox(
+                box.optDouble("x_max", box.optDouble("xmax", MAX_BOUND)).toFloat()
+            listOf(ymin, xmin, ymax, xmax).takeIf { values -> values.all(Float::isFinite) }?.let {
+                NormalizedBox(
                     ymin = ymin.coerceIn(0f, 1f),
                     xmin = xmin.coerceIn(0f, 1f),
                     ymax = ymax.coerceIn(0f, 1f),
@@ -98,7 +105,12 @@ class VisionOutputParser {
             }
         }
 
-        return NormalizedBox(0f, 0f, 1f, 1f)
+        return arrayResult ?: objectResult ?: NormalizedBox(
+            MIN_BOUND_FLOAT,
+            MIN_BOUND_FLOAT,
+            MAX_BOUND_FLOAT,
+            MAX_BOUND_FLOAT,
+        )
     }
 
     private fun sanitize(raw: String): String {
@@ -138,5 +150,24 @@ class VisionOutputParser {
             repeat(brackets.coerceAtLeast(0)) { append(']') }
             repeat(braces.coerceAtLeast(0)) { append('}') }
         }
+    }
+
+    private companion object {
+        const val BOX_VALUE_COUNT = 4
+        const val DEFAULT_CATEGORY = "OTHER"
+        const val DEFAULT_STORAGE = "PANTRY"
+        const val DEFAULT_UNIT = "COUNT"
+        const val DEFAULT_QUANTITY = 1.0
+        const val MIN_QUANTITY_FLOAT = 0f
+        const val MIN_CONFIDENCE_DOUBLE = 0.0
+        const val MIN_CONFIDENCE_FLOAT = 0f
+        const val MAX_CONFIDENCE_FLOAT = 1f
+        const val MIN_DAYS = 0
+        const val MIN_THRESHOLD_DOUBLE = 0.0
+        const val MIN_THRESHOLD_FLOAT = 0f
+        const val MIN_BOUND = 0.0
+        const val MAX_BOUND = 1.0
+        const val MIN_BOUND_FLOAT = 0f
+        const val MAX_BOUND_FLOAT = 1f
     }
 }

@@ -13,6 +13,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.IOException
 import java.util.Arrays
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -83,7 +84,7 @@ class SnapshotCaptureService(
         val scaled = scale(oriented)
         return try {
             ByteArrayOutputStream().use { output ->
-                check(scaled.compress(Bitmap.CompressFormat.WEBP, 85, output)) {
+                check(scaled.compress(Bitmap.CompressFormat.WEBP, WEBP_QUALITY, output)) {
                     "Could not encode snapshot"
                 }
                 output.toByteArray()
@@ -108,15 +109,17 @@ class SnapshotCaptureService(
                 )
             val matrix = Matrix()
             when (orientation) {
-                ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
-                ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
-                ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
-                ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
-                ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+                ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(ROTATION_90_DEGREES)
+                ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(ROTATION_180_DEGREES)
+                ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(ROTATION_270_DEGREES)
+                ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(NEGATIVE_SCALE, SCALE)
+                ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(SCALE, NEGATIVE_SCALE)
                 else -> return source
             }
             Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
-        } catch (_: Exception) {
+        } catch (_: IOException) {
+            source
+        } catch (_: IllegalArgumentException) {
             source
         }
     }
@@ -145,5 +148,11 @@ class SnapshotCaptureService(
     companion object {
         private const val MAX_DIMENSION = 1536
         private const val MAX_DECODE_DIMENSION = 2048
+        private const val WEBP_QUALITY = 85
+        private const val ROTATION_90_DEGREES = 90f
+        private const val ROTATION_180_DEGREES = 180f
+        private const val ROTATION_270_DEGREES = 270f
+        private const val SCALE = 1f
+        private const val NEGATIVE_SCALE = -1f
     }
 }

@@ -71,8 +71,9 @@ class LiveVisionAnalyzer(
 
                 // ML Kit detects objects in the rotated upright input image coordinate space.
                 // When rotation is 90 or 270 degrees, effective width/height are transposed.
-                val effectiveWidth = if (rotation % 180 != 0) imageProxy.height else imageProxy.width
-                val effectiveHeight = if (rotation % 180 != 0) imageProxy.width else imageProxy.height
+                val isTransposed = rotation % RIGHT_ANGLE_DEGREES != NO_REMAINDER
+                val effectiveWidth = if (isTransposed) imageProxy.height else imageProxy.width
+                val effectiveHeight = if (isTransposed) imageProxy.width else imageProxy.height
 
                 val boxes =
                     objectTask.result
@@ -125,6 +126,8 @@ class LiveVisionAnalyzer(
 
     companion object {
         private const val FRAME_INTERVAL_MS = 66L // ~15 FPS throttle
+        private const val RIGHT_ANGLE_DEGREES = 180
+        private const val NO_REMAINDER = 0
         const val CONFIDENCE_THRESHOLD = 0.70f
     }
 }
