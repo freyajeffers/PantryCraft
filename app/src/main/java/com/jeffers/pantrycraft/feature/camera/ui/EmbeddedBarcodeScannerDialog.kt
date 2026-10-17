@@ -63,98 +63,6 @@ internal fun triggerBarcodeHapticTick(
 }
 
 @Composable
-private fun BarcodeScannerContent(
-    context: Context,
-    view: View,
-    lifecycleOwner: androidx.lifecycle.LifecycleOwner,
-    onBarcodeResolved: (String, BarcodeMatch?) -> Unit,
-) {
-    val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
-    val scope = rememberCoroutineScope()
-    val repository = remember { Repository.getInstance(context) }
-    val barcodeResolver = remember { repository.offlineBarcodeResolver() }
-    var hasResolved by remember { mutableStateOf(false) }
-    val previewView = remember(context) {
-        PreviewView(context).apply {
-            implementationMode = PreviewView.ImplementationMode.PERFORMANCE
-        }
-    }
-    val analyzer = remember {
-        createBarcodeAnalyzer(
-            executor = analysisExecutor,
-            barcodeResolver = barcodeResolver,
-            scope = scope,
-            context = context,
-            view = view,
-            onBarcodeResolved = onBarcodeResolved,
-            isResolved = { hasResolved },
-            markResolved = { hasResolved = true },
-        )
-    }
-    val cameraManager = remember { CameraManager(context, analyzer, analysisExecutor) }
-    DisposableEffect(cameraManager, lifecycleOwner) {
-        cameraManager.bind(lifecycleOwner, previewView)
-        onDispose {
-            cameraManager.unbind()
-            analyzer.close()
-            barcodeResolver.close()
-            analysisExecutor.shutdown()
-        }
-    }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            "Point the camera at a UPC or EAN barcode to auto-fill item details.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Box(modifier = Modifier.fillMaxWidth().height(220.dp).padding(top = 4.dp)) {
-            AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
-        }
-    }
-}
-
-private fun createBarcodeAnalyzer(
-    executor: java.util.concurrent.Executor,
-    barcodeResolver: com.jeffers.pantrycraft.feature.camera.barcode.OfflineBarcodeResolver,
-    scope: kotlinx.coroutines.CoroutineScope,
-    context: Context,
-    view: View,
-    onBarcodeResolved: (String, BarcodeMatch?) -> Unit,
-    isResolved: () -> Boolean,
-    markResolved: () -> Unit,
-): LiveVisionAnalyzer {
-    val barcodeOptions = BarcodeScannerOptions
-        .Builder()
-        .setBarcodeFormats(
-            Barcode.FORMAT_UPC_A,
-            Barcode.FORMAT_UPC_E,
-            Barcode.FORMAT_EAN_8,
-            Barcode.FORMAT_EAN_13,
-            Barcode.FORMAT_QR_CODE,
-        ).build()
-    val objectOptions = ObjectDetectorOptions
-        .Builder()
-        .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-        .build()
-    return LiveVisionAnalyzer(
-        barcodeScanner = BarcodeScanning.getClient(barcodeOptions),
-        objectDetector = ObjectDetection.getClient(objectOptions),
-        executor = executor,
-        onResult = { result ->
-            val rawCode = result.barcodes.firstOrNull()
-            if (!isResolved() && rawCode != null) {
-                markResolved()
-                scope.launch {
-                    val match = runCatching { barcodeResolver.resolveBarcode(rawCode) }.getOrNull()
-                    triggerBarcodeHapticTick(context, view)
-                    onBarcodeResolved(rawCode, match)
-                }
-            }
-        },
-    )
-}
-
-@Composable
 fun EmbeddedBarcodeScannerDialog(
     onDismiss: () -> Unit,
     onBarcodeResolved: (barcode: String, match: BarcodeMatch?) -> Unit,
@@ -188,12 +96,82 @@ fun EmbeddedBarcodeScannerDialog(
                     }
                 }
             } else {
-                BarcodeScannerContent(
-                    context = context,
-                    view = view,
-                    lifecycleOwner = lifecycleOwner,
-                    onBarcodeResolved = onBarcodeResolved,
-                )
+                val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
+                val scope = rememberCoroutineScope()
+                val repository = remember { Repository.getInstance(context) }
+                val barcodeResolver = remember { repository.offlineBarcodeResolver() }
+                var hasResolved by remember { mutableStateOf(false) }
+                val previewView =
+                    remember(context) {
+                        PreviewView(context).apply {
+                            implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+                        }
+                    }
+                val analyzer =
+                    remember {
+                        val barcodeOptions =
+                            BarcodeScannerOptions
+                                .Builder()
+                                .setBarcodeFormats(
+                                    Barcode.FORMAT_UPC_A,
+                                    Barcode.FORMAT_UPC_E,
+                                    Barcode.FORMAT_EAN_8,
+                                    Barcode.FORMAT_EAN_13,
+                                    Barcode.FORMAT_QR_CODE,
+                                ).build()
+                        val objectOptions =
+                            ObjectDetectorOptions
+                                .Builder()
+                                .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
+                                .build()
+                        LiveVisionAnalyzer(
+                            barcodeScanner = BarcodeScanning.getClient(barcodeOptions),
+                            objectDetector = ObjectDetection.getClient(objectOptions),
+                            executor = analysisExecutor,
+                            onResult = { result ->
+                                val rawCode = result.barcodes.firstOrNull()
+                                if (!hasResolved && rawCode != null) {
+                                    hasResolved = true
+                                    scope.launch {
+                                        val match = runCatching { barcodeResolver.resolveBarcode(rawCode) }.getOrNull()
+                                        triggerBarcodeHapticTick(context, view)
+                                        onBarcodeResolved(rawCode, match)
+                                    }
+                                }
+                            },
+                        )
+                    }
+                val cameraManager = remember { CameraManager(context, analyzer, analysisExecutor) }
+
+                DisposableEffect(cameraManager, lifecycleOwner) {
+                    cameraManager.bind(lifecycleOwner, previewView)
+                    onDispose {
+                        cameraManager.unbind()
+                        analyzer.close()
+                        barcodeResolver.close()
+                        analysisExecutor.shutdown()
+                    }
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Point the camera at a UPC or EAN barcode to auto-fill item details.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(220.dp)
+                                .padding(top = 4.dp),
+                    ) {
+                        AndroidView(
+                            factory = { previewView },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                }
             }
         },
         confirmButton = {},

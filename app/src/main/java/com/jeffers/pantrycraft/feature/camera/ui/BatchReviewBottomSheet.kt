@@ -299,7 +299,6 @@ fun BatchReviewBottomSheet(
                 modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
             ) {
                 ReviewEditorFields(
-                    state = ReviewEditorState(
                     name = editName,
                     onNameChange = { editName = it },
                     category = editCategory,
@@ -330,7 +329,6 @@ fun BatchReviewBottomSheet(
                     },
                     barcode = editBarcode,
                     onScanBarcodeClick = { showEmbeddedBarcodeScanner = true },
-                    ),
                 )
             }
         }
@@ -355,7 +353,6 @@ fun BatchReviewBottomSheet(
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     ReviewEditorFields(
-                    state = ReviewEditorState(
                         name = editName,
                         onNameChange = { editName = it },
                         category = editCategory,
@@ -381,8 +378,7 @@ fun BatchReviewBottomSheet(
                         onOpenedChange = { editIsOpened = it },
                         barcode = editBarcode,
                         onScanBarcodeClick = { showEmbeddedBarcodeScanner = true },
-                        ),
-                )
+                    )
                 }
             },
             confirmButton = {
@@ -409,136 +405,124 @@ fun BatchReviewBottomSheet(
 
 private fun Int.toShelfLifeLabel() = if (this == 0) "None" else "$this days"
 
-
-private data class ReviewEditorState(
-    val name: String,
-    val onNameChange: (String) -> Unit,
-    val category: String,
-    val onCategoryChange: (String) -> Unit,
-    val unit: String,
-    val onUnitChange: (String) -> Unit,
-    val storageLocation: String,
-    val onStorageLocationChange: (String) -> Unit,
-    val shelfLifeDays: Int,
-    val onShelfLifeChange: (Int) -> Unit,
-    val notes: String,
-    val onNotesChange: (String) -> Unit,
-    val isAromatic: Boolean,
-    val onAromaticChange: (Boolean) -> Unit,
-    val customUnitName: String = "",
-    val onCustomUnitNameChange: (String) -> Unit = {},
-    val thresholdText: String = "0",
-    val onThresholdTextChange: (String) -> Unit = {},
-    val isOpened: Boolean = false,
-    val onOpenedChange: (Boolean) -> Unit = {},
-    val barcode: String? = null,
-    val onScanBarcodeClick: () -> Unit = {},
-)
-
 @Composable
-private fun ReviewEditorFields(state: ReviewEditorState) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        NameField(name = state.name, onNameChange = state.onNameChange, onScan = state.onScanBarcodeClick)
-        BarcodeRow(barcode = state.barcode)
-        CategoryAndUnitRow(
-            category = state.category,
-            onCategoryChange = state.onCategoryChange,
-            unit = state.unit,
-            onUnitChange = state.onUnitChange,
-            customUnitName = state.customUnitName,
-            onCustomUnitNameChange = state.onCustomUnitNameChange,
-        )
-        StorageAndShelfLife(
-            storageLocation = state.storageLocation,
-            onStorageLocationChange = state.onStorageLocationChange,
-            shelfLifeDays = state.shelfLifeDays,
-            onShelfLifeChange = state.onShelfLifeChange,
-            presets = PantryTaxonomy.shelfLifePresetDays,
-        )
-        ThresholdAndNotes(
-            thresholdText = state.thresholdText,
-            onThresholdTextChange = state.onThresholdTextChange,
-            notes = state.notes,
-            onNotesChange = state.onNotesChange,
-        )
-        ToggleRow(
-            isOpened = state.isOpened,
-            onOpenedChange = state.onOpenedChange,
-            isAromatic = state.isAromatic,
-            onAromaticChange = state.onAromaticChange,
-        )
-    }
-}
-
-@Composable
-private fun NameField(name: String, onNameChange: (String) -> Unit, onScan: () -> Unit) {
-    OutlinedTextField(
-        value = name,
-        onValueChange = onNameChange,
-        label = { Text("Name") },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-        trailingIcon = {
-            IconButton(onClick = onScan) {
-                Icon(imageVector = Icons.Filled.QrCodeScanner, contentDescription = "Scan barcode")
-            }
-        },
-    )
-}
-
-@Composable
-private fun BarcodeRow(barcode: String?) {
-    if (!barcode.isNullOrBlank()) {
-        Text("Barcode: $barcode", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-    }
-}
-
-@Composable
-private data class UnitSelection(
-    val category: String,
-    val unit: String,
-    val customUnitName: String,
-    val onCategoryChange: (String) -> Unit,
-    val onUnitChange: (String) -> Unit,
-    val onCustomUnitNameChange: (String) -> Unit,
-)
-
-@Composable
-private fun CategoryAndUnitRow(selection: UnitSelection) {
-    ReviewDropdown(label = "Category", value = selection.category, options = PantryTaxonomy.categories, onSelected = selection.onCategoryChange)
-    ReviewDropdown(label = "Unit", value = selection.unit, options = PantryTaxonomy.units, onSelected = selection.onUnitChange)
-    if (selection.unit == "CUSTOM") {
-        OutlinedTextField(value = selection.customUnitName, onValueChange = selection.onCustomUnitNameChange, label = { Text("Custom unit") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-    }
-}
-
-@Composable
-private fun StorageAndShelfLife(
+private fun ReviewEditorFields(
+    name: String,
+    onNameChange: (String) -> Unit,
+    category: String,
+    onCategoryChange: (String) -> Unit,
+    unit: String,
+    onUnitChange: (String) -> Unit,
     storageLocation: String,
     onStorageLocationChange: (String) -> Unit,
     shelfLifeDays: Int,
     onShelfLifeChange: (Int) -> Unit,
-    presets: List<Int>,
+    notes: String,
+    onNotesChange: (String) -> Unit,
+    isAromatic: Boolean,
+    onAromaticChange: (Boolean) -> Unit,
+    customUnitName: String = "",
+    onCustomUnitNameChange: (String) -> Unit = {},
+    thresholdText: String = "0",
+    onThresholdTextChange: (String) -> Unit = {},
+    isOpened: Boolean = false,
+    onOpenedChange: (Boolean) -> Unit = {},
+    barcode: String? = null,
+    onScanBarcodeClick: () -> Unit = {},
 ) {
-    ReviewDropdown(label = "Storage location", value = storageLocation, options = PantryTaxonomy.storageLocations, onSelected = onStorageLocationChange)
-    ReviewShelfLifeEditor(label = "Shelf life", value = shelfLifeDays, presets = presets, onValueChange = onShelfLifeChange)
-}
-
-@Composable
-private fun ThresholdAndNotes(thresholdText: String, onThresholdTextChange: (String) -> Unit, notes: String, onNotesChange: (String) -> Unit) {
-    OutlinedTextField(value = thresholdText, onValueChange = onThresholdTextChange, label = { Text("Low-stock alert threshold") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
-    OutlinedTextField(value = notes, onValueChange = onNotesChange, label = { Text("Notes / Condition") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-}
-
-@Composable
-private fun ToggleRow(isOpened: Boolean, onOpenedChange: (Boolean) -> Unit, isAromatic: Boolean, onAromaticChange: (Boolean) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Checkbox(checked = isOpened, onCheckedChange = onOpenedChange)
-        Text("Already opened (accelerates perishability)", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 8.dp))
-    }
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Checkbox(checked = isAromatic, onCheckedChange = onAromaticChange)
-        Text("Aromatic / Seasoning (spices, herbs, oils)", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 8.dp))
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = name,
+            onValueChange = onNameChange,
+            label = { Text("Name") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(onClick = onScanBarcodeClick) {
+                    Icon(
+                        imageVector = Icons.Filled.QrCodeScanner,
+                        contentDescription = "Scan barcode to fill item",
+                    )
+                }
+            },
+        )
+        if (!barcode.isNullOrBlank()) {
+            Text(
+                "Barcode: $barcode",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        ReviewDropdown(
+            label = "Category",
+            value = category,
+            options = PantryTaxonomy.categories,
+            onSelected = onCategoryChange,
+        )
+        ReviewDropdown(
+            label = "Unit",
+            value = unit,
+            options = PantryTaxonomy.units,
+            onSelected = onUnitChange,
+        )
+        if (unit == "CUSTOM") {
+            OutlinedTextField(
+                value = customUnitName,
+                onValueChange = onCustomUnitNameChange,
+                label = { Text("Custom unit (e.g. bunch, cloves, stalks)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        ReviewDropdown(
+            label = "Storage location",
+            value = storageLocation,
+            options = PantryTaxonomy.storageLocations,
+            onSelected = onStorageLocationChange,
+        )
+        ReviewShelfLifeEditor(
+            label = "Shelf life",
+            value = shelfLifeDays,
+            presets = PantryTaxonomy.shelfLifePresetDays,
+            onValueChange = onShelfLifeChange,
+        )
+        OutlinedTextField(
+            value = thresholdText,
+            onValueChange = onThresholdTextChange,
+            label = { Text("Low-stock alert threshold") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(
+            value = notes,
+            onValueChange = onNotesChange,
+            label = { Text("Notes / Condition") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = isOpened,
+                onCheckedChange = onOpenedChange,
+            )
+            Text(
+                "Already opened (accelerates perishability)",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = isAromatic,
+                onCheckedChange = onAromaticChange,
+            )
+            Text(
+                "Aromatic / Seasoning (spices, herbs, oils)",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
     }
 }
 

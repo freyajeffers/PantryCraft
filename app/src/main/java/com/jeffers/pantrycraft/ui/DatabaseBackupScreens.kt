@@ -55,9 +55,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-private const val BYTES_IN_KB = 1024L
-private const val BYTES_IN_MB = BYTES_IN_KB * 1024L
-
 private data class CatalogDialog(
     val title: String,
     val message: String,
@@ -66,23 +63,13 @@ private data class CatalogDialog(
 
 private fun formatFileSize(bytes: Long): String =
     when {
-        bytes < BYTES_IN_KB -> "$bytes B"
-        bytes < BYTES_IN_MB -> "%.1f KB".format(bytes / BYTES_IN_KB.toDouble())
-        else -> "%.1f MB".format(bytes / BYTES_IN_MB.toDouble())
+        bytes < 1024L -> "$bytes B"
+        bytes < 1024L * 1024L -> "%.1f KB".format(bytes / 1024.0)
+        else -> "%.1f MB".format(bytes / (1024.0 * 1024.0))
     }
 
 @Composable
 fun SettingsScreen(
-    context: android.content.Context,
-    repository: Repository,
-) {
-    // Thin wrapper: delegate the heavy lifting to SettingsContent to keep this top-level
-    // composable short for static analysis (Detekt LongMethod). Behavior preserved.
-    SettingsContent(context = context, repository = repository)
-}
-
-@Composable
-fun SettingsContent(
     context: android.content.Context,
     repository: Repository,
 ) {
@@ -334,17 +321,44 @@ fun SettingsContent(
     var catalogDialog by remember { mutableStateOf<CatalogDialog?>(null) }
     var confirmCatalogDelete by remember { mutableStateOf(false) }
     if (showBackupList) {
-        BackupListDialog(
-            backupRecords = backupRecords,
-            onCancel = { showBackupList = false },
-            onRestoreSelected = { record ->
-                showBackupList = false
-                pinDialogAction.value = { suppliedPin ->
-                    record.exportedUri?.let { restoreFromUri(Uri.parse(it), suppliedPin) }
-                        ?: restoreFromInternal(record.backupName, suppliedPin)
+        AlertDialog(
+            onDismissRequest = { showBackupList = false },
+            title = { Text("Choose a backup to restore") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (backupRecords.isEmpty()) {
+                        Text("No backups have been created yet.")
+                    } else {
+                        backupRecords.forEach { record ->
+                            TextButton(
+                                onClick = {
+                                    showBackupList = false
+                                    pinDialogAction.value = { suppliedPin ->
+                                        record.exportedUri?.let { restoreFromUri(Uri.parse(it), suppliedPin) }
+                                            ?: restoreFromInternal(record.backupName, suppliedPin)
+                                    }
+                                    pinText = ""
+                                    showPinDialog = true
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    Text(record.createdAtLabel)
+                                    Text(
+                                        record.exportedUri?.let {
+                                            "File: ${Uri.parse(it).lastPathSegment ?: it}"
+                                        } ?: "Location: app backup storage",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(record.backupName, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
                 }
-                pinText = ""
-                showPinDialog = true
+            },
+            confirmButton = {
+                TextButton(onClick = { showBackupList = false }) { Text("Cancel") }
             },
         )
     }
@@ -423,44 +437,121 @@ fun SettingsContent(
             "Manage offline barcode data and protect your pantry information.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        CatalogCard(
-            catalogReady = catalogReady,
-            catalogFileSize = catalogFileSize,
-            catalogDownloading = catalogDownloading,
-            catalogDownloadedBytes = catalogDownloadedBytes,
-            catalogTotalBytes = catalogTotalBytes,
-            onDownload = {
-                catalogDownloading = true
-                catalogDownloadedBytes = 0L
-                catalogTotalBytes = -1L
-                scope.launch {
-                    val result = withContext(Dispatchers.IO) {
-                        runCatching {
-                            repository.downloadOfflineCatalog { downloaded, total ->
-                                catalogDownloadedBytes = downloaded
-                                catalogTotalBytes = total
-                            }
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("FoodFacts barcode catalog", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "This optional catalog helps PantryCraft recognize packaged foods when you scan a barcode. " +
+                        "Download it once to make barcode lookups work offline. The catalog is saved only inside " +
+                        "the app and does not contain your pantry or grocery list.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    if (catalogReady) {
+                        "Ready for offline barcode scans · ${formatFileSize(catalogFileSize ?: 0L)}"
+                    } else {
+                        "Not downloaded"
+                    },
+                    color =
+                        if (catalogReady) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
+                if (catalogDownloading) {
+                    val progress =
+                        if (catalogTotalBytes > 0) {
+                            catalogDownloadedBytes.toFloat() / catalogTotalBytes
+                        } else {
+                            null
                         }
+                    if (progress == null) {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        )
+                    } else {
+                        LinearProgressIndicator(
+                            progress = { progress.coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        )
                     }
-                    catalogDownloading = false
-                    result.fold(
-                        onSuccess = { file ->
-                            catalogReady = true
-                            catalogFileSize = file.length()
-                            Toast.makeText(context, "Food catalog downloaded (${formatFileSize(file.length())})", Toast.LENGTH_SHORT).show()
+                    Text(
+                        if (catalogTotalBytes > 0) {
+                            "Downloading ${formatFileSize(catalogDownloadedBytes)} of ${formatFileSize(catalogTotalBytes)}"
+                        } else {
+                            "Downloading ${formatFileSize(catalogDownloadedBytes)}"
                         },
-                        onFailure = {
-                            catalogDialog = CatalogDialog(
-                                "Download failed",
-                                it.message ?: "The catalog could not be downloaded. Check your connection and try again.",
-                                true,
-                            )
-                        },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
-            },
-            onDelete = { confirmCatalogDelete = true },
-        )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (!catalogReady) {
+                        Button(
+                            enabled = !catalogDownloading,
+                            onClick = {
+                                catalogDownloading = true
+                                catalogDownloadedBytes = 0L
+                                catalogTotalBytes = -1L
+                                scope.launch {
+                                    val result =
+                                        withContext(Dispatchers.IO) {
+                                            runCatching {
+                                                repository.downloadOfflineCatalog { downloaded, total ->
+                                                    catalogDownloadedBytes = downloaded
+                                                    catalogTotalBytes = total
+                                                }
+                                            }
+                                        }
+                                    catalogDownloading = false
+                                    result.fold(
+                                        onSuccess = { file ->
+                                            catalogReady = true
+                                            catalogFileSize = file.length()
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Food catalog downloaded (${formatFileSize(file.length())})",
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
+                                        },
+                                        onFailure = {
+                                            catalogDialog =
+                                                CatalogDialog(
+                                                    "Download failed",
+                                                    it.message
+                                                        ?: "The catalog could not be downloaded. " +
+                                                        "Check your connection and try again.",
+                                                    true,
+                                                )
+                                        },
+                                    )
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) { Text("Download food catalog") }
+                    }
+                    if (catalogReady) {
+                        OutlinedButton(
+                            onClick = { confirmCatalogDelete = true },
+                            enabled = !catalogDownloading,
+                        ) { Text("Delete") }
+                    }
+                }
+            }
+        }
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Notifications & Alerts", style = MaterialTheme.typography.titleLarge)
@@ -564,43 +655,76 @@ fun SettingsContent(
                     )
                 }
                 if (automaticBackupsEnabled) {
-                    AutomaticBackupIntervalRow(
-                        selectedMinutes = automaticBackupIntervalMinutes,
-                        onSelect = { minutes ->
-                            automaticBackupIntervalMinutes = minutes
-                            AutomaticBackupPreferences.setSchedule(
-                                context,
-                                enabled = true,
-                                intervalMinutes = minutes,
-                            )
-                            AutomaticBackupScheduler.schedule(context, minutes)
-                        },
-                    )
+                    Text("Backup interval", modifier = Modifier.padding(top = 12.dp))
+                    Row(
+                        modifier =
+                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        listOf(
+                            60L to "1 hour",
+                            3 * 60L to "3 hours",
+                            6 * 60L to "6 hours",
+                            12 * 60L to "12 hours",
+                            24 * 60L to "Daily",
+                            7 * 24 * 60L to "Weekly",
+                            30 * 24 * 60L to "Monthly",
+                        ).forEach { interval ->
+                            val selected = automaticBackupIntervalMinutes == interval.first
+                            if (selected) {
+                                Button(onClick = {
+                                    automaticBackupIntervalMinutes = interval.first
+                                    AutomaticBackupPreferences.setSchedule(
+                                        context,
+                                        enabled = true,
+                                        intervalMinutes = interval.first,
+                                    )
+                                    AutomaticBackupScheduler.schedule(context, interval.first)
+                                }) { Text("✓ ${interval.second}") }
+                            } else {
+                                OutlinedButton(onClick = {
+                                    automaticBackupIntervalMinutes = interval.first
+                                    AutomaticBackupPreferences.setSchedule(
+                                        context,
+                                        enabled = true,
+                                        intervalMinutes = interval.first,
+                                    )
+                                    AutomaticBackupScheduler.schedule(context, interval.first)
+                                }) { Text(interval.second) }
+                            }
+                        }
+                    }
                 }
                 if (databaseHasUserData) {
-                    BackupCreateRow(
-                        onRequestPin = { action ->
-                            pinDialogAction.value = action
+                    Button(
+                        onClick = {
+                            // prompt for PIN then create backup
+                            pinDialogAction.value = { suppliedPin ->
+                                scope.launch {
+                                    backupResult =
+                                        withContext(Dispatchers.IO) {
+                                            runCatching {
+                                                DatabaseBackupManager.createEncryptedBackup(
+                                                    context,
+                                                    suppliedPin,
+                                                )
+                                            }.fold(
+                                                onSuccess = {
+                                                    backupRecords = DatabaseBackupManager.backupRecords(context)
+                                                    pendingBackupName = it
+                                                    createBackupLauncher.launch(it)
+                                                    "Backup created. Choose where to save the encrypted file."
+                                                },
+                                                onFailure = { "Backup failed: ${it.message}" },
+                                            )
+                                        }
+                                }
+                            }
                             pinText = ""
                             showPinDialog = true
                         },
-                        onCreate = { suppliedPin ->
-                            scope.launch {
-                                backupResult = withContext(Dispatchers.IO) {
-                                    runCatching { DatabaseBackupManager.createEncryptedBackup(context, suppliedPin) }
-                                        .fold(
-                                            onSuccess = {
-                                                backupRecords = DatabaseBackupManager.backupRecords(context)
-                                                pendingBackupName = it
-                                                createBackupLauncher.launch(it)
-                                                "Backup created. Choose where to save the encrypted file."
-                                            },
-                                            onFailure = { "Backup failed: ${it.message}" },
-                                        )
-                                }
-                            }
-                        },
-                    )
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Save encrypted backup file") }
                 }
                 Text(
                     if (lastExportedUri != null) {
