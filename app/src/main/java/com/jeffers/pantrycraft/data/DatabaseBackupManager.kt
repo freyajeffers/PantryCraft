@@ -43,6 +43,14 @@ object DatabaseBackupManager {
     private const val KEY_LEN_BITS = 256
     private const val GCM_TAG_LENGTH_BITS = 128
     private const val STREAM_BUFFER_BYTES = 16 * 1024
+
+    private data class EncryptedBackupPayload(
+        val passphrase: ByteArray?,
+        val secretKey: SecretKeySpec,
+        val salt: ByteArray,
+        val iv: ByteArray,
+    )
+
     private const val BYTE_MASK = 0xFF
     private const val BYTE_SHIFT = 8
     private const val PREFS_NAME = "backup_preferences"
@@ -232,7 +240,11 @@ object DatabaseBackupManager {
             // continue writing after the WAL checkpoint and during the snapshot.
             AppDatabase.closeDatabase()
 
-            writeEncryptedBackup(temp, dbFile, passphrase, secretKey, salt, iv)
+            writeEncryptedBackup(
+                temp,
+                dbFile,
+                EncryptedBackupPayload(passphrase, secretKey, salt, iv),
+            )
 
             if (!temp.renameTo(dest)) {
                 temp.delete()
@@ -257,27 +269,28 @@ object DatabaseBackupManager {
     private fun writeEncryptedBackup(
         temp: File,
         dbFile: File,
-        passphrase: ByteArray?,
-        secretKey: SecretKeySpec,
-        salt: ByteArray,
-        iv: ByteArray,
+        payload: EncryptedBackupPayload,
     ) {
         FileOutputStream(temp).use { fos ->
             // header
             fos.write(MAGIC.toByteArray(Charsets.UTF_8))
             fos.write(byteArrayOf(VERSION))
-            fos.write(salt)
-            fos.write(iv)
+            fos.write(payload.salt)
+            fos.write(payload.iv)
 
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey, GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
+            cipher.init(
+                Cipher.ENCRYPT_MODE,
+                payload.secretKey,
+                GCMParameterSpec(GCM_TAG_LENGTH_BITS, payload.iv),
+            )
 
             CipherOutputStream(fos, cipher).use { cos ->
                 // write passphrase length (2 bytes big-endian) then passphrase
-                val len = passphrase?.size ?: 0
+                val len = payload.passphrase?.size ?: 0
                 cos.write((len ushr BYTE_SHIFT) and BYTE_MASK)
                 cos.write(len and BYTE_MASK)
-                if (passphrase != null) cos.write(passphrase)
+                if (payload.passphrase != null) cos.write(payload.passphrase)
 
                 // stream DB into cipher
                 FileInputStream(dbFile).use { fis ->
