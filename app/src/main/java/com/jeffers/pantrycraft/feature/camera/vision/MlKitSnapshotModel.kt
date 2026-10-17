@@ -34,37 +34,7 @@ class MlKitSnapshotModel(
                         try {
                             val items = JSONArray()
                             objects.forEach { detected ->
-                                val rawLabel = detected.labels.firstOrNull()?.text ?: "Food item"
-                                val (itemName, category) = mapLabelToCategory(rawLabel)
-                                val box = detected.boundingBox
-                                items.put(
-                                    JSONObject()
-                                        .put("name", itemName)
-                                        .put("category", category)
-                                        .put("storage_location", defaultStorageForCategory(category))
-                                        .put("quantity", 1.0)
-                                        .put("unit", "COUNT")
-                                        .put(
-                                            "confidence",
-                                            detected.labels.firstOrNull()?.confidence ?: DEFAULT_CONFIDENCE,
-                                        )
-                                        .put(
-                                            "estimated_shelf_life_days",
-                                            defaultShelfLifeForCategory(category),
-                                        )
-                                        .put(
-                                            "is_aromatic_or_seasoning",
-                                            category == "SPICES" || category == "CONDIMENTS",
-                                        )
-                                        .put(
-                                            "bounding_box",
-                                            JSONArray()
-                                                .put((box.top.toFloat() / bitmap.height).coerceIn(0f, 1f))
-                                                .put((box.left.toFloat() / bitmap.width).coerceIn(0f, 1f))
-                                                .put((box.bottom.toFloat() / bitmap.height).coerceIn(0f, 1f))
-                                                .put((box.right.toFloat() / bitmap.width).coerceIn(0f, 1f)),
-                                        ),
-                                )
+                                items.put(makeDetectedItem(detected, bitmap))
                             }
                             if (continuation.isActive) {
                                 continuation.resume(
@@ -135,5 +105,27 @@ class MlKitSnapshotModel(
             listOf("frozen") to "FROZEN",
             listOf("grain", "cereal", "rice", "pasta") to "GRAINS",
         )
+
+        private fun makeDetectedItem(detected: com.google.mlkit.vision.objects.DetectedObject, bitmap: android.graphics.Bitmap): JSONObject {
+            val rawLabel = detected.labels.firstOrNull()?.text ?: DEFAULT_ITEM_NAME
+            val (itemName, category) = mapLabelToCategory(rawLabel)
+            val box = detected.boundingBox
+            val bounding = JSONArray()
+                .put((box.top.toFloat() / bitmap.height).coerceIn(0f, 1f))
+                .put((box.left.toFloat() / bitmap.width).coerceIn(0f, 1f))
+                .put((box.bottom.toFloat() / bitmap.height).coerceIn(0f, 1f))
+                .put((box.right.toFloat() / bitmap.width).coerceIn(0f, 1f))
+
+            return JSONObject()
+                .put("name", itemName)
+                .put("category", category)
+                .put("storage_location", defaultStorageForCategory(category))
+                .put("quantity", 1.0)
+                .put("unit", "COUNT")
+                .put("confidence", detected.labels.firstOrNull()?.confidence ?: DEFAULT_CONFIDENCE)
+                .put("estimated_shelf_life_days", defaultShelfLifeForCategory(category))
+                .put("is_aromatic_or_seasoning", category == "SPICES" || category == "CONDIMENTS")
+                .put("bounding_box", bounding)
+        }
     }
 }
