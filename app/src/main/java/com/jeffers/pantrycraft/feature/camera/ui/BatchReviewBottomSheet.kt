@@ -494,18 +494,21 @@ private fun BarcodeRow(barcode: String?) {
 }
 
 @Composable
-private fun CategoryAndUnitRow(
-    category: String,
-    onCategoryChange: (String) -> Unit,
-    unit: String,
-    onUnitChange: (String) -> Unit,
-    customUnitName: String,
-    onCustomUnitNameChange: (String) -> Unit,
-) {
-    ReviewDropdown(label = "Category", value = category, options = PantryTaxonomy.categories, onSelected = onCategoryChange)
-    ReviewDropdown(label = "Unit", value = unit, options = PantryTaxonomy.units, onSelected = onUnitChange)
-    if (unit == "CUSTOM") {
-        OutlinedTextField(value = customUnitName, onValueChange = onCustomUnitNameChange, label = { Text("Custom unit") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+private data class UnitSelection(
+    val category: String,
+    val unit: String,
+    val customUnitName: String,
+    val onCategoryChange: (String) -> Unit,
+    val onUnitChange: (String) -> Unit,
+    val onCustomUnitNameChange: (String) -> Unit,
+)
+
+@Composable
+private fun CategoryAndUnitRow(selection: UnitSelection) {
+    ReviewDropdown(label = "Category", value = selection.category, options = PantryTaxonomy.categories, onSelected = selection.onCategoryChange)
+    ReviewDropdown(label = "Unit", value = selection.unit, options = PantryTaxonomy.units, onSelected = selection.onUnitChange)
+    if (selection.unit == "CUSTOM") {
+        OutlinedTextField(value = selection.customUnitName, onValueChange = selection.onCustomUnitNameChange, label = { Text("Custom unit") }, singleLine = true, modifier = Modifier.fillMaxWidth())
     }
 }
 
