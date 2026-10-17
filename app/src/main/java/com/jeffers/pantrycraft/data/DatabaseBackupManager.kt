@@ -318,52 +318,9 @@ object DatabaseBackupManager {
         }
 
         FileInputStream(src).use { fis ->
-            val magicBytes = ByteArray(MAGIC.length)
-            if (fis.read(magicBytes) != magicBytes.size) throw IOException("Truncated backup")
-            if (!magicBytes.contentEquals(MAGIC.toByteArray(Charsets.UTF_8))) {
-                throw IOException("Invalid backup magic")
-            }
-            val version = fis.read()
-            if (version != VERSION.toInt()) throw IOException("Unsupported backup version: $version")
-            val salt = ByteArray(SALT_LEN)
-            if (fis.read(salt) != SALT_LEN) throw IOException("Truncated backup salt")
-            val iv = ByteArray(IV_LEN)
-            if (fis.read(iv) != IV_LEN) throw IOException("Truncated backup IV")
+            val (passphrase, temp) = decryptBackupToTemp(fis, pin, context)
 
-            var derived: ByteArray? = null
-            var passphrase: ByteArray? = null
-            val temp =
-                File.createTempFile("pantry_backup_", ".db.tmp", context.filesDir)
             try {
-                derived = deriveKeyBytes(pin, salt)
-                val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-                cipher.init(
-                    Cipher.DECRYPT_MODE,
-                    SecretKeySpec(derived, "AES"),
-                    GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv),
-                )
-                CipherInputStream(fis, cipher).use { cis ->
-                    val lengthHigh = cis.read()
-                    val lengthLow = cis.read()
-                    if (lengthHigh < 0 || lengthLow < 0) throw IOException("Truncated backup payload")
-                    val passphraseLength = (lengthHigh shl 8) or lengthLow
-                    passphrase = ByteArray(passphraseLength)
-                    var offset = 0
-                    while (offset < passphraseLength) {
-                        val read = cis.read(passphrase, offset, passphraseLength - offset)
-                        if (read < 0) throw IOException("Truncated backup passphrase")
-                        offset += read
-                    }
-                    FileOutputStream(temp).use { fos ->
-                        val buffer = ByteArray(STREAM_BUFFER_BYTES)
-                        var read: Int
-                        while (cis.read(buffer).also { read = it } > 0) {
-                            fos.write(buffer, 0, read)
-                        }
-                        fos.fd.sync()
-                    }
-                }
-
                 AppDatabase.closeDatabase()
                 Repository.resetInstance()
                 DatabaseKeyProvider.reset(context)
@@ -386,9 +343,62 @@ object DatabaseBackupManager {
                 throw IOException("Failed to restore backup: ${e.message}", e)
             } finally {
                 passphrase?.fill(0)
-                derived?.fill(0)
                 Arrays.fill(pin, '\u0000')
             }
+        }
+    }
+
+    private fun decryptBackupToTemp(
+        fis: FileInputStream,
+        pin: CharArray,
+        context: Context,
+    ): Pair<ByteArray?, File> {
+        val magicBytes = ByteArray(MAGIC.length)
+        if (fis.read(magicBytes) != magicBytes.size) throw IOException("Truncated backup")
+        if (!magicBytes.contentEquals(MAGIC.toByteArray(Charsets.UTF_8))) {
+            throw IOException("Invalid backup magic")
+        }
+        val version = fis.read()
+        if (version != VERSION.toInt()) throw IOException("Unsupported backup version: $version")
+        val salt = ByteArray(SALT_LEN)
+        if (fis.read(salt) != SALT_LEN) throw IOException("Truncated backup salt")
+        val iv = ByteArray(IV_LEN)
+        if (fis.read(iv) != IV_LEN) throw IOException("Truncated backup IV")
+
+        var derived: ByteArray? = null
+        var passphrase: ByteArray? = null
+        val temp = File.createTempFile("pantry_backup_", ".db.tmp", context.filesDir)
+
+        try {
+            derived = deriveKeyBytes(pin, salt)
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(derived, "AES"), GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
+
+            CipherInputStream(fis, cipher).use { cis ->
+                val lengthHigh = cis.read()
+                val lengthLow = cis.read()
+                if (lengthHigh < 0 || lengthLow < 0) throw IOException("Truncated backup payload")
+                val passphraseLength = (lengthHigh shl 8) or lengthLow
+                passphrase = ByteArray(passphraseLength)
+                var offset = 0
+                while (offset < passphraseLength) {
+                    val read = cis.read(passphrase, offset, passphraseLength - offset)
+                    if (read < 0) throw IOException("Truncated backup passphrase")
+                    offset += read
+                }
+                FileOutputStream(temp).use { fos ->
+                    val buffer = ByteArray(STREAM_BUFFER_BYTES)
+                    var read: Int
+                    while (cis.read(buffer).also { read = it } > 0) {
+                        fos.write(buffer, 0, read)
+                    }
+                    fos.fd.sync()
+                }
+            }
+
+            return Pair(passphrase, temp)
+        } finally {
+            derived?.fill(0)
         }
     }
 
