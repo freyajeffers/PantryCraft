@@ -208,9 +208,7 @@ object DatabaseBackupManager {
         pin: CharArray,
     ): String {
         val dbFile = context.getDatabasePath(DB_NAME)
-        if (!dbFile.exists()) {
-            throw IOException("Database file not found")
-        }
+        ensureDatabasePresent(dbFile)
 
         val dir = File(context.filesDir, BACKUP_DIR).apply { if (!exists()) mkdirs() }
         val stamp = System.currentTimeMillis()
@@ -233,48 +231,65 @@ object DatabaseBackupManager {
             // Close Room before copying the database file so no open connection can
             // continue writing after the WAL checkpoint and during the snapshot.
             AppDatabase.closeDatabase()
-            FileOutputStream(temp).use { fos ->
-                // header
-                fos.write(MAGIC.toByteArray(Charsets.UTF_8))
-                fos.write(byteArrayOf(VERSION))
-                fos.write(salt)
-                fos.write(iv)
 
-                val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-                cipher.init(Cipher.ENCRYPT_MODE, secretKey, GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
+            writeEncryptedBackup(temp, dbFile, passphrase, secretKey, salt, iv)
 
-                CipherOutputStream(fos, cipher).use { cos ->
-                    // write passphrase length (2 bytes big-endian) then passphrase
-                    val len = passphrase.size
-                    cos.write((len ushr BYTE_SHIFT) and BYTE_MASK)
-                    cos.write(len and BYTE_MASK)
-                    cos.write(passphrase)
-
-                    // stream DB into cipher
-                    FileInputStream(dbFile).use { fis ->
-                        val buffer = ByteArray(STREAM_BUFFER_BYTES)
-                        var read: Int
-                        while (fis.read(buffer).also { read = it } > 0) {
-                            cos.write(buffer, 0, read)
-                        }
-                    }
-                    cos.flush()
-                }
+            if (!temp.renameTo(dest)) {
+                temp.delete()
+                throw IOException("Unable to finalize encrypted backup")
             }
-            if (!temp.renameTo(dest)) throw IOException("Unable to finalize encrypted backup")
-        } catch (error: IOException) {
-            temp.delete()
-            throw error
         } finally {
             passphrase?.fill(0)
             derived?.fill(0)
             Arrays.fill(pin, '\u0000')
         }
-        recordCreatedBackup(
-            context,
-            dest.name,
-        )
+
+        recordCreatedBackup(context, dest.name)
         return dest.name
+    }
+
+    private fun ensureDatabasePresent(dbFile: File) {
+        if (!dbFile.exists()) {
+            throw IOException("Database file not found")
+        }
+    }
+
+    private fun writeEncryptedBackup(
+        temp: File,
+        dbFile: File,
+        passphrase: ByteArray?,
+        secretKey: SecretKeySpec,
+        salt: ByteArray,
+        iv: ByteArray,
+    ) {
+        FileOutputStream(temp).use { fos ->
+            // header
+            fos.write(MAGIC.toByteArray(Charsets.UTF_8))
+            fos.write(byteArrayOf(VERSION))
+            fos.write(salt)
+            fos.write(iv)
+
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
+
+            CipherOutputStream(fos, cipher).use { cos ->
+                // write passphrase length (2 bytes big-endian) then passphrase
+                val len = passphrase?.size ?: 0
+                cos.write((len ushr BYTE_SHIFT) and BYTE_MASK)
+                cos.write(len and BYTE_MASK)
+                if (passphrase != null) cos.write(passphrase)
+
+                // stream DB into cipher
+                FileInputStream(dbFile).use { fis ->
+                    val buffer = ByteArray(STREAM_BUFFER_BYTES)
+                    var read: Int
+                    while (fis.read(buffer).also { read = it } > 0) {
+                        cos.write(buffer, 0, read)
+                    }
+                }
+                cos.flush()
+            }
+        }
     }
 
     private fun saveBackupRecord(
