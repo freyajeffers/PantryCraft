@@ -22,8 +22,9 @@ class ModelRouter(
         prompt: String,
     ): String {
         val provider = ByokPreferences.selectedProvider(context)
-        val useFallback = provider == AiProvider.OFFLINE_MLKIT ||
-            (provider.requiresApiKey && !ByokPreferences.hasApiKey(context))
+        val useFallback =
+            provider == AiProvider.OFFLINE_MLKIT ||
+                (provider.requiresApiKey && !ByokPreferences.hasApiKey(context))
         return if (useFallback) {
             localFallbackModel.analyze(webpBytes, prompt)
         } else {

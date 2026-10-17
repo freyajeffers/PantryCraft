@@ -57,8 +57,7 @@ enum class AiProvider(
     ;
 
     companion object {
-        fun fromId(id: String?): AiProvider =
-            entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: OFFLINE_MLKIT
+        fun fromId(id: String?): AiProvider = entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: OFFLINE_MLKIT
     }
 }
 
@@ -124,8 +123,7 @@ object ByokPreferences {
                 .putString(
                     API_KEY_CIPHERTEXT,
                     Base64.encodeToString(cipher.doFinal(plaintext), Base64.NO_WRAP),
-                )
-                .putString(API_KEY_IV, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
+                ).putString(API_KEY_IV, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
                 .apply()
         } finally {
             plaintext.fill(0)
@@ -164,8 +162,7 @@ object ByokPreferences {
             .apply()
     }
 
-    private fun preferences(context: Context) =
-        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private fun preferences(context: Context) = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private fun getOrCreateKey(): SecretKey {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }

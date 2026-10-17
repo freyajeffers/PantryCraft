@@ -31,10 +31,9 @@ interface PantryQueryDao {
     @Query(
         "SELECT * FROM pantry_items WHERE isDeleted = 0 AND quantity > 0 " +
             "ORDER BY CASE WHEN expirationTimestamp IS NULL THEN 1 ELSE 0 END, " +
-                "expirationTimestamp ASC, name COLLATE NOCASE ASC",
+            "expirationTimestamp ASC, name COLLATE NOCASE ASC",
     )
     suspend fun getAvailableIngredients(): List<PantryItem>
-
 }
 
 @Dao
@@ -77,7 +76,9 @@ interface PantryMutationDao {
 }
 
 @Dao
-interface PantryDao : PantryQueryDao, PantryMutationDao
+interface PantryDao :
+    PantryQueryDao,
+    PantryMutationDao
 
 @Dao
 interface GroceryDao {

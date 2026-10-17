@@ -58,9 +58,11 @@ class MlKitSnapshotModel(
     companion object {
         private fun mapLabelToCategory(label: String): Pair<String, String> {
             val lower = label.lowercase()
-            val category = CATEGORY_RULES.firstOrNull { (keywords, _) ->
-                keywords.any(lower::contains)
-            }?.second ?: OTHER_CATEGORY
+            val category =
+                CATEGORY_RULES
+                    .firstOrNull { (keywords, _) ->
+                        keywords.any(lower::contains)
+                    }?.second ?: OTHER_CATEGORY
             val displayName = if (category == OTHER_CATEGORY && lower.contains("food")) DEFAULT_ITEM_NAME else label
             return displayName to category
         }
@@ -94,27 +96,32 @@ class MlKitSnapshotModel(
         private const val BAKERY_SHELF_LIFE_DAYS = 5
         private const val FROZEN_SHELF_LIFE_DAYS = 90
         private const val DEFAULT_SHELF_LIFE_DAYS = 30
-        private val CATEGORY_RULES = listOf(
-            listOf("fruit", "vegetable", "produce", "plant") to "PRODUCE",
-            listOf("dairy", "milk", "cheese", "yogurt") to "DAIRY",
-            listOf("meat", "beef", "chicken", "pork", "fish", "seafood") to "MEAT",
-            listOf("bread", "bakery", "pastry") to "BAKERY",
-            listOf("beverage", "drink", "juice", "bottle") to "BEVERAGES",
-            listOf("snack", "chip", "cookie") to "SNACKS",
-            listOf("canned", "can") to "CANNED",
-            listOf("frozen") to "FROZEN",
-            listOf("grain", "cereal", "rice", "pasta") to "GRAINS",
-        )
+        private val CATEGORY_RULES =
+            listOf(
+                listOf("fruit", "vegetable", "produce", "plant") to "PRODUCE",
+                listOf("dairy", "milk", "cheese", "yogurt") to "DAIRY",
+                listOf("meat", "beef", "chicken", "pork", "fish", "seafood") to "MEAT",
+                listOf("bread", "bakery", "pastry") to "BAKERY",
+                listOf("beverage", "drink", "juice", "bottle") to "BEVERAGES",
+                listOf("snack", "chip", "cookie") to "SNACKS",
+                listOf("canned", "can") to "CANNED",
+                listOf("frozen") to "FROZEN",
+                listOf("grain", "cereal", "rice", "pasta") to "GRAINS",
+            )
 
-        private fun makeDetectedItem(detected: com.google.mlkit.vision.objects.DetectedObject, bitmap: android.graphics.Bitmap): JSONObject {
+        private fun makeDetectedItem(
+            detected: com.google.mlkit.vision.objects.DetectedObject,
+            bitmap: android.graphics.Bitmap,
+        ): JSONObject {
             val rawLabel = detected.labels.firstOrNull()?.text ?: DEFAULT_ITEM_NAME
             val (itemName, category) = mapLabelToCategory(rawLabel)
             val box = detected.boundingBox
-            val bounding = JSONArray()
-                .put((box.top.toFloat() / bitmap.height).coerceIn(0f, 1f))
-                .put((box.left.toFloat() / bitmap.width).coerceIn(0f, 1f))
-                .put((box.bottom.toFloat() / bitmap.height).coerceIn(0f, 1f))
-                .put((box.right.toFloat() / bitmap.width).coerceIn(0f, 1f))
+            val bounding =
+                JSONArray()
+                    .put((box.top.toFloat() / bitmap.height).coerceIn(0f, 1f))
+                    .put((box.left.toFloat() / bitmap.width).coerceIn(0f, 1f))
+                    .put((box.bottom.toFloat() / bitmap.height).coerceIn(0f, 1f))
+                    .put((box.right.toFloat() / bitmap.width).coerceIn(0f, 1f))
 
             return JSONObject()
                 .put("name", itemName)

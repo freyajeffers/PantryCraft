@@ -39,71 +39,83 @@ class VisionOutputParser {
         }
     }
 
-    private fun parseItem(item: JSONObject?): ParsedVisionItem? {
-        return item?.let { json ->
+    private fun parseItem(item: JSONObject?): ParsedVisionItem? =
+        item?.let { json ->
             val name = json.optString("name").trim()
             name.takeIf(String::isNotEmpty)?.let {
                 ParsedVisionItem(
                     name = it,
                     category = json.optString("category", DEFAULT_CATEGORY).uppercase(),
                     storageLocation = json.optString("storage_location", DEFAULT_STORAGE).uppercase(),
-                    quantity = json.optDouble("quantity", DEFAULT_QUANTITY)
-                        .toFloat().coerceAtLeast(MIN_QUANTITY_FLOAT),
+                    quantity =
+                        json
+                            .optDouble("quantity", DEFAULT_QUANTITY)
+                            .toFloat()
+                            .coerceAtLeast(MIN_QUANTITY_FLOAT),
                     unit = json.optString("unit", DEFAULT_UNIT).uppercase(),
-                    confidence = json.optDouble("confidence", MIN_CONFIDENCE_DOUBLE)
-                        .toFloat().coerceIn(MIN_CONFIDENCE_FLOAT, MAX_CONFIDENCE_FLOAT),
-                    estimatedShelfLifeDays = json.optInt("estimated_shelf_life_days", MIN_DAYS)
-                        .coerceAtLeast(MIN_DAYS),
+                    confidence =
+                        json
+                            .optDouble("confidence", MIN_CONFIDENCE_DOUBLE)
+                            .toFloat()
+                            .coerceIn(MIN_CONFIDENCE_FLOAT, MAX_CONFIDENCE_FLOAT),
+                    estimatedShelfLifeDays =
+                        json
+                            .optInt("estimated_shelf_life_days", MIN_DAYS)
+                            .coerceAtLeast(MIN_DAYS),
                     isAromaticOrSeasoning = json.optBoolean("is_aromatic_or_seasoning", false),
                     boundingBox = parseBoundingBox(json),
                     conditionNotes = json.optString("condition_notes").takeIf(String::isNotBlank),
                     customUnitName = json.optString("custom_unit_name").takeIf(String::isNotBlank),
                     barcode = json.optString("barcode").takeIf(String::isNotBlank),
-                    threshold = json.optDouble("threshold", MIN_THRESHOLD_DOUBLE)
-                        .toFloat().coerceAtLeast(MIN_THRESHOLD_FLOAT),
+                    threshold =
+                        json
+                            .optDouble("threshold", MIN_THRESHOLD_DOUBLE)
+                            .toFloat()
+                            .coerceAtLeast(MIN_THRESHOLD_FLOAT),
                     isOpened = json.optBoolean("is_opened", false),
                 )
             }
         }
-    }
 
     private fun parseBoundingBox(item: JSONObject): NormalizedBox {
         val arrayBox = item.optJSONArray("bounding_box")
-        val arrayResult = arrayBox
-            ?.takeIf { it.length() == BOX_VALUE_COUNT }
-            ?.let { jsonArray ->
-                (0 until BOX_VALUE_COUNT).map { index ->
-                    jsonArray.optDouble(index, Double.NaN).toFloat()
+        val arrayResult =
+            arrayBox
+                ?.takeIf { it.length() == BOX_VALUE_COUNT }
+                ?.let { jsonArray ->
+                    (0 until BOX_VALUE_COUNT).map { index ->
+                        jsonArray.optDouble(index, Double.NaN).toFloat()
+                    }
+                }?.takeIf { values -> values.all(Float::isFinite) }
+                ?.let { values ->
+                    NormalizedBox(
+                        ymin = values[0].coerceIn(0f, 1f),
+                        xmin = values[1].coerceIn(0f, 1f),
+                        ymax = values[2].coerceIn(0f, 1f),
+                        xmax = values[3].coerceIn(0f, 1f),
+                    )
                 }
-            }?.takeIf { values -> values.all(Float::isFinite) }
-            ?.let { values ->
-                NormalizedBox(
-                    ymin = values[0].coerceIn(0f, 1f),
-                    xmin = values[1].coerceIn(0f, 1f),
-                    ymax = values[2].coerceIn(0f, 1f),
-                    xmax = values[3].coerceIn(0f, 1f),
-                )
-            }
 
         val objectBox = item.optJSONObject("bounding_box")
-        val objectResult = objectBox?.let { box ->
-            val ymin =
-                box.optDouble("y_min", box.optDouble("ymin", MIN_BOUND)).toFloat()
-            val xmin =
-                box.optDouble("x_min", box.optDouble("xmin", MIN_BOUND)).toFloat()
-            val ymax =
-                box.optDouble("y_max", box.optDouble("ymax", MAX_BOUND)).toFloat()
-            val xmax =
-                box.optDouble("x_max", box.optDouble("xmax", MAX_BOUND)).toFloat()
-            listOf(ymin, xmin, ymax, xmax).takeIf { values -> values.all(Float::isFinite) }?.let {
-                NormalizedBox(
-                    ymin = ymin.coerceIn(0f, 1f),
-                    xmin = xmin.coerceIn(0f, 1f),
-                    ymax = ymax.coerceIn(0f, 1f),
-                    xmax = xmax.coerceIn(0f, 1f),
-                )
+        val objectResult =
+            objectBox?.let { box ->
+                val ymin =
+                    box.optDouble("y_min", box.optDouble("ymin", MIN_BOUND)).toFloat()
+                val xmin =
+                    box.optDouble("x_min", box.optDouble("xmin", MIN_BOUND)).toFloat()
+                val ymax =
+                    box.optDouble("y_max", box.optDouble("ymax", MAX_BOUND)).toFloat()
+                val xmax =
+                    box.optDouble("x_max", box.optDouble("xmax", MAX_BOUND)).toFloat()
+                listOf(ymin, xmin, ymax, xmax).takeIf { values -> values.all(Float::isFinite) }?.let {
+                    NormalizedBox(
+                        ymin = ymin.coerceIn(0f, 1f),
+                        xmin = xmin.coerceIn(0f, 1f),
+                        ymax = ymax.coerceIn(0f, 1f),
+                        xmax = xmax.coerceIn(0f, 1f),
+                    )
+                }
             }
-        }
 
         return arrayResult ?: objectResult ?: NormalizedBox(
             MIN_BOUND_FLOAT,

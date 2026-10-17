@@ -42,19 +42,22 @@ fun HomeScreen(
     val lowStockItems by repository?.observeLowStock()?.collectAsState(initial = emptyList())
         ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(emptyList()) }
     val now = System.currentTimeMillis()
-    val expiringCount = pantryItems.count { item ->
-        item.expirationTimestamp != null &&
-            (item.expirationTimestamp - now) in 0..(EXPIRING_DAYS * MILLIS_PER_DAY)
-    }
-    val expiredCount = pantryItems.count { item ->
-        item.expirationTimestamp != null && item.expirationTimestamp < now
-    }
+    val expiringCount =
+        pantryItems.count { item ->
+            item.expirationTimestamp != null &&
+                (item.expirationTimestamp - now) in 0..(EXPIRING_DAYS * MILLIS_PER_DAY)
+        }
+    val expiredCount =
+        pantryItems.count { item ->
+            item.expirationTimestamp != null && item.expirationTimestamp < now
+        }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         HomeHeader()
@@ -121,9 +124,10 @@ private fun InventoryMetrics(
 private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -167,7 +171,10 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
 }
 
 @Composable
-private fun GroceryChecklistCard(lowStockCount: Int, onNavigate: (String) -> Unit) {
+private fun GroceryChecklistCard(
+    lowStockCount: Int,
+    onNavigate: (String) -> Unit,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -202,9 +209,10 @@ private fun GroceryChecklistCard(lowStockCount: Int, onNavigate: (String) -> Uni
 private fun MealSynthesisCard(pantryCount: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            ),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -245,15 +253,16 @@ private fun MetricCard(
 ) {
     Card(
         modifier = modifier,
-        colors = if (isWarning) {
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
-            )
-        } else {
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            )
-        },
+        colors =
+            if (isWarning) {
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+                )
+            } else {
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+            },
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
@@ -264,11 +273,12 @@ private fun MetricCard(
             Text(
                 value,
                 style = MaterialTheme.typography.headlineMedium,
-                color = if (isWarning) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
+                color =
+                    if (isWarning) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
             )
             Text(
                 subtitle,

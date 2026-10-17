@@ -100,29 +100,36 @@ private fun DatabaseRecoveryScreen(context: android.content.Context) {
 }
 
 @Composable
-private fun AppBottomBar(destination: String, onDestinationSelected: (String) -> Unit) {
+private fun AppBottomBar(
+    destination: String,
+    onDestinationSelected: (String) -> Unit,
+) {
     NavigationBar {
         Row(modifier = Modifier.fillMaxWidth()) {
             BottomDestination.entries.forEach { item ->
                 val selected = destination == item.route
                 BoxWithConstraints(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(64.dp)
-                        .clickable { onDestinationSelected(item.route) },
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .height(64.dp)
+                            .clickable { onDestinationSelected(item.route) },
                     contentAlignment = Alignment.Center,
                 ) {
                     val bubbleWidth = minOf(54.dp, maxWidth - 8.dp)
                     Box(
-                        modifier = Modifier
-                            .width(bubbleWidth)
-                            .height(32.dp)
-                            .background(
-                                if (selected) MaterialTheme.colorScheme.secondaryContainer
-                                else MaterialTheme.colorScheme.surface,
-                                RoundedCornerShape(16.dp),
-                            )
-                            .semantics { contentDescription = item.label },
+                        modifier =
+                            Modifier
+                                .width(bubbleWidth)
+                                .height(32.dp)
+                                .background(
+                                    if (selected) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.surface
+                                    },
+                                    RoundedCornerShape(16.dp),
+                                ).semantics { contentDescription = item.label },
                         contentAlignment = Alignment.Center,
                     ) {
                         androidx.compose.material3.Icon(

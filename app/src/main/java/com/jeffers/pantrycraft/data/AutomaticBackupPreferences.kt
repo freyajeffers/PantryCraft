@@ -22,8 +22,7 @@ object AutomaticBackupPreferences {
 
     fun isEnabled(context: Context): Boolean = preferences(context).getBoolean(ENABLED_KEY, false)
 
-    fun intervalMinutes(context: Context): Long =
-        preferences(context).getLong(INTERVAL_MINUTES_KEY, DEFAULT_INTERVAL_MINUTES)
+    fun intervalMinutes(context: Context): Long = preferences(context).getLong(INTERVAL_MINUTES_KEY, DEFAULT_INTERVAL_MINUTES)
 
     fun setSchedule(
         context: Context,
@@ -51,8 +50,7 @@ object AutomaticBackupPreferences {
                 .putString(
                     PIN_CIPHERTEXT_KEY,
                     Base64.encodeToString(cipher.doFinal(plaintext), Base64.NO_WRAP),
-                )
-                .putString(PIN_IV_KEY, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
+                ).putString(PIN_IV_KEY, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
                 .apply()
         } finally {
             plaintext.fill(0)

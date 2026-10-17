@@ -27,7 +27,11 @@ class AutomaticBackupWorker(
             val database = AppDatabase.getDatabase(applicationContext)
             val hasPantryData = database.pantryDao().getAvailableIngredients().isNotEmpty()
             val hasGroceryData =
-                database.groceryDao().observeAllGroceryItems().first().isNotEmpty()
+                database
+                    .groceryDao()
+                    .observeAllGroceryItems()
+                    .first()
+                    .isNotEmpty()
             if (hasPantryData || hasGroceryData) {
                 backupIfChanged(pin)
             }
@@ -52,12 +56,17 @@ class AutomaticBackupWorker(
         }
     }
 
-    private fun exportToTree(treeUri: android.net.Uri?, backupName: String) {
+    private fun exportToTree(
+        treeUri: android.net.Uri?,
+        backupName: String,
+    ) {
         if (treeUri == null) return
-        val tree = DocumentFile.fromTreeUri(applicationContext, treeUri)
-            ?: error("Automatic backup location is unavailable")
-        val destination = tree.createFile("application/octet-stream", backupName)
-            ?: error("Unable to create automatic backup file")
+        val tree =
+            DocumentFile.fromTreeUri(applicationContext, treeUri)
+                ?: error("Automatic backup location is unavailable")
+        val destination =
+            tree.createFile("application/octet-stream", backupName)
+                ?: error("Unable to create automatic backup file")
         DatabaseBackupManager.exportBackup(applicationContext, backupName, destination.uri)
     }
 }
