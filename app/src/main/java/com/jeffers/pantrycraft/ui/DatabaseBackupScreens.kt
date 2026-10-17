@@ -440,121 +440,44 @@ fun SettingsScreen(
             "Manage offline barcode data and protect your pantry information.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors =
-                CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("FoodFacts barcode catalog", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    "This optional catalog helps PantryCraft recognize packaged foods when you scan a barcode. " +
-                        "Download it once to make barcode lookups work offline. The catalog is saved only inside " +
-                        "the app and does not contain your pantry or grocery list.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    if (catalogReady) {
-                        "Ready for offline barcode scans · ${formatFileSize(catalogFileSize ?: 0L)}"
-                    } else {
-                        "Not downloaded"
-                    },
-                    color =
-                        if (catalogReady) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.padding(top = 12.dp),
-                )
-                if (catalogDownloading) {
-                    val progress =
-                        if (catalogTotalBytes > 0) {
-                            catalogDownloadedBytes.toFloat() / catalogTotalBytes
-                        } else {
-                            null
+        CatalogCard(
+            catalogReady = catalogReady,
+            catalogFileSize = catalogFileSize,
+            catalogDownloading = catalogDownloading,
+            catalogDownloadedBytes = catalogDownloadedBytes,
+            catalogTotalBytes = catalogTotalBytes,
+            onDownload = {
+                catalogDownloading = true
+                catalogDownloadedBytes = 0L
+                catalogTotalBytes = -1L
+                scope.launch {
+                    val result = withContext(Dispatchers.IO) {
+                        runCatching {
+                            repository.downloadOfflineCatalog { downloaded, total ->
+                                catalogDownloadedBytes = downloaded
+                                catalogTotalBytes = total
+                            }
                         }
-                    if (progress == null) {
-                        LinearProgressIndicator(
-                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                        )
-                    } else {
-                        LinearProgressIndicator(
-                            progress = { progress.coerceIn(0f, 1f) },
-                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                        )
                     }
-                    Text(
-                        if (catalogTotalBytes > 0) {
-                            "Downloading ${formatFileSize(catalogDownloadedBytes)} of ${formatFileSize(catalogTotalBytes)}"
-                        } else {
-                            "Downloading ${formatFileSize(catalogDownloadedBytes)}"
+                    catalogDownloading = false
+                    result.fold(
+                        onSuccess = { file ->
+                            catalogReady = true
+                            catalogFileSize = file.length()
+                            Toast.makeText(context, "Food catalog downloaded (${formatFileSize(file.length())})", Toast.LENGTH_SHORT).show()
                         },
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp),
+                        onFailure = {
+                            catalogDialog = CatalogDialog(
+                                "Download failed",
+                                it.message ?: "The catalog could not be downloaded. Check your connection and try again.",
+                                true,
+                            )
+                        },
                     )
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (!catalogReady) {
-                        Button(
-                            enabled = !catalogDownloading,
-                            onClick = {
-                                catalogDownloading = true
-                                catalogDownloadedBytes = 0L
-                                catalogTotalBytes = -1L
-                                scope.launch {
-                                    val result =
-                                        withContext(Dispatchers.IO) {
-                                            runCatching {
-                                                repository.downloadOfflineCatalog { downloaded, total ->
-                                                    catalogDownloadedBytes = downloaded
-                                                    catalogTotalBytes = total
-                                                }
-                                            }
-                                        }
-                                    catalogDownloading = false
-                                    result.fold(
-                                        onSuccess = { file ->
-                                            catalogReady = true
-                                            catalogFileSize = file.length()
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    "Food catalog downloaded (${formatFileSize(file.length())})",
-                                                    Toast.LENGTH_SHORT,
-                                                ).show()
-                                        },
-                                        onFailure = {
-                                            catalogDialog =
-                                                CatalogDialog(
-                                                    "Download failed",
-                                                    it.message
-                                                        ?: "The catalog could not be downloaded. " +
-                                                        "Check your connection and try again.",
-                                                    true,
-                                                )
-                                        },
-                                    )
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                        ) { Text("Download food catalog") }
-                    }
-                    if (catalogReady) {
-                        OutlinedButton(
-                            onClick = { confirmCatalogDelete = true },
-                            enabled = !catalogDownloading,
-                        ) { Text("Delete") }
-                    }
-                }
-            }
-        }
+            },
+            onDelete = { confirmCatalogDelete = true },
+        )
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Notifications & Alerts", style = MaterialTheme.typography.titleLarge)
@@ -658,45 +581,18 @@ fun SettingsScreen(
                     )
                 }
                 if (automaticBackupsEnabled) {
-                    Text("Backup interval", modifier = Modifier.padding(top = 12.dp))
-                    Row(
-                        modifier =
-                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        listOf(
-                            60L to "1 hour",
-                            3 * 60L to "3 hours",
-                            6 * 60L to "6 hours",
-                            12 * 60L to "12 hours",
-                            24 * 60L to "Daily",
-                            7 * 24 * 60L to "Weekly",
-                            30 * 24 * 60L to "Monthly",
-                        ).forEach { interval ->
-                            val selected = automaticBackupIntervalMinutes == interval.first
-                            if (selected) {
-                                Button(onClick = {
-                                    automaticBackupIntervalMinutes = interval.first
-                                    AutomaticBackupPreferences.setSchedule(
-                                        context,
-                                        enabled = true,
-                                        intervalMinutes = interval.first,
-                                    )
-                                    AutomaticBackupScheduler.schedule(context, interval.first)
-                                }) { Text("✓ ${interval.second}") }
-                            } else {
-                                OutlinedButton(onClick = {
-                                    automaticBackupIntervalMinutes = interval.first
-                                    AutomaticBackupPreferences.setSchedule(
-                                        context,
-                                        enabled = true,
-                                        intervalMinutes = interval.first,
-                                    )
-                                    AutomaticBackupScheduler.schedule(context, interval.first)
-                                }) { Text(interval.second) }
-                            }
-                        }
-                    }
+                    AutomaticBackupIntervalRow(
+                        selectedMinutes = automaticBackupIntervalMinutes,
+                        onSelect = { minutes ->
+                            automaticBackupIntervalMinutes = minutes
+                            AutomaticBackupPreferences.setSchedule(
+                                context,
+                                enabled = true,
+                                intervalMinutes = minutes,
+                            )
+                            AutomaticBackupScheduler.schedule(context, minutes)
+                        },
+                    )
                 }
                 if (databaseHasUserData) {
                     Button(
