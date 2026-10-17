@@ -76,6 +76,7 @@ interface PantryMutationDao {
     suspend fun delete(item: PantryItem)
 }
 
+@Dao
 interface PantryDao : PantryQueryDao, PantryMutationDao
 
 @Dao

@@ -326,13 +326,13 @@ class Repository private constructor(
                             ?: "PANTRY"
                     val quantity =
                         cols
-                            .getOrNull(3)
+                            .getOrNull(QUANTITY_COLUMN)
                             ?.trim()
                             ?.toFloatOrNull()
                             ?.coerceAtLeast(0f) ?: 1f
                     val unit =
                         cols
-                            .getOrNull(4)
+                            .getOrNull(UNIT_COLUMN)
                             ?.trim()
                             ?.uppercase()
                             ?.takeIf { it.isNotEmpty() } ?: "COUNT"
@@ -343,7 +343,7 @@ class Repository private constructor(
                     val threshold =
                         if (hasExtendedCols) {
                             cols
-                                .getOrNull(6)
+                                .getOrNull(THRESHOLD_COLUMN)
                                 ?.trim()
                                 ?.toFloatOrNull()
                                 ?.coerceAtLeast(0f) ?: 0f
@@ -434,6 +434,9 @@ class Repository private constructor(
         private const val CSV_HEADER = "Name,Category,StorageLocation,Quantity,Unit,CustomUnitName,Threshold,ExpirationDate,IsOpened,Notes\n"
         private const val DATE_PATTERN = "yyyy-MM-dd"
         private const val CUSTOM_UNIT_COLUMN = 5
+        private const val QUANTITY_COLUMN = 3
+        private const val UNIT_COLUMN = 4
+        private const val THRESHOLD_COLUMN = 6
         private const val EXPIRATION_COLUMN = 7
         private const val LEGACY_EXPIRATION_COLUMN = 5
         private const val IS_OPENED_COLUMN = 8
