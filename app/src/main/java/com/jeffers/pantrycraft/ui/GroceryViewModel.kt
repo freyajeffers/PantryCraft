@@ -13,13 +13,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+private const val STATE_TIMEOUT_MILLIS = 5_000L
+
 class GroceryViewModel(
     private val repo: Repository,
 ) : ViewModel() {
     val items: StateFlow<List<GroceryItem>> =
         repo.observeGroceryItems().stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
+            started = SharingStarted.WhileSubscribed(STATE_TIMEOUT_MILLIS),
             initialValue = emptyList(),
         )
 

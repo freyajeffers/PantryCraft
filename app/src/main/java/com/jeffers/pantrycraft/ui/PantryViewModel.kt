@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 private const val SEARCH_DEBOUNCE_MILLIS = 50L
 private const val EXPIRING_SOON_DAYS = 5L
 private const val MILLIS_PER_DAY = 24L * 60L * 60L * 1_000L
+private const val STATE_TIMEOUT_MILLIS = 5_000L
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class PantryViewModel(
@@ -33,7 +34,7 @@ class PantryViewModel(
     val items: StateFlow<List<PantryItem>> =
         repo.observePantryItems().stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
+            started = SharingStarted.WhileSubscribed(STATE_TIMEOUT_MILLIS),
             initialValue = emptyList(),
         )
 
@@ -52,7 +53,7 @@ class PantryViewModel(
     private val searchedItems: StateFlow<List<PantryItem>> =
         _searchQuery.debounce(SEARCH_DEBOUNCE_MILLIS).flatMapLatest(repo::searchPantryItems).stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
+            started = SharingStarted.WhileSubscribed(STATE_TIMEOUT_MILLIS),
             initialValue = emptyList(),
         )
 
@@ -61,7 +62,7 @@ class PantryViewModel(
             sortPantryItems(filterPantryItems(items, location), sortOrder)
         }.stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
+            started = SharingStarted.WhileSubscribed(STATE_TIMEOUT_MILLIS),
             initialValue = emptyList(),
         )
 

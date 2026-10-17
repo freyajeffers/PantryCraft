@@ -67,9 +67,14 @@ import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
 
-private val ExpiredColor = Color(0xFFB3261E)
-private val ExpiringSoonColor = Color(0xFFFFB300)
-private val FreshColor = Color(0xFF2E7D32)
+private const val EXPIRED_COLOR_VALUE = 0xFFB3261E
+private const val EXPIRING_SOON_COLOR_VALUE = 0xFFFFB300
+private const val FRESH_COLOR_VALUE = 0xFF2E7D32
+private val ExpiredColor = Color(EXPIRED_COLOR_VALUE)
+private val ExpiringSoonColor = Color(EXPIRING_SOON_COLOR_VALUE)
+private val FreshColor = Color(FRESH_COLOR_VALUE)
+private const val EXPIRING_SOON_HOURS = 48L
+private const val EXPIRING_SOON_DAYS = 5L
 
 private fun newPantryDraft() =
     ParsedVisionItem(
@@ -465,8 +470,8 @@ fun expirationStatus(
     val remaining = expirationTimestamp - now
     return when {
         remaining < 0 -> ExpirationStatus.EXPIRED
-        remaining < TimeUnit.HOURS.toMillis(48) -> ExpirationStatus.EXPIRING_SOON
-        remaining <= TimeUnit.DAYS.toMillis(5) -> ExpirationStatus.EXPIRING_SOON
+        remaining < TimeUnit.HOURS.toMillis(EXPIRING_SOON_HOURS) -> ExpirationStatus.EXPIRING_SOON
+        remaining <= TimeUnit.DAYS.toMillis(EXPIRING_SOON_DAYS) -> ExpirationStatus.EXPIRING_SOON
         else -> ExpirationStatus.FRESH
     }
 }
