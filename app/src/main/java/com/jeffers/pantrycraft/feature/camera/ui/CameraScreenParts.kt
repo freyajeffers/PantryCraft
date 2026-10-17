@@ -25,23 +25,43 @@ import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
 import androidx.compose.runtime.remember
 import java.lang.Float
 
+private const val LABEL_TEXT_SIZE = 34f
+private const val BADGE_ALPHA = 200
+private const val BADGE_ROUND_RADIUS = 12f
+private const val BADGE_HORIZONTAL_PADDING = 12f
+private const val BADGE_VERTICAL_PADDING = 32f
+private const val BADGE_HEIGHT = 44f
+private const val BADGE_OFFSET = 40f
+private const val BOX_MIN_SIZE = 1f
+private const val STROKE_WIDTH = 4f
+private const val FOCUS_RADIUS = 48f
+private const val FOCUS_STROKE = 3f
+
+data class CameraHudState(
+    val latestResult: com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult?,
+    val latestFrameTime: Long?,
+    val snapshotStatus: String?,
+    val barcodeMatch: BarcodeMatch?,
+    val isTorchOn: Boolean,
+)
+
 @Composable
 fun rememberLabelPaint(): Paint = remember {
     Paint().apply {
         color = android.graphics.Color.WHITE
-        textSize = 34f
+        textSize = LABEL_TEXT_SIZE
         isAntiAlias = true
         typeface = Typeface.DEFAULT_BOLD
     }
 }
 
-@Composable
 fun rememberBadgePaint(): Paint = remember {
     Paint().apply {
-        color = android.graphics.Color.argb(200, 20, 30, 45)
+        color = android.graphics.Color.argb(BADGE_ALPHA, 20, 30, 45)
         style = Paint.Style.FILL
         isAntiAlias = true
     }
+}
 }
 
 @Composable
@@ -72,28 +92,28 @@ fun CameraPreviewCanvas(
             drawRect(
                 color = androidx.compose.ui.graphics.Color.Cyan,
                 topLeft = Offset(left, top),
-                size = androidx.compose.ui.geometry.Size((right - left).coerceAtLeast(1f), (bottom - top).coerceAtLeast(1f)),
-                style = Stroke(width = 4f),
+                size = androidx.compose.ui.geometry.Size((right - left).coerceAtLeast(BOX_MIN_SIZE), (bottom - top).coerceAtLeast(BOX_MIN_SIZE)),
+                style = Stroke(width = STROKE_WIDTH),
             )
 
             box.label?.let { label ->
                 val confPercent = box.confidence?.let { " ${(it * 100).toInt()}%" } ?: ""
                 val text = "$label$confPercent"
                 val textWidth = labelPaint.measureText(text)
-                val badgeTop = (top - 40f).coerceAtLeast(8f)
+                val badgeTop = (top - BADGE_OFFSET).coerceAtLeast(8f)
                 drawContext.canvas.nativeCanvas.drawRoundRect(
                     left,
                     badgeTop,
-                    left + textWidth + 24f,
-                    badgeTop + 44f,
-                    12f,
-                    12f,
+                    left + textWidth + BADGE_HORIZONTAL_PADDING * 2,
+                    badgeTop + BADGE_HEIGHT,
+                    BADGE_ROUND_RADIUS,
+                    BADGE_ROUND_RADIUS,
                     badgePaint,
                 )
                 drawContext.canvas.nativeCanvas.drawText(
                     text,
-                    left + 12f,
-                    badgeTop + 32f,
+                    left + BADGE_HORIZONTAL_PADDING,
+                    badgeTop + BADGE_VERTICAL_PADDING,
                     labelPaint,
                 )
             }
@@ -101,23 +121,16 @@ fun CameraPreviewCanvas(
         focusPoint?.let { pt ->
             drawCircle(
                 color = androidx.compose.ui.graphics.Color.White,
-                radius = 48f,
+                radius = FOCUS_RADIUS,
                 center = pt,
-                style = Stroke(width = 3f),
+                style = Stroke(width = FOCUS_STROKE),
             )
         }
     }
 }
 
 @Composable
-fun CameraTopHud(
-    latestResult: LiveVisionResult?,
-    latestFrameTime: Long?,
-    snapshotStatus: String?,
-    barcodeMatch: BarcodeMatch?,
-    isTorchOn: Boolean,
-    onToggleTorch: () -> Unit,
-) {
+fun CameraTopHud(hudState: CameraHudState, onToggleTorch: () -> Unit) {
     Row(
         modifier = Modifier
             .align(Alignment.TopCenter)
