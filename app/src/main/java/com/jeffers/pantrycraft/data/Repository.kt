@@ -32,16 +32,14 @@ class Repository private constructor(
 
     fun searchPantryItems(query: String): Flow<List<PantryItem>> {
         val sanitized = sanitizeSearchQuery(query)
-        if (sanitized.isEmpty()) return observePantryItems()
-        val ftsQuery =
+        val ftsQuery = if (sanitized.isEmpty()) "" else
             sanitized
                 .split(Regex("\\s+"))
                 .filter { it.isNotBlank() }
                 .joinToString(" ") { term ->
                     "\"${term.replace("\"", "\"\"")}\"*"
                 }
-        if (ftsQuery.isBlank()) return observePantryItems()
-        return pantryDao.search(
+        return if (ftsQuery.isBlank()) observePantryItems() else pantryDao.search(
             SimpleSQLiteQuery(
                 "SELECT pantry_items.* FROM pantry_items " +
                     "JOIN pantry_items_fts ON pantry_items.rowid = pantry_items_fts.rowid " +
@@ -128,7 +126,8 @@ class Repository private constructor(
         return pantryDao.insert(validated)
     }
 
-    suspend fun updatePantry(item: PantryItem) = pantryDao.update(validate(item).copy(updatedAt = System.currentTimeMillis()))
+    suspend fun updatePantry(item: PantryItem) =
+        pantryDao.update(validate(item).copy(updatedAt = System.currentTimeMillis()))
 
     suspend fun deletePantry(item: PantryItem) = pantryDao.softDelete(item.id)
 
@@ -149,7 +148,8 @@ class Repository private constructor(
             val allChecked = groceryDao.observeAllGroceryItems().first().filter { it.checked }
             allChecked.forEach { grocery ->
                 if (grocery.fromPantryId != null) {
-                    val existing = pantryDao.observeAllPantryItems().first().firstOrNull { it.id == grocery.fromPantryId }
+                    val existing =
+                        pantryDao.observeAllPantryItems().first().firstOrNull { it.id == grocery.fromPantryId }
                     if (existing != null) {
                         pantryDao.update(
                             existing.copy(
@@ -283,11 +283,12 @@ class Repository private constructor(
     suspend fun exportPantryToCsv(): String {
         val pantry = pantryDao.observeAllPantryItems().first()
         return buildString {
-            append("Name,Category,StorageLocation,Quantity,Unit,CustomUnitName,Threshold,ExpirationDate,IsOpened,Notes\n")
+            append(CSV_HEADER)
             pantry.forEach { item ->
                 val expDate =
                     item.expirationTimestamp?.let {
-                        java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date(it))
+                        java.text.SimpleDateFormat(DATE_PATTERN, java.util.Locale.US)
+                            .format(java.util.Date(it))
                     } ?: ""
                 val escapedName = "\"${item.name.replace("\"", "\"\"")}\""
                 val escapedCustomUnit = "\"${(item.customUnitName ?: "").replace("\"", "\"\"")}\""
@@ -336,7 +337,9 @@ class Repository private constructor(
                             ?.uppercase()
                             ?.takeIf { it.isNotEmpty() } ?: "COUNT"
                     val hasExtendedCols = cols.size >= 10
-                    val customUnit = if (hasExtendedCols) cols.getOrNull(5)?.trim()?.takeIf { it.isNotEmpty() } else null
+                    val customUnit =
+                        if (hasExtendedCols) cols.getOrNull(CUSTOM_UNIT_COLUMN)?.trim()
+                            ?.takeIf { it.isNotEmpty() } else null
                     val threshold =
                         if (hasExtendedCols) {
                             cols
@@ -347,13 +350,19 @@ class Repository private constructor(
                         } else {
                             0f
                         }
-                    val expDateStr = (if (hasExtendedCols) cols.getOrNull(7) else cols.getOrNull(5))?.trim().orEmpty()
+                    val expDateStr =
+                        (if (hasExtendedCols) cols.getOrNull(EXPIRATION_COLUMN) else cols.getOrNull(LEGACY_EXPIRATION_COLUMN))
+                            ?.trim().orEmpty()
                     val expTimestamp =
                         expDateStr.takeIf { it.isNotEmpty() }?.let {
                             runCatching { dateFormat.parse(it)?.time }.getOrNull()
                         }
-                    val isOpened = (if (hasExtendedCols) cols.getOrNull(8) else cols.getOrNull(6))?.trim()?.toBoolean() ?: false
-                    val notes = (if (hasExtendedCols) cols.getOrNull(9) else cols.getOrNull(7))?.trim()?.takeIf { it.isNotEmpty() }
+                    val isOpened =
+                        (if (hasExtendedCols) cols.getOrNull(IS_OPENED_COLUMN) else cols.getOrNull(LEGACY_IS_OPENED_COLUMN))
+                            ?.trim()?.toBoolean() ?: false
+                    val notes =
+                        (if (hasExtendedCols) cols.getOrNull(NOTES_COLUMN) else cols.getOrNull(LEGACY_NOTES_COLUMN))
+                            ?.trim()?.takeIf { it.isNotEmpty() }
                     insertPantry(
                         PantryItem(
                             name = name,
@@ -422,6 +431,15 @@ class Repository private constructor(
     }
 
     companion object {
+        private const val CSV_HEADER = "Name,Category,StorageLocation,Quantity,Unit,CustomUnitName,Threshold,ExpirationDate,IsOpened,Notes\n"
+        private const val DATE_PATTERN = "yyyy-MM-dd"
+        private const val CUSTOM_UNIT_COLUMN = 5
+        private const val EXPIRATION_COLUMN = 7
+        private const val LEGACY_EXPIRATION_COLUMN = 5
+        private const val IS_OPENED_COLUMN = 8
+        private const val LEGACY_IS_OPENED_COLUMN = 6
+        private const val NOTES_COLUMN = 9
+        private const val LEGACY_NOTES_COLUMN = 7
         @Volatile
         private var INSTANCE: Repository? = null
 

@@ -41,6 +41,10 @@ object DatabaseBackupManager {
     private const val IV_LEN = 12
     private const val ITERATIONS = 200_000
     private const val KEY_LEN_BITS = 256
+    private const val GCM_TAG_LENGTH_BITS = 128
+    private const val STREAM_BUFFER_BYTES = 16 * 1024
+    private const val BYTE_MASK = 0xFF
+    private const val BYTE_SHIFT = 8
     private const val PREFS_NAME = "backup_preferences"
     private const val LAST_EXPORTED_URI = "last_exported_uri"
     private const val LAST_DB_CHECKSUM = "last_db_checksum"
@@ -143,7 +147,7 @@ object DatabaseBackupManager {
         return runCatching {
             val digest = java.security.MessageDigest.getInstance("SHA-256")
             dbFile.inputStream().use { input ->
-                val buffer = ByteArray(16 * 1024)
+                val buffer = ByteArray(STREAM_BUFFER_BYTES)
                 var read: Int
                 while (input.read(buffer).also { read = it } > 0) {
                     digest.update(buffer, 0, read)
@@ -237,18 +241,18 @@ object DatabaseBackupManager {
                 fos.write(iv)
 
                 val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-                cipher.init(Cipher.ENCRYPT_MODE, secretKey, GCMParameterSpec(128, iv))
+                cipher.init(Cipher.ENCRYPT_MODE, secretKey, GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
 
                 CipherOutputStream(fos, cipher).use { cos ->
                     // write passphrase length (2 bytes big-endian) then passphrase
                     val len = passphrase.size
-                    cos.write((len ushr 8) and 0xFF)
-                    cos.write(len and 0xFF)
+                    cos.write((len ushr BYTE_SHIFT) and BYTE_MASK)
+                    cos.write(len and BYTE_MASK)
                     cos.write(passphrase)
 
                     // stream DB into cipher
                     FileInputStream(dbFile).use { fis ->
-                        val buffer = ByteArray(16 * 1024)
+                        val buffer = ByteArray(STREAM_BUFFER_BYTES)
                         var read: Int
                         while (fis.read(buffer).also { read = it } > 0) {
                             cos.write(buffer, 0, read)
@@ -258,7 +262,7 @@ object DatabaseBackupManager {
                 }
             }
             if (!temp.renameTo(dest)) throw IOException("Unable to finalize encrypted backup")
-        } catch (error: Exception) {
+        } catch (error: IOException) {
             temp.delete()
             throw error
         } finally {
@@ -336,7 +340,7 @@ object DatabaseBackupManager {
                 cipher.init(
                     Cipher.DECRYPT_MODE,
                     SecretKeySpec(derived, "AES"),
-                    GCMParameterSpec(128, iv),
+                    GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv),
                 )
                 CipherInputStream(fis, cipher).use { cis ->
                     val lengthHigh = cis.read()
@@ -351,7 +355,7 @@ object DatabaseBackupManager {
                         offset += read
                     }
                     FileOutputStream(temp).use { fos ->
-                        val buffer = ByteArray(16 * 1024)
+                        val buffer = ByteArray(STREAM_BUFFER_BYTES)
                         var read: Int
                         while (cis.read(buffer).also { read = it } > 0) {
                             fos.write(buffer, 0, read)
@@ -371,13 +375,13 @@ object DatabaseBackupManager {
                 if (!temp.renameTo(dbFile)) {
                     FileInputStream(temp).use { input ->
                         FileOutputStream(dbFile).use { output ->
-                            input.copyTo(output, 16 * 1024)
+                            input.copyTo(output, STREAM_BUFFER_BYTES)
                             output.fd.sync()
                         }
                     }
                     check(temp.delete()) { "Unable to remove temporary restored database" }
                 }
-            } catch (e: Exception) {
+            } catch (e: IOException) {
                 temp.delete()
                 throw IOException("Failed to restore backup: ${e.message}", e)
             } finally {

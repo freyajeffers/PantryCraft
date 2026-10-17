@@ -1,0 +1,25 @@
+PantryCraft Phase 2 extended soak test
+
+Script:
+  /home/freya/.hermes/cache/scratch/run_stability_sweep.sh
+
+Run after the phone reconnects and the Scan screen is open:
+  bash /home/freya/.hermes/cache/scratch/run_stability_sweep.sh DEVICE SERIAL_COUNT
+
+Example:
+  bash /home/freya/.hermes/cache/scratch/run_stability_sweep.sh 127.0.0.1:34333 500
+
+The script records:
+- Per-sample live Analysis timing
+- Memory samples every 50 samples
+- vision_scratch orphan-file counts every 50 samples
+- Summary statistics and artifact paths on completion
+
+Results are saved under:
+  /home/freya/.hermes/cache/scratch/stability_sweep_<timestamp>/
+
+The previous partial run remains at:
+  /home/freya/.hermes/cache/scratch/stability_sweep_1792054756/
+
+It collected 168 valid samples before being stopped: mean 29.29 ms, P95 35 ms,
+165/168 under 40 ms, with 3 memory and 3 orphan-file checkpoints.

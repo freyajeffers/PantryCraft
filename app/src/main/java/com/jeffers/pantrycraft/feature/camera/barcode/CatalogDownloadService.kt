@@ -25,19 +25,19 @@ class CatalogDownloadService(
             val temporary = File(context.noBackupFilesDir, "$CATALOG_FILE_NAME.download")
             try {
                 val connection = URL(url).openConnection() as HttpURLConnection
-                connection.connectTimeout = 15_000
-                connection.readTimeout = 60_000
+                connection.connectTimeout = CONNECT_TIMEOUT_MILLIS
+                connection.readTimeout = READ_TIMEOUT_MILLIS
                 connection.instanceFollowRedirects = true
                 connection.requestMethod = "GET"
                 connection.connect()
-                if (connection.responseCode !in 200..299) {
+                if (connection.responseCode !in HTTP_SUCCESS_MIN..HTTP_SUCCESS_MAX) {
                     throw CatalogDownloadException("Catalog download failed: HTTP ${connection.responseCode}")
                 }
                 val contentLength = connection.contentLengthLong
                 if (contentLength > MAX_BYTES) throw CatalogDownloadException("Catalog exceeds size limit")
                 connection.inputStream.use { input ->
                     temporary.outputStream().use { output ->
-                        val buffer = ByteArray(8192)
+                        val buffer = ByteArray(TRANSFER_BUFFER_BYTES)
                         var total = 0L
                         while (true) {
                             val count = input.read(buffer)
@@ -69,6 +69,11 @@ class CatalogDownloadService(
             "d2fa1beec99ec5e78516cd02aec73b588c13e2e4906954ae135fa04d3ffea210"
         const val CATALOG_FILE_NAME = "foodfacts.db"
         private const val MAX_BYTES = 32L * 1024L * 1024L
+        private const val CONNECT_TIMEOUT_MILLIS = 15_000
+        private const val READ_TIMEOUT_MILLIS = 60_000
+        private const val TRANSFER_BUFFER_BYTES = 8 * 1024
+        private const val HTTP_SUCCESS_MIN = 200
+        private const val HTTP_SUCCESS_MAX = 299
     }
 }
 
@@ -76,7 +81,7 @@ object CatalogDownloadVerifier {
     fun sha256(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")
         file.inputStream().use { input ->
-            val buffer = ByteArray(8192)
+            val buffer = ByteArray(TRANSFER_BUFFER_BYTES)
             while (true) {
                 val count = input.read(buffer)
                 if (count < 0) break
@@ -86,6 +91,8 @@ object CatalogDownloadVerifier {
         return digest.digest().joinToString("") { "%02x".format(it) }
     }
 }
+
+private const val TRANSFER_BUFFER_BYTES = 8 * 1024
 
 class CatalogDownloadException(
     message: String,

@@ -22,6 +22,10 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+private const val SEARCH_DEBOUNCE_MILLIS = 50L
+private const val EXPIRING_SOON_DAYS = 5L
+private const val MILLIS_PER_DAY = 24L * 60L * 60L * 1_000L
+
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class PantryViewModel(
     private val repo: Repository,
@@ -46,7 +50,7 @@ class PantryViewModel(
     val searchQuery: StateFlow<String> = _searchQuery
 
     private val searchedItems: StateFlow<List<PantryItem>> =
-        _searchQuery.debounce(50).flatMapLatest(repo::searchPantryItems).stateIn(
+        _searchQuery.debounce(SEARCH_DEBOUNCE_MILLIS).flatMapLatest(repo::searchPantryItems).stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptyList(),
@@ -163,7 +167,7 @@ fun filterPantryItems(
     when (filter) {
         PantryLocationFilter.ALL -> items
         PantryLocationFilter.EXPIRING_SOON -> {
-            val cutoff = now + 5 * 24 * 60 * 60 * 1_000L
+            val cutoff = now + EXPIRING_SOON_DAYS * MILLIS_PER_DAY
             items.filter { item ->
                 item.expirationTimestamp?.let { it <= cutoff } == true
             }

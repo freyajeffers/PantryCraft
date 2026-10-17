@@ -82,7 +82,8 @@ class OfflineBarcodeResolver(
         assetBarcodeDatabase = null
     }
 
-    private fun CustomBarcodeItem.toMatch(barcode: String) = BarcodeMatch(barcode, name, category, defaultUnit, estimatedShelfLifeDays)
+    private fun CustomBarcodeItem.toMatch(barcode: String) =
+        BarcodeMatch(barcode, name, category, defaultUnit, estimatedShelfLifeDays)
 
     private fun EmbeddedProduct.toMatch(barcode: String) = BarcodeMatch(barcode, name, category, unit, shelfLifeDays)
 
@@ -111,8 +112,11 @@ private data class EmbeddedProduct(
 private object EmbeddedBarcodeCatalog {
     val products =
         mapOf(
-            "012000001056" to EmbeddedProduct("Coca-Cola", "OTHER", "COUNT", 365),
-            "011110038364" to EmbeddedProduct("Great Value Milk", "DAIRY", "COUNT", 14),
-            "004100007012" to EmbeddedProduct("Cheerios", "PANTRY_STAPLE", "COUNT", 365),
+            "012000001056" to EmbeddedProduct("Coca-Cola", "OTHER", "COUNT", SHELF_LIFE_YEAR_DAYS),
+            "011110038364" to EmbeddedProduct("Great Value Milk", "DAIRY", "COUNT", SHELF_LIFE_TWO_WEEKS_DAYS),
+            "004100007012" to EmbeddedProduct("Cheerios", "PANTRY_STAPLE", "COUNT", SHELF_LIFE_YEAR_DAYS),
         )
+
+    private const val SHELF_LIFE_YEAR_DAYS = 365
+    private const val SHELF_LIFE_TWO_WEEKS_DAYS = 14
 }

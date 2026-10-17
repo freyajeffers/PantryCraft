@@ -37,7 +37,9 @@ class ExpirationAlertWorker(
                         !item.isDeleted
                 }.sortedBy { it.expirationTimestamp }
 
-        if (expiringItems.isNotEmpty() && NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) {
+        val notificationsEnabled =
+            NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()
+        if (expiringItems.isNotEmpty() && notificationsEnabled) {
             ensureNotificationChannel(applicationContext)
             val summary =
                 expiringItems
@@ -74,6 +76,8 @@ class ExpirationAlertWorker(
         private const val NOTIFICATION_ID = 4101
         const val ALERT_WINDOW_MILLIS = 2L * 24L * 60L * 60L * 1000L
         private const val MAX_ITEMS_IN_NOTIFICATION = 4
+        private const val NINE_AM_HOUR = 9
+        private const val ZERO = 0
 
         fun isEnabled(context: Context): Boolean =
             context
@@ -116,10 +120,10 @@ class ExpirationAlertWorker(
             val now = Calendar.getInstance().apply { timeInMillis = nowMillis }
             val nextNine =
                 (now.clone() as Calendar).apply {
-                    set(Calendar.HOUR_OF_DAY, 9)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
+                    set(Calendar.HOUR_OF_DAY, NINE_AM_HOUR)
+                    set(Calendar.MINUTE, ZERO)
+                    set(Calendar.SECOND, ZERO)
+                    set(Calendar.MILLISECOND, ZERO)
                     if (timeInMillis <= nowMillis) add(Calendar.DAY_OF_YEAR, 1)
                 }
             return (nextNine.timeInMillis - nowMillis).coerceAtLeast(0L)

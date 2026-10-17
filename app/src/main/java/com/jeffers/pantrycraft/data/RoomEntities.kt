@@ -41,7 +41,7 @@ data class PantryItem(
 fun PantryItem.markOpened(now: Long = System.currentTimeMillis()): PantryItem {
     if (isOpened) return this
     val openedDays = PantryTaxonomy.openedShelfLifeDays(category)
-    val openedExpiration = now + openedDays * 86_400_000L
+    val openedExpiration = now + openedDays * MILLIS_PER_DAY
     val adjustedExpiration =
         if (expirationTimestamp == null) {
             openedExpiration
@@ -56,6 +56,8 @@ fun PantryItem.markOpened(now: Long = System.currentTimeMillis()): PantryItem {
         updatedAt = now,
     )
 }
+
+private const val MILLIS_PER_DAY = 86_400_000L
 
 @Entity(tableName = "grocery_items")
 data class GroceryItem(

@@ -70,14 +70,17 @@ abstract class AppDatabase : RoomDatabase() {
                     db.execSQL("ALTER TABLE pantry_items_new RENAME TO pantry_items")
                     db.execSQL("CREATE INDEX index_pantry_items_storageLocation ON pantry_items(storageLocation)")
                     db.execSQL("CREATE INDEX index_pantry_items_normalized_name ON pantry_items(normalized_name)")
-                    db.execSQL("CREATE INDEX index_pantry_items_expirationTimestamp ON pantry_items(expirationTimestamp)")
+                    db.execSQL(
+                        "CREATE INDEX index_pantry_items_expirationTimestamp " +
+                            "ON pantry_items(expirationTimestamp)",
+                    )
                     db.execSQL("CREATE UNIQUE INDEX index_pantry_items_barcode ON pantry_items(barcode)")
                     db.execSQL("CREATE INDEX index_pantry_items_isDeleted ON pantry_items(isDeleted)")
                 }
             }
 
         val MIGRATION_2_3 =
-            object : Migration(2, 3) {
+            object : Migration(MIGRATION_2_VERSION, MIGRATION_3_VERSION) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL(
                         "CREATE TABLE IF NOT EXISTS custom_barcode_cache (" +
@@ -87,6 +90,9 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 }
             }
+
+        private const val MIGRATION_2_VERSION = 2
+        private const val MIGRATION_3_VERSION = 3
 
         private fun searchIndexIsConfigured(db: SupportSQLiteDatabase): Boolean =
             db

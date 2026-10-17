@@ -1,11 +1,18 @@
 package com.jeffers.pantrycraft.data
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.RawQuery
+import androidx.room.Transaction
+import androidx.room.Update
 import androidx.sqlite.db.SupportSQLiteQuery
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface PantryDao {
+interface PantryQueryDao {
     @Query("SELECT * FROM pantry_items WHERE isDeleted = 0 ORDER BY name COLLATE NOCASE")
     fun observeAllPantryItems(): Flow<List<PantryItem>>
 
@@ -23,10 +30,15 @@ interface PantryDao {
 
     @Query(
         "SELECT * FROM pantry_items WHERE isDeleted = 0 AND quantity > 0 " +
-            "ORDER BY CASE WHEN expirationTimestamp IS NULL THEN 1 ELSE 0 END, expirationTimestamp ASC, name COLLATE NOCASE ASC",
+            "ORDER BY CASE WHEN expirationTimestamp IS NULL THEN 1 ELSE 0 END, " +
+                "expirationTimestamp ASC, name COLLATE NOCASE ASC",
     )
     suspend fun getAvailableIngredients(): List<PantryItem>
 
+}
+
+@Dao
+interface PantryMutationDao {
     @Query("UPDATE pantry_items SET isDeleted = 1, updated_at = :updatedAt WHERE id = :id")
     suspend fun softDelete(
         id: Long,
@@ -63,6 +75,8 @@ interface PantryDao {
     @Delete
     suspend fun delete(item: PantryItem)
 }
+
+interface PantryDao : PantryQueryDao, PantryMutationDao
 
 @Dao
 interface GroceryDao {

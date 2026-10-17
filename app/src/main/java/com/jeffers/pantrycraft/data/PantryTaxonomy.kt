@@ -26,20 +26,34 @@ object PantryTaxonomy {
 
     val storageLocations = listOf("PANTRY", "FRIDGE", "FREEZER", "COUNTER")
 
-    val shelfLifeOptionsDays = listOf(0, 3, 7, 14)
+    val shelfLifeOptionsDays = listOf(NO_SHELF_LIFE, THREE_DAYS, ONE_WEEK, TWO_WEEKS)
 
-    val shelfLifePresetDays = listOf(0, 3, 7, 14, 30, 60, 90, 180, 365)
+    val shelfLifePresetDays =
+        listOf(
+            NO_SHELF_LIFE, THREE_DAYS, ONE_WEEK, TWO_WEEKS, ONE_MONTH,
+            TWO_MONTHS, THREE_MONTHS, SIX_MONTHS, ONE_YEAR,
+        )
 
     fun isAromaticOrSeasoningCategory(category: String): Boolean =
         category.equals("SPICES", ignoreCase = true) || category.equals("CONDIMENTS", ignoreCase = true)
 
     fun openedShelfLifeDays(category: String): Int =
         when (category.uppercase()) {
-            "MEAT", "SEAFOOD" -> 3
-            "DAIRY", "PRODUCE", "BAKERY", "BEVERAGES", "CANNED" -> 7
-            "CONDIMENTS", "SNACKS" -> 14
-            "FROZEN" -> 30
-            "SPICES", "GRAINS", "PANTRY_STAPLE" -> 90
-            else -> 14
+            "MEAT", "SEAFOOD" -> THREE_DAYS
+            "DAIRY", "PRODUCE", "BAKERY", "BEVERAGES", "CANNED" -> ONE_WEEK
+            "CONDIMENTS", "SNACKS" -> TWO_WEEKS
+            "FROZEN" -> ONE_MONTH
+            "SPICES", "GRAINS", "PANTRY_STAPLE" -> THREE_MONTHS
+            else -> TWO_WEEKS
         }
+
+    private const val NO_SHELF_LIFE = 0
+    private const val THREE_DAYS = 3
+    private const val ONE_WEEK = 7
+    private const val TWO_WEEKS = 14
+    private const val ONE_MONTH = 30
+    private const val TWO_MONTHS = 60
+    private const val THREE_MONTHS = 90
+    private const val SIX_MONTHS = 180
+    private const val ONE_YEAR = 365
 }

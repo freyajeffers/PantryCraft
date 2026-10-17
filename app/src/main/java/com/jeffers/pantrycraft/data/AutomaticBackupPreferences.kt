@@ -22,7 +22,8 @@ object AutomaticBackupPreferences {
 
     fun isEnabled(context: Context): Boolean = preferences(context).getBoolean(ENABLED_KEY, false)
 
-    fun intervalMinutes(context: Context): Long = preferences(context).getLong(INTERVAL_MINUTES_KEY, 24 * 60L)
+    fun intervalMinutes(context: Context): Long =
+        preferences(context).getLong(INTERVAL_MINUTES_KEY, DEFAULT_INTERVAL_MINUTES)
 
     fun setSchedule(
         context: Context,
@@ -47,7 +48,10 @@ object AutomaticBackupPreferences {
             val preferences = preferences(context)
             preferences
                 .edit()
-                .putString(PIN_CIPHERTEXT_KEY, Base64.encodeToString(cipher.doFinal(plaintext), Base64.NO_WRAP))
+                .putString(
+                    PIN_CIPHERTEXT_KEY,
+                    Base64.encodeToString(cipher.doFinal(plaintext), Base64.NO_WRAP),
+                )
                 .putString(PIN_IV_KEY, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
                 .apply()
         } finally {
@@ -58,13 +62,14 @@ object AutomaticBackupPreferences {
 
     fun loadPin(context: Context): CharArray? {
         val preferences = preferences(context)
-        val encodedCiphertext = preferences.getString(PIN_CIPHERTEXT_KEY, null) ?: return null
-        val encodedIv = preferences.getString(PIN_IV_KEY, null) ?: return null
+        val encodedCiphertext = preferences.getString(PIN_CIPHERTEXT_KEY, null)
+        val encodedIv = preferences.getString(PIN_IV_KEY, null)
+        if (encodedCiphertext == null || encodedIv == null) return null
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(
             Cipher.DECRYPT_MODE,
             getOrCreateKey(),
-            GCMParameterSpec(128, Base64.decode(encodedIv, Base64.NO_WRAP)),
+            GCMParameterSpec(GCM_TAG_LENGTH_BITS, Base64.decode(encodedIv, Base64.NO_WRAP)),
         )
         val plaintext = cipher.doFinal(Base64.decode(encodedCiphertext, Base64.NO_WRAP))
         return try {
@@ -78,7 +83,8 @@ object AutomaticBackupPreferences {
 
     private fun getOrCreateKey(): SecretKey {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-        (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
+        val existingKey = keyStore.getKey(KEY_ALIAS, null) as? SecretKey
+        if (existingKey != null) return existingKey
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
         val baseBuilder = {
             KeyGenParameterSpec
@@ -87,15 +93,24 @@ object AutomaticBackupPreferences {
                     KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
                 ).setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setKeySize(256)
+                .setKeySize(AES_KEY_SIZE_BITS)
         }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-            runCatching {
-                generator.init(baseBuilder().setIsStrongBoxBacked(true).build())
-                return generator.generateKey()
+        val strongBoxKey =
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                runCatching {
+                    generator.init(baseBuilder().setIsStrongBoxBacked(true).build())
+                    generator.generateKey()
+                }.getOrNull()
+            } else {
+                null
             }
+        return strongBoxKey ?: generator.run {
+            init(baseBuilder().build())
+            generateKey()
         }
-        generator.init(baseBuilder().build())
-        return generator.generateKey()
     }
+
+    private const val DEFAULT_INTERVAL_MINUTES = 24 * 60L
+    private const val AES_KEY_SIZE_BITS = 256
+    private const val GCM_TAG_LENGTH_BITS = 128
 }

@@ -57,7 +57,8 @@ enum class AiProvider(
     ;
 
     companion object {
-        fun fromId(id: String?): AiProvider = entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: OFFLINE_MLKIT
+        fun fromId(id: String?): AiProvider =
+            entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: OFFLINE_MLKIT
     }
 }
 
@@ -120,7 +121,10 @@ object ByokPreferences {
             cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
             preferences(context)
                 .edit()
-                .putString(API_KEY_CIPHERTEXT, Base64.encodeToString(cipher.doFinal(plaintext), Base64.NO_WRAP))
+                .putString(
+                    API_KEY_CIPHERTEXT,
+                    Base64.encodeToString(cipher.doFinal(plaintext), Base64.NO_WRAP),
+                )
                 .putString(API_KEY_IV, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
                 .apply()
         } finally {
@@ -131,14 +135,15 @@ object ByokPreferences {
 
     fun loadApiKey(context: Context): String? {
         val prefs = preferences(context)
-        val encodedCiphertext = prefs.getString(API_KEY_CIPHERTEXT, null) ?: return null
-        val encodedIv = prefs.getString(API_KEY_IV, null) ?: return null
+        val encodedCiphertext = prefs.getString(API_KEY_CIPHERTEXT, null)
+        val encodedIv = prefs.getString(API_KEY_IV, null)
+        if (encodedCiphertext == null || encodedIv == null) return null
         return runCatching {
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
             cipher.init(
                 Cipher.DECRYPT_MODE,
                 getOrCreateKey(),
-                GCMParameterSpec(128, Base64.decode(encodedIv, Base64.NO_WRAP)),
+                GCMParameterSpec(GCM_TAG_LENGTH_BITS, Base64.decode(encodedIv, Base64.NO_WRAP)),
             )
             val bytes = cipher.doFinal(Base64.decode(encodedCiphertext, Base64.NO_WRAP))
             try {
@@ -159,11 +164,13 @@ object ByokPreferences {
             .apply()
     }
 
-    private fun preferences(context: Context) = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private fun preferences(context: Context) =
+        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private fun getOrCreateKey(): SecretKey {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-        (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
+        val existingKey = keyStore.getKey(KEY_ALIAS, null) as? SecretKey
+        if (existingKey != null) return existingKey
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
         val baseBuilder = {
             KeyGenParameterSpec
@@ -172,15 +179,23 @@ object ByokPreferences {
                     KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
                 ).setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setKeySize(256)
+                .setKeySize(AES_KEY_SIZE_BITS)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            runCatching {
-                generator.init(baseBuilder().setIsStrongBoxBacked(true).build())
-                return generator.generateKey()
+        val strongBoxKey =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                runCatching {
+                    generator.init(baseBuilder().setIsStrongBoxBacked(true).build())
+                    generator.generateKey()
+                }.getOrNull()
+            } else {
+                null
             }
+        return strongBoxKey ?: generator.run {
+            init(baseBuilder().build())
+            generateKey()
         }
-        generator.init(baseBuilder().build())
-        return generator.generateKey()
     }
+
+    private const val AES_KEY_SIZE_BITS = 256
+    private const val GCM_TAG_LENGTH_BITS = 128
 }

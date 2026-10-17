@@ -18,7 +18,7 @@ class AssetBarcodeDatabase(
                 .orEmpty()
                 .contains(ASSET_NAME)
         ) {
-            throw IllegalStateException("Offline food catalog is not installed")
+            error("Offline food catalog is not installed")
         }
         if (!target.exists()) {
             context.assets.open(ASSET_NAME).use { input -> target.outputStream().use(input::copyTo) }
@@ -36,15 +36,15 @@ class AssetBarcodeDatabase(
                 null,
                 null,
                 null,
-                "1",
+                QUERY_LIMIT,
             ).use { cursor ->
                 if (!cursor.moveToFirst()) return null
                 EmbeddedBarcodeMatch(
                     barcode = cursor.getString(0),
                     name = cursor.getString(1),
-                    brand = cursor.getString(2),
-                    category = cursor.getString(3),
-                    shelfLifeDays = cursor.getInt(4),
+                    brand = cursor.getString(BRAND_COLUMN),
+                    category = cursor.getString(CATEGORY_COLUMN),
+                    shelfLifeDays = cursor.getInt(SHELF_LIFE_COLUMN),
                 )
             }
 
@@ -52,6 +52,10 @@ class AssetBarcodeDatabase(
 
     companion object {
         private const val ASSET_NAME = "foodfacts.db"
+        private const val QUERY_LIMIT = "1"
+        private const val BRAND_COLUMN = 2
+        private const val CATEGORY_COLUMN = 3
+        private const val SHELF_LIFE_COLUMN = 4
     }
 }
 

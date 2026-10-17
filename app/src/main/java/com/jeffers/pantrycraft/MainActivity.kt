@@ -6,7 +6,6 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.*
 import com.jeffers.pantrycraft.data.AutomaticBackupScheduler
 import com.jeffers.pantrycraft.data.ExpirationAlertScheduler
 import com.jeffers.pantrycraft.data.ExpirationAlertWorker

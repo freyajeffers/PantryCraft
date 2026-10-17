@@ -34,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -48,8 +49,7 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun AppNavigator() {
-    val context =
-        androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     // Load Repository lazily off the UI thread so composition and first-draw are fast.
     val repositoryResultState = remember { mutableStateOf<Result<Repository>?>(null) }
     LaunchedEffect(Unit) {
@@ -58,32 +58,10 @@ fun AppNavigator() {
                 runCatching { Repository.getInstance(context.applicationContext) }
             }
     }
-    val repositoryResult = repositoryResultState.value
-    if (repositoryResult == null) {
-        DatabaseLoadingScreen()
-        return
-    }
+    val repositoryResult = repositoryResultState.value ?: return DatabaseLoadingScreen()
     val databaseError = repositoryResult.exceptionOrNull()
     if (databaseError is DatabaseKeyInvalidatedException) {
-        DatabaseRecoveryScreen(
-            context = context,
-            onRestore = { backupName, pin ->
-                if (backupName.startsWith("content://")) {
-                    DatabaseBackupManager.restoreEncryptedBackupFromUri(
-                        context,
-                        android.net.Uri.parse(backupName),
-                        pin,
-                    )
-                } else {
-                    DatabaseBackupManager.restoreEncryptedBackup(context, backupName, pin)
-                }
-                (context as? android.app.Activity)?.recreate()
-            },
-            onReset = {
-                AppDatabase.resetEncryptedDatabase(context)
-                (context as? android.app.Activity)?.recreate()
-            },
-        )
+        DatabaseRecoveryScreen(context)
         return
     }
     val repository = repositoryResult.getOrThrow()
@@ -92,67 +70,88 @@ fun AppNavigator() {
         BackHandler { destination = "home" }
     }
     Scaffold(
-        bottomBar = {
-            NavigationBar {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    BottomDestination.entries.forEach { item ->
-                        val selected = destination == item.route
-                        BoxWithConstraints(
-                            modifier =
-                                Modifier
-                                    .weight(1f)
-                                    .height(64.dp)
-                                    .clickable { destination = item.route },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            val bubbleWidth = minOf(54.dp, maxWidth - 8.dp)
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .width(bubbleWidth)
-                                        .height(32.dp)
-                                        .background(
-                                            if (selected) {
-                                                MaterialTheme.colorScheme.secondaryContainer
-                                            } else {
-                                                MaterialTheme.colorScheme.surface
-                                            },
-                                            RoundedCornerShape(16.dp),
-                                        ).semantics { contentDescription = item.label },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                androidx.compose.material3.Icon(
-                                    imageVector = if (selected) item.selectedIcon else item.icon,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(28.dp),
-                                )
-                            }
-                        }
+        bottomBar = { AppBottomBar(destination) { destination = it } },
+    ) { contentPadding ->
+        DestinationContent(destination, repository, context, contentPadding) { destination = it }
+    }
+}
+
+@Composable
+private fun DatabaseRecoveryScreen(context: android.content.Context) {
+    DatabaseRecoveryScreen(
+        context = context,
+        onRestore = { backupName, pin ->
+            if (backupName.startsWith("content://")) {
+                DatabaseBackupManager.restoreEncryptedBackupFromUri(
+                    context,
+                    android.net.Uri.parse(backupName),
+                    pin,
+                )
+            } else {
+                DatabaseBackupManager.restoreEncryptedBackup(context, backupName, pin)
+            }
+            (context as? android.app.Activity)?.recreate()
+        },
+        onReset = {
+            AppDatabase.resetEncryptedDatabase(context)
+            (context as? android.app.Activity)?.recreate()
+        },
+    )
+}
+
+@Composable
+private fun AppBottomBar(destination: String, onDestinationSelected: (String) -> Unit) {
+    NavigationBar {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            BottomDestination.entries.forEach { item ->
+                val selected = destination == item.route
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(64.dp)
+                        .clickable { onDestinationSelected(item.route) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val bubbleWidth = minOf(54.dp, maxWidth - 8.dp)
+                    Box(
+                        modifier = Modifier
+                            .width(bubbleWidth)
+                            .height(32.dp)
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.secondaryContainer
+                                else MaterialTheme.colorScheme.surface,
+                                RoundedCornerShape(16.dp),
+                            )
+                            .semantics { contentDescription = item.label },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        androidx.compose.material3.Icon(
+                            imageVector = if (selected) item.selectedIcon else item.icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp),
+                        )
                     }
                 }
             }
-        },
-    ) { contentPadding ->
-        Box(modifier = Modifier.padding(contentPadding)) {
-            when (destination) {
-                "home" -> HomeScreen(repository, onNavigate = { destination = it })
+        }
+    }
+}
 
-                "pantry" -> {
-                    val vm: PantryViewModel =
-                        viewModel(factory = PantryViewModelFactory(repository))
-                    PantryScreen(vm)
-                }
-
-                "grocery" -> {
-                    val vm: GroceryViewModel =
-                        viewModel(factory = GroceryViewModelFactory(repository))
-                    GroceryScreen(vm)
-                }
-
-                "camera" -> CameraScreen()
-
-                "settings" -> SettingsScreen(context, repository)
-            }
+@Composable
+private fun DestinationContent(
+    destination: String,
+    repository: Repository,
+    context: android.content.Context,
+    contentPadding: androidx.compose.foundation.layout.PaddingValues,
+    onNavigate: (String) -> Unit,
+) {
+    Box(modifier = Modifier.padding(contentPadding)) {
+        when (destination) {
+            "home" -> HomeScreen(repository, onNavigate)
+            "pantry" -> PantryScreen(viewModel(factory = PantryViewModelFactory(repository)))
+            "grocery" -> GroceryScreen(viewModel(factory = GroceryViewModelFactory(repository)))
+            "camera" -> CameraScreen()
+            "settings" -> SettingsScreen(context, repository)
         }
     }
 }
