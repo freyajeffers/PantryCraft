@@ -549,9 +549,9 @@ fun CameraScreen() {
             }
         }
 
-        // Unknown Barcode Association Dialog — use the extracted implementation to keep this file small
+        // Unknown Barcode Association Dialog
         associateDialogBarcode?.let { barcode ->
-            AssociateBarcodeDialogImpl(
+            AssociateBarcodeDialog(
                 barcode = barcode,
                 onDismiss = {
                     associateDialogBarcode = null
@@ -577,7 +577,8 @@ fun CameraScreen() {
                                 category = category,
                                 storageLocation = storageLocation,
                                 expirationTimestamp = exp,
-                                isAromaticOrSeasoning = PantryTaxonomy.isAromaticOrSeasoningCategory(category),
+                                isAromaticOrSeasoning =
+                                    PantryTaxonomy.isAromaticOrSeasoningCategory(category),
                             ),
                         )
                         snapshotStatus = "Saved and remembered $name"
@@ -592,7 +593,90 @@ fun CameraScreen() {
 }
 
 @Composable
-// AssociateBarcodeDialog implementation is extracted to CameraDialogs.kt (AssociateBarcodeDialogImpl)
+private fun AssociateBarcodeDialog(
+    barcode: String,
+    onDismiss: () -> Unit,
+    onSave: (name: String, category: String, unit: String, storageLocation: String, shelfLifeDays: Int) -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("OTHER") }
+    var unit by remember { mutableStateOf("COUNT") }
+    var storageLocation by remember { mutableStateOf(PantryTaxonomy.storageLocations.first()) }
+    var shelfLifeDaysText by remember { mutableStateOf("14") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Name Scanned Barcode") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Barcode: $barcode", style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Item Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { category = it },
+                    label = { Text("Category (e.g. PRODUCE, DAIRY, SNACKS)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = unit,
+                    onValueChange = { unit = it },
+                    label = { Text("Unit (COUNT, G, KG, ML, L, CAN)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = storageLocation,
+                    onValueChange = { storageLocation = it },
+                    label = { Text("Storage (PANTRY, FRIDGE, FREEZER, COUNTER)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = shelfLifeDaysText,
+                    onValueChange = { shelfLifeDaysText = it },
+                    label = { Text("Estimated Shelf Life (Days)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = name.isNotBlank(),
+                onClick = {
+                    val cleanStorage =
+                        storageLocation
+                            .trim()
+                            .uppercase()
+                            .takeIf { it in PantryTaxonomy.storageLocations }
+                            ?: PantryTaxonomy.storageLocations.first()
+                    val cleanDays = shelfLifeDaysText.toIntOrNull()?.coerceAtLeast(0) ?: 0
+                    onSave(
+                        name.trim(),
+                        category.trim().uppercase().ifEmpty { "OTHER" },
+                        unit.trim().uppercase().ifEmpty { "COUNT" },
+                        cleanStorage,
+                        cleanDays,
+                    )
+                },
+            ) {
+                Text("Save & Remember")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
+}
+
 @Composable
 private fun CameraPermissionPrompt(onRequestPermission: () -> Unit) {
     Column(
