@@ -22,6 +22,27 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult
 import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
+import androidx.compose.runtime.remember
+import java.lang.Float
+
+@Composable
+fun rememberLabelPaint(): Paint = remember {
+    Paint().apply {
+        color = android.graphics.Color.WHITE
+        textSize = 34f
+        isAntiAlias = true
+        typeface = Typeface.DEFAULT_BOLD
+    }
+}
+
+@Composable
+fun rememberBadgePaint(): Paint = remember {
+    Paint().apply {
+        color = android.graphics.Color.argb(200, 20, 30, 45)
+        style = Paint.Style.FILL
+        isAntiAlias = true
+    }
+}
 
 @Composable
 fun CameraPreviewCanvas(
