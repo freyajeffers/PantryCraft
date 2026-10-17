@@ -55,6 +55,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
+private const val BYTES_IN_KB = 1024L
+private const val BYTES_IN_MB = BYTES_IN_KB * 1024L
+private const val MINUTES_PER_HOUR = 60L
+private const val HOURS_PER_DAY = 24L
+private const val DAYS_PER_WEEK = 7L
+private const val DAYS_PER_MONTH = 30L
+
 private data class CatalogDialog(
     val title: String,
     val message: String,
@@ -63,9 +70,9 @@ private data class CatalogDialog(
 
 private fun formatFileSize(bytes: Long): String =
     when {
-        bytes < 1024L -> "$bytes B"
-        bytes < 1024L * 1024L -> "%.1f KB".format(bytes / 1024.0)
-        else -> "%.1f MB".format(bytes / (1024.0 * 1024.0))
+        bytes < BYTES_IN_KB -> "$bytes B"
+        bytes < BYTES_IN_MB -> "%.1f KB".format(bytes / BYTES_IN_KB.toDouble())
+        else -> "%.1f MB".format(bytes / BYTES_IN_MB.toDouble())
     }
 
 @Composable
@@ -662,13 +669,13 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         listOf(
-                            60L to "1 hour",
-                            3 * 60L to "3 hours",
-                            6 * 60L to "6 hours",
-                            12 * 60L to "12 hours",
-                            24 * 60L to "Daily",
-                            7 * 24 * 60L to "Weekly",
-                            30 * 24 * 60L to "Monthly",
+                            MINUTES_PER_HOUR to "1 hour",
+                            3 * MINUTES_PER_HOUR to "3 hours",
+                            6 * MINUTES_PER_HOUR to "6 hours",
+                            12 * MINUTES_PER_HOUR to "12 hours",
+                            HOURS_PER_DAY * MINUTES_PER_HOUR to "Daily",
+                            DAYS_PER_WEEK * HOURS_PER_DAY * MINUTES_PER_HOUR to "Weekly",
+                            DAYS_PER_MONTH * HOURS_PER_DAY * MINUTES_PER_HOUR to "Monthly",
                         ).forEach { interval ->
                             val selected = automaticBackupIntervalMinutes == interval.first
                             if (selected) {
