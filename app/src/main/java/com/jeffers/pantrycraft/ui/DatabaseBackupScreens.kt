@@ -154,35 +154,18 @@ fun SettingsScreen(
         }
     // Pin entry dialog helper
     if (showPinDialog) {
-        AlertDialog(
-            onDismissRequest = {
+        BackupPinDialog(
+            pinText = pinText,
+            onPinTextChange = { pinText = it },
+            onDismiss = {
                 showPinDialog = false
                 pinText = ""
             },
-            title = { Text("Enter backup PIN") },
-            text = {
-                OutlinedTextField(
-                    value = pinText,
-                    onValueChange = { pinText = it },
-                    label = { Text("PIN") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val pinChars = pinText.toCharArray()
-                    pinText = ""
-                    showPinDialog = false
-                    pinDialogAction.value(pinChars)
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showPinDialog = false
-                    pinText = ""
-                }) { Text("Cancel") }
+            onConfirm = {
+                val pinChars = pinText.toCharArray()
+                pinText = ""
+                showPinDialog = false
+                pinDialogAction.value(pinChars)
             },
         )
     }
@@ -948,6 +931,111 @@ fun SettingsScreen(
 }
 
 @Composable
+private fun RecoveryResetDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Reset local database?") },
+        text = {
+            Text(
+                "This permanently deletes the local pantry and grocery database. " +
+                    "Restore a backup first if you need to keep it.",
+            )
+        },
+        confirmButton = { TextButton(onClick = onConfirm) { Text("Reset database") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+private data class RecoveryContentState(
+    val backups: List<String>,
+    val selectedBackup: String?,
+    val pin: String,
+    val error: String?,
+    val onSelectBackup: (String) -> Unit,
+    val onPinChange: (String) -> Unit,
+    val onOpenBackup: () -> Unit,
+    val onRestore: () -> Unit,
+    val onReset: () -> Unit,
+)
+
+@Composable
+private fun RecoveryContent(state: RecoveryContentState) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("Encrypted database recovery required", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            "Restore a PIN-protected backup to recover the database and its SQLCipher key.",
+            modifier = Modifier.padding(vertical = 16.dp),
+        )
+        if (state.backups.isEmpty()) {
+            Text("No encrypted backups are available on this device.")
+        } else {
+            state.backups.forEach { backup ->
+                TextButton(onClick = { state.onSelectBackup(backup) }) {
+                    val label = if (backup.startsWith("content://")) {
+                        Uri.parse(backup).lastPathSegment ?: "Saved backup file"
+                    } else {
+                        backup
+                    }
+                    Text(if (backup == state.selectedBackup) "✓ $label" else label)
+                }
+            }
+            OutlinedTextField(
+                value = state.pin,
+                onValueChange = state.onPinChange,
+                label = { Text("Backup PIN") },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedButton(
+                enabled = state.pin.isNotEmpty(),
+                onClick = state.onOpenBackup,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) { Text("Open backup file") }
+            Spacer(modifier = Modifier.padding(4.dp))
+            Button(
+                enabled = state.selectedBackup != null && state.pin.isNotEmpty(),
+                onClick = state.onRestore,
+            ) { Text("Restore selected backup") }
+        }
+        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        OutlinedButton(onClick = state.onReset) { Text("Reset local database") }
+    }
+}
+
+@Composable
+private fun BackupPinDialog(
+    pinText: String,
+    onPinTextChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Enter backup PIN") },
+        text = {
+            OutlinedTextField(
+                value = pinText,
+                onValueChange = onPinTextChange,
+                label = { Text("PIN") },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = { TextButton(onClick = onConfirm) { Text("OK") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
 fun DatabaseRecoveryScreen(
     context: android.content.Context,
     onRestore: (String, CharArray) -> Unit,
@@ -982,94 +1070,39 @@ fun DatabaseRecoveryScreen(
             }
         }
     if (confirmReset) {
-        AlertDialog(
-            onDismissRequest = { confirmReset = false },
-            title = { Text("Reset local database?") },
-            text = {
-                Text(
-                    "This permanently deletes the local pantry and grocery database. " +
-                        "Restore a backup first if you need to keep it.",
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        confirmReset = false
-                        onReset()
-                    },
-                ) { Text("Reset database") }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmReset = false }) { Text("Cancel") }
+        RecoveryResetDialog(
+            onDismiss = { confirmReset = false },
+            onConfirm = {
+                confirmReset = false
+                onReset()
             },
         )
     }
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text("Encrypted database recovery required", style = MaterialTheme.typography.headlineSmall)
-        Text(
-            "Restore a PIN-protected backup to recover the database and its SQLCipher key.",
-            modifier = Modifier.padding(vertical = 16.dp),
-        )
-        if (backups.isEmpty()) {
-            Text("No encrypted backups are available on this device.")
-        } else {
-            backups.forEach { backup ->
-                TextButton(onClick = { selectedBackup = backup }) {
-                    val label =
-                        if (backup.startsWith("content://")) {
-                            Uri.parse(backup).lastPathSegment ?: "Saved backup file"
-                        } else {
-                            backup
-                        }
-                    Text(if (backup == selectedBackup) "✓ $label" else label)
-                }
-            }
-            OutlinedTextField(
-                value = pin,
-                onValueChange = { pin = it },
-                label = { Text("Backup PIN") },
-                visualTransformation = PasswordVisualTransformation(),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedButton(
-                enabled = pin.isNotEmpty(),
-                onClick = {
-                    pendingRestorePin = pin.toCharArray()
-                    pin = ""
-                    openBackupLauncher.launch(arrayOf("application/octet-stream", "application/*"))
-                },
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            ) {
-                Text("Open backup file")
-            }
-            Spacer(modifier = Modifier.padding(4.dp))
-            Button(
-                enabled = selectedBackup != null && pin.isNotEmpty(),
-                onClick = {
-                    val backup = selectedBackup ?: return@Button
+    RecoveryContent(
+        RecoveryContentState(
+            backups = backups,
+            selectedBackup = selectedBackup,
+            pin = pin,
+            error = error,
+            onSelectBackup = { selectedBackup = it },
+            onPinChange = { pin = it },
+            onOpenBackup = {
+                pendingRestorePin = pin.toCharArray()
+                pin = ""
+                openBackupLauncher.launch(arrayOf("application/octet-stream", "application/*"))
+            },
+            onRestore = {
+                selectedBackup?.let { backup ->
                     val suppliedPin = pin.toCharArray()
                     pin = ""
                     scope.launch {
-                        error =
-                            withContext(Dispatchers.IO) {
-                                runCatching { onRestore(backup, suppliedPin) }
-                                    .exceptionOrNull()
-                                    ?.message
-                            }
+                        error = withContext(Dispatchers.IO) {
+                            runCatching { onRestore(backup, suppliedPin) }.exceptionOrNull()?.message
+                        }
                     }
-                },
-            ) {
-                Text("Restore selected backup")
-            }
-        }
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        OutlinedButton(onClick = { confirmReset = true }) {
-            Text("Reset local database")
-        }
-    }
+                }
+            },
+            onReset = { confirmReset = true },
+        ),
+    )
 }
