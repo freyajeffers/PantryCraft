@@ -49,7 +49,7 @@ class AutomaticBackupWorker(
         AppDatabase.checkpointForBackup(applicationContext)
         val checksum = DatabaseBackupManager.dbChecksum(applicationContext)
         if (checksum == null || checksum != DatabaseBackupManager.lastDbChecksum(applicationContext)) {
-            val treeUri = DatabaseBackupManager.persistedAutoBackupTreeUri(applicationContext)
+            val treeUri = persistedAutoBackupTreeUri(applicationContext)
             val backupName = DatabaseBackupManager.createEncryptedBackup(applicationContext, pin)
             exportToTree(treeUri, backupName)
             DatabaseBackupManager.saveLastDbChecksum(applicationContext, checksum)

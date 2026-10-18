@@ -48,6 +48,8 @@ import com.jeffers.pantrycraft.data.AutomaticBackupScheduler
 import com.jeffers.pantrycraft.data.ByokPreferences
 import com.jeffers.pantrycraft.data.backupRecords as loadBackupRecords
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
+import com.jeffers.pantrycraft.data.persistedAutoBackupTreeUri
+import com.jeffers.pantrycraft.data.persistedBackupUri
 import com.jeffers.pantrycraft.data.ExpirationAlertWorker
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
@@ -128,10 +130,10 @@ fun SettingsScreen(
     val databaseHasUserData = pantryItems.isNotEmpty() || groceryItems.isNotEmpty()
     var backupResult by remember { mutableStateOf<String?>(null) }
     var pendingBackupName by remember { mutableStateOf<String?>(null) }
-    var lastExportedUri by remember { mutableStateOf(DatabaseBackupManager.persistedBackupUri(context)) }
+    var lastExportedUri by remember { mutableStateOf(persistedBackupUri(context)) }
     var backupRecords by remember { mutableStateOf(loadBackupRecords(context)) }
     var autoBackupTreeUri by remember {
-        mutableStateOf(DatabaseBackupManager.persistedAutoBackupTreeUri(context))
+        mutableStateOf(persistedAutoBackupTreeUri(context))
     }
     var automaticBackupsEnabled by remember {
         mutableStateOf(AutomaticBackupPreferences.isEnabled(context))
@@ -1072,7 +1074,7 @@ fun DatabaseRecoveryScreen(
     val scope = rememberCoroutineScope()
     val backups = remember {
         DatabaseBackupManager.listBackups(context) +
-            listOfNotNull(DatabaseBackupManager.persistedBackupUri(context)?.toString())
+            listOfNotNull(persistedBackupUri(context)?.toString())
     }
     var selectedBackup by remember { mutableStateOf(backups.firstOrNull()) }
     var pin by remember { mutableStateOf("") }

@@ -77,17 +77,6 @@ object DatabaseBackupManager {
         )
     }
 
-    fun persistedBackupUri(context: Context): Uri? {
-        val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val value = preferences.getString(LAST_EXPORTED_URI, null)
-        return value?.let(Uri::parse)
-    }
-
-    fun persistedAutoBackupTreeUri(context: Context): Uri? {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(AUTO_BACKUP_TREE_URI, null)?.let { Uri.parse(it) }
-    }
-
     fun persistAutoBackupTreeUri(
         context: Context,
         uri: Uri?,
