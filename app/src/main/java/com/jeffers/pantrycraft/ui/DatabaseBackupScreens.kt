@@ -1,10 +1,7 @@
 package com.jeffers.pantrycraft.ui
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,12 +18,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -40,24 +34,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import com.jeffers.pantrycraft.data.AiProvider
 import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.AutomaticBackupPreferences
 import com.jeffers.pantrycraft.data.AutomaticBackupScheduler
 import com.jeffers.pantrycraft.data.ByokPreferences
-import com.jeffers.pantrycraft.data.backupRecords as loadBackupRecords
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
-import com.jeffers.pantrycraft.data.persistAutoBackupTreeUri
-import com.jeffers.pantrycraft.data.persistedBackupUri
 import com.jeffers.pantrycraft.data.ExpirationAlertWorker
 import com.jeffers.pantrycraft.data.Repository
+import com.jeffers.pantrycraft.data.persistAutoBackupTreeUri
+import com.jeffers.pantrycraft.data.persistedBackupUri
 import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import com.jeffers.pantrycraft.data.backupRecords as loadBackupRecords
 
 private const val BYTES_IN_KB = 1024L
 private const val BYTES_IN_MB = BYTES_IN_KB * 1024L
@@ -444,45 +437,50 @@ fun SettingsScreen(
         FoodFactsCard(
             repository = repository,
             scope = scope,
-            props = FoodFactsProps(
-                catalogReady = catalogReady,
-                catalogFileSize = catalogFileSize,
-                catalogDownloading = catalogDownloading,
-                catalogDownloadedBytes = catalogDownloadedBytes,
-                catalogTotalBytes = catalogTotalBytes,
-                onStartDownload = {
-                    catalogDownloading = true
-                    catalogDownloadedBytes = 0L
-                    catalogTotalBytes = -1L
-                },
-                onDownloadResult = { result ->
-                    catalogDownloading = false
-                    result.fold(
-                        onSuccess = { file ->
-                            catalogReady = true
-                            catalogFileSize = file.length()
-                            Toast.makeText(
-                                context,
-                                "Food catalog downloaded (${formatFileSize(file.length())})",
-                                Toast.LENGTH_SHORT,
-                            ).show()
-                        },
-                        onFailure = {
-                            catalogDialog = CatalogDialog(
-                                "Download failed",
-                                it.message ?: "The catalog could not be downloaded. Check your connection and try again.",
-                                true,
-                            )
-                        },
-                    )
-                },
-                onProgress = { downloaded, total ->
-                    catalogDownloadedBytes = downloaded
-                    catalogTotalBytes = total
-                },
-                onDelete = { confirmCatalogDelete = true },
-                catalogDialogSetter = { catalogDialog = it },
-            ),
+            props =
+                FoodFactsProps(
+                    catalogReady = catalogReady,
+                    catalogFileSize = catalogFileSize,
+                    catalogDownloading = catalogDownloading,
+                    catalogDownloadedBytes = catalogDownloadedBytes,
+                    catalogTotalBytes = catalogTotalBytes,
+                    onStartDownload = {
+                        catalogDownloading = true
+                        catalogDownloadedBytes = 0L
+                        catalogTotalBytes = -1L
+                    },
+                    onDownloadResult = { result ->
+                        catalogDownloading = false
+                        result.fold(
+                            onSuccess = { file ->
+                                catalogReady = true
+                                catalogFileSize = file.length()
+                                Toast
+                                    .makeText(
+                                        context,
+                                        "Food catalog downloaded (${formatFileSize(file.length())})",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                            },
+                            onFailure = {
+                                catalogDialog =
+                                    CatalogDialog(
+                                        "Download failed",
+                                        it.message
+                                            ?: "The catalog could not be downloaded. " +
+                                            "Check your connection and try again.",
+                                        true,
+                                    )
+                            },
+                        )
+                    },
+                    onProgress = { downloaded, total ->
+                        catalogDownloadedBytes = downloaded
+                        catalogTotalBytes = total
+                    },
+                    onDelete = { confirmCatalogDelete = true },
+                    catalogDialogSetter = { catalogDialog = it },
+                ),
         )
         NotificationSettingsCard(
             context = context,
@@ -505,23 +503,13 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(top = 12.dp),
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Automatic background backups")
-                        Text(
-                            "Backups run while the app is not open and stay on this device. " +
-                                "The PIN is protected by Android Keystore.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = automaticBackupsEnabled,
-                        onCheckedChange = { enabled ->
-                            if (!enabled) {
+                AutomaticBackupCard(
+                    props =
+                        AutomaticBackupProps(
+                            enabled = automaticBackupsEnabled,
+                            intervalMinutes = automaticBackupIntervalMinutes,
+                            databaseHasUserData = databaseHasUserData,
+                            onDisable = {
                                 automaticBackupsEnabled = false
                                 AutomaticBackupPreferences.setSchedule(
                                     context,
@@ -529,7 +517,8 @@ fun SettingsScreen(
                                     intervalMinutes = automaticBackupIntervalMinutes,
                                 )
                                 AutomaticBackupScheduler.cancel(context)
-                            } else {
+                            },
+                            onEnableRequested = {
                                 pinDialogAction.value = { suppliedPin ->
                                     AutomaticBackupPreferences.savePin(context, suppliedPin)
                                     AutomaticBackupPreferences.setSchedule(
@@ -538,90 +527,44 @@ fun SettingsScreen(
                                         intervalMinutes = automaticBackupIntervalMinutes,
                                     )
                                     automaticBackupsEnabled = true
-                                    AutomaticBackupScheduler.schedule(
-                                        context,
-                                        automaticBackupIntervalMinutes,
-                                    )
+                                    AutomaticBackupScheduler.schedule(context, automaticBackupIntervalMinutes)
                                 }
                                 pinText = ""
                                 showPinDialog = true
-                            }
-                        },
-                        modifier = Modifier.padding(start = 12.dp),
-                    )
-                }
-                if (automaticBackupsEnabled) {
-                    Text("Backup interval", modifier = Modifier.padding(top = 12.dp))
-                    Row(
-                        modifier =
-                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        listOf(
-                            MINUTES_PER_HOUR to "1 hour",
-                            THREE_HOURS * MINUTES_PER_HOUR to "3 hours",
-                            SIX_HOURS * MINUTES_PER_HOUR to "6 hours",
-                            TWELVE_HOURS * MINUTES_PER_HOUR to "12 hours",
-                            HOURS_PER_DAY * MINUTES_PER_HOUR to "Daily",
-                            DAYS_PER_WEEK * HOURS_PER_DAY * MINUTES_PER_HOUR to "Weekly",
-                            DAYS_PER_MONTH * HOURS_PER_DAY * MINUTES_PER_HOUR to "Monthly",
-                        ).forEach { interval ->
-                            val selected = automaticBackupIntervalMinutes == interval.first
-                            if (selected) {
-                                Button(onClick = {
-                                    automaticBackupIntervalMinutes = interval.first
-                                    AutomaticBackupPreferences.setSchedule(
-                                        context,
-                                        enabled = true,
-                                        intervalMinutes = interval.first,
-                                    )
-                                    AutomaticBackupScheduler.schedule(context, interval.first)
-                                }) { Text("✓ ${interval.second}") }
-                            } else {
-                                OutlinedButton(onClick = {
-                                    automaticBackupIntervalMinutes = interval.first
-                                    AutomaticBackupPreferences.setSchedule(
-                                        context,
-                                        enabled = true,
-                                        intervalMinutes = interval.first,
-                                    )
-                                    AutomaticBackupScheduler.schedule(context, interval.first)
-                                }) { Text(interval.second) }
-                            }
-                        }
-                    }
-                }
-                if (databaseHasUserData) {
-                    Button(
-                        onClick = {
-                            // prompt for PIN then create backup
-                            pinDialogAction.value = { suppliedPin ->
-                                scope.launch {
-                                    backupResult =
-                                        withContext(Dispatchers.IO) {
-                                            runCatching {
-                                                DatabaseBackupManager.createEncryptedBackup(
-                                                    context,
-                                                    suppliedPin,
+                            },
+                            onIntervalSelected = { minutes ->
+                                automaticBackupIntervalMinutes = minutes
+                                AutomaticBackupPreferences.setSchedule(
+                                    context,
+                                    enabled = true,
+                                    intervalMinutes = minutes,
+                                )
+                                AutomaticBackupScheduler.schedule(context, minutes)
+                            },
+                            onBackupNow = {
+                                pinDialogAction.value = { suppliedPin ->
+                                    scope.launch {
+                                        backupResult =
+                                            withContext(Dispatchers.IO) {
+                                                runCatching {
+                                                    DatabaseBackupManager.createEncryptedBackup(context, suppliedPin)
+                                                }.fold(
+                                                    onSuccess = {
+                                                        backupRecords = loadBackupRecords(context)
+                                                        pendingBackupName = it
+                                                        createBackupLauncher.launch(it)
+                                                        "Backup created. Choose where to save the encrypted file."
+                                                    },
+                                                    onFailure = { "Backup failed: ${it.message}" },
                                                 )
-                                            }.fold(
-                                                onSuccess = {
-                                                    backupRecords = loadBackupRecords(context)
-                                                    pendingBackupName = it
-                                                    createBackupLauncher.launch(it)
-                                                    "Backup created. Choose where to save the encrypted file."
-                                                },
-                                                onFailure = { "Backup failed: ${it.message}" },
-                                            )
-                                        }
+                                            }
+                                    }
                                 }
-                            }
-                            pinText = ""
-                            showPinDialog = true
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text("Save encrypted backup file") }
-                }
+                                pinText = ""
+                                showPinDialog = true
+                            },
+                        ),
+                )
                 Text(
                     if (lastExportedUri != null) {
                         "Saved location remembered for recovery."
@@ -885,11 +828,12 @@ private fun RecoveryContent(state: RecoveryContentState) {
         } else {
             state.backups.forEach { backup ->
                 TextButton(onClick = { state.onSelectBackup(backup) }) {
-                    val label = if (backup.startsWith("content://")) {
-                        Uri.parse(backup).lastPathSegment ?: "Saved backup file"
-                    } else {
-                        backup
-                    }
+                    val label =
+                        if (backup.startsWith("content://")) {
+                            Uri.parse(backup).lastPathSegment ?: "Saved backup file"
+                        } else {
+                            backup
+                        }
                     Text(if (backup == state.selectedBackup) "✓ $label" else label)
                 }
             }
@@ -962,26 +906,29 @@ fun DatabaseRecoveryScreen(
     onReset: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val backups = remember {
-        DatabaseBackupManager.listBackups(context) +
-            listOfNotNull(persistedBackupUri(context)?.toString())
-    }
+    val backups =
+        remember {
+            DatabaseBackupManager.listBackups(context) +
+                listOfNotNull(persistedBackupUri(context)?.toString())
+        }
     var selectedBackup by remember { mutableStateOf(backups.firstOrNull()) }
     var pin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var confirmReset by remember { mutableStateOf(false) }
     var pendingRestorePin by remember { mutableStateOf<CharArray?>(null) }
-    val openBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        val suppliedPin = pendingRestorePin
-        pendingRestorePin = null
-        if (uri != null && suppliedPin != null) {
-            scope.launch {
-                error = withContext(Dispatchers.IO) {
-                    runCatching { onRestore(uri.toString(), suppliedPin) }.exceptionOrNull()?.message
+    val openBackupLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            val suppliedPin = pendingRestorePin
+            pendingRestorePin = null
+            if (uri != null && suppliedPin != null) {
+                scope.launch {
+                    error =
+                        withContext(Dispatchers.IO) {
+                            runCatching { onRestore(uri.toString(), suppliedPin) }.exceptionOrNull()?.message
+                        }
                 }
             }
         }
-    }
     RecoveryResetDialogHost(confirmReset, { confirmReset = false }) {
         confirmReset = false
         onReset()
@@ -1004,9 +951,10 @@ fun DatabaseRecoveryScreen(
                     val suppliedPin = pin.toCharArray()
                     pin = ""
                     scope.launch {
-                        error = withContext(Dispatchers.IO) {
-                            runCatching { onRestore(backup, suppliedPin) }.exceptionOrNull()?.message
-                        }
+                        error =
+                            withContext(Dispatchers.IO) {
+                                runCatching { onRestore(backup, suppliedPin) }.exceptionOrNull()?.message
+                            }
                     }
                 }
             },
