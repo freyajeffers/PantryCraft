@@ -441,121 +441,105 @@ private data class ReviewEditorProps(
 
 @Composable
 private fun ReviewEditorFields(props: ReviewEditorProps) {
-    val name = props.name
-    val onNameChange = props.onNameChange
-    val category = props.category
-    val onCategoryChange = props.onCategoryChange
-    val unit = props.unit
-    val onUnitChange = props.onUnitChange
-    val storageLocation = props.storageLocation
-    val onStorageLocationChange = props.onStorageLocationChange
-    val shelfLifeDays = props.shelfLifeDays
-    val onShelfLifeChange = props.onShelfLifeChange
-    val notes = props.notes
-    val onNotesChange = props.onNotesChange
-    val isAromatic = props.isAromatic
-    val onAromaticChange = props.onAromaticChange
-    val customUnitName = props.customUnitName
-    val onCustomUnitNameChange = props.onCustomUnitNameChange
-    val thresholdText = props.thresholdText
-    val onThresholdTextChange = props.onThresholdTextChange
-    val isOpened = props.isOpened
-    val onOpenedChange = props.onOpenedChange
-    val barcode = props.barcode
-    val onScanBarcodeClick = props.onScanBarcodeClick
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ReviewIdentityFields(props)
+        ReviewInventoryFields(props)
+        ReviewFlags(props)
+    }
+}
+
+@Composable
+private fun ReviewIdentityFields(props: ReviewEditorProps) {
+    OutlinedTextField(
+        value = props.name,
+        onValueChange = props.onNameChange,
+        label = { Text("Name") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        trailingIcon = {
+            IconButton(onClick = props.onScanBarcodeClick) {
+                Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan barcode to fill item")
+            }
+        },
+    )
+    if (!props.barcode.isNullOrBlank()) {
+        Text(
+            "Barcode: ${props.barcode}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+    ReviewDropdown("Category", props.category, PantryTaxonomy.categories, props.onCategoryChange)
+    ReviewDropdown("Unit", props.unit, PantryTaxonomy.units, props.onUnitChange)
+    if (props.unit == "CUSTOM") {
         OutlinedTextField(
-            value = name,
-            onValueChange = onNameChange,
-            label = { Text("Name") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            trailingIcon = {
-                IconButton(onClick = onScanBarcodeClick) {
-                    Icon(
-                        imageVector = Icons.Filled.QrCodeScanner,
-                        contentDescription = "Scan barcode to fill item",
-                    )
-                }
-            },
-        )
-        if (!barcode.isNullOrBlank()) {
-            Text(
-                "Barcode: $barcode",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-        ReviewDropdown(
-            label = "Category",
-            value = category,
-            options = PantryTaxonomy.categories,
-            onSelected = onCategoryChange,
-        )
-        ReviewDropdown(
-            label = "Unit",
-            value = unit,
-            options = PantryTaxonomy.units,
-            onSelected = onUnitChange,
-        )
-        if (unit == "CUSTOM") {
-            OutlinedTextField(
-                value = customUnitName,
-                onValueChange = onCustomUnitNameChange,
-                label = { Text("Custom unit (e.g. bunch, cloves, stalks)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        ReviewDropdown(
-            label = "Storage location",
-            value = storageLocation,
-            options = PantryTaxonomy.storageLocations,
-            onSelected = onStorageLocationChange,
-        )
-        ReviewShelfLifeEditor(
-            label = "Shelf life",
-            value = shelfLifeDays,
-            presets = PantryTaxonomy.shelfLifePresetDays,
-            onValueChange = onShelfLifeChange,
-        )
-        OutlinedTextField(
-            value = thresholdText,
-            onValueChange = onThresholdTextChange,
-            label = { Text("Low-stock alert threshold") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            value = props.customUnitName,
+            onValueChange = props.onCustomUnitNameChange,
+            label = { Text("Custom unit (e.g. bunch, cloves, stalks)") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        OutlinedTextField(
-            value = notes,
-            onValueChange = onNotesChange,
-            label = { Text("Notes / Condition") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+    }
+    ReviewDropdown(
+        "Storage location",
+        props.storageLocation,
+        PantryTaxonomy.storageLocations,
+        props.onStorageLocationChange,
+    )
+}
+
+@Composable
+private fun ReviewInventoryFields(props: ReviewEditorProps) {
+    ReviewShelfLifeEditor(
+        label = "Shelf life",
+        value = props.shelfLifeDays,
+        presets = PantryTaxonomy.shelfLifePresetDays,
+        onValueChange = props.onShelfLifeChange,
+    )
+    OutlinedTextField(
+        value = props.thresholdText,
+        onValueChange = props.onThresholdTextChange,
+        label = { Text("Low-stock alert threshold") },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    OutlinedTextField(
+        value = props.notes,
+        onValueChange = props.onNotesChange,
+        label = { Text("Notes / Condition") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun ReviewFlags(props: ReviewEditorProps) {
+    ReviewCheckbox(
+        checked = props.isOpened,
+        onCheckedChange = props.onOpenedChange,
+        label = "Already opened (accelerates perishability)",
+    )
+    ReviewCheckbox(
+        checked = props.isAromatic,
+        onCheckedChange = props.onAromaticChange,
+        label = "Aromatic / Seasoning (spices, herbs, oils)",
+    )
+}
+
+@Composable
+private fun ReviewCheckbox(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    label: String,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(start = 8.dp),
         )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(
-                checked = isOpened,
-                onCheckedChange = onOpenedChange,
-            )
-            Text(
-                "Already opened (accelerates perishability)",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 8.dp),
-            )
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(
-                checked = isAromatic,
-                onCheckedChange = onAromaticChange,
-            )
-            Text(
-                "Aromatic / Seasoning (spices, herbs, oils)",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 8.dp),
-            )
-        }
     }
 }
 
