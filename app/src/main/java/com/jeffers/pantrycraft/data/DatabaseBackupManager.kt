@@ -292,15 +292,18 @@ object DatabaseBackupManager {
                 cos.write(len and BYTE_MASK)
                 if (payload.passphrase != null) cos.write(payload.passphrase)
 
-                // stream DB into cipher
-                FileInputStream(dbFile).use { fis ->
-                    val buffer = ByteArray(STREAM_BUFFER_BYTES)
-                    var read: Int
-                    while (fis.read(buffer).also { read = it } > 0) {
-                        cos.write(buffer, 0, read)
-                    }
-                }
+                writeEncryptedDatabase(cos, dbFile)
                 cos.flush()
+            }
+        }
+    }
+
+    private fun writeEncryptedDatabase(output: CipherOutputStream, dbFile: File) {
+        FileInputStream(dbFile).use { fis ->
+            val buffer = ByteArray(STREAM_BUFFER_BYTES)
+            var read: Int
+            while (fis.read(buffer).also { read = it } > 0) {
+                output.write(buffer, 0, read)
             }
         }
     }
