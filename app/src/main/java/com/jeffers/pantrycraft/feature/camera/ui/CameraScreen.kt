@@ -104,6 +104,18 @@ private const val BADGE_TOP_OFFSET = 40f
 private const val FOCUS_CIRCLE_RADIUS = 48f
 private const val FOCUS_CIRCLE_STROKE = 3f
 private const val ZOOM_SENSITIVITY = 0.5f
+private const val CONFIDENCE_PERCENT_SCALE = 100
+private const val MILLIS_PER_DAY = 86_400_000L
+private const val MIN_BADGE_TOP = 8f
+
+private data class CameraStatusHudState(
+    val latestResult: LiveVisionResult?,
+    val latestFrameTime: Long?,
+    val barcodeMatch: BarcodeMatch?,
+    val snapshotStatus: String?,
+    val isTorchOn: Boolean,
+    val onToggleTorch: () -> Unit,
+)
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -277,116 +289,21 @@ fun CameraScreen() {
             factory = { previewView },
             modifier = Modifier.fillMaxSize(),
         )
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val result = latestResult
-            // Map normalized sensor coordinates through PreviewView FILL_CENTER center-crop transform
-            val imgW = result?.imageWidth?.takeIf { it > 0 }?.toFloat() ?: size.width
-            val imgH = result?.imageHeight?.takeIf { it > 0 }?.toFloat() ?: size.height
-            val scale = maxOf(size.width / imgW, size.height / imgH)
-            val scaledW = imgW * scale
-            val scaledH = imgH * scale
-            val offsetX = (size.width - scaledW) / 2f
-            val offsetY = (size.height - scaledH) / 2f
+        CameraPreviewOverlay(latestResult, focusPoint, labelPaint, badgePaint)
 
-            result?.objectBoxes?.forEach { box ->
-                val left = (box.xmin * scaledW + offsetX).coerceIn(0f, size.width)
-                val top = (box.ymin * scaledH + offsetY).coerceIn(0f, size.height)
-                val right = (box.xmax * scaledW + offsetX).coerceIn(0f, size.width)
-                val bottom = (box.ymax * scaledH + offsetY).coerceIn(0f, size.height)
-
-                drawRect(
-                    color = Color.Cyan,
-                    topLeft = Offset(left, top),
-                    size = Size((right - left).coerceAtLeast(1f), (bottom - top).coerceAtLeast(1f)),
-                    style = Stroke(width = BOX_STROKE_WIDTH),
-                )
-
-                box.label?.let { label ->
-                    val confPercent = box.confidence?.let { " ${(it * 100).toInt()}%" } ?: ""
-                    val text = "$label$confPercent"
-                    val textWidth = labelPaint.measureText(text)
-                    val badgeTop = (top - BADGE_TOP_OFFSET).coerceAtLeast(8f)
-                    drawContext.canvas.nativeCanvas.drawRoundRect(
-                        left,
-                        badgeTop,
-                        left + textWidth + BADGE_HORIZONTAL_PADDING,
-                        badgeTop + BADGE_HEIGHT,
-                        BADGE_CORNER_RADIUS,
-                        BADGE_CORNER_RADIUS,
-                        badgePaint,
-                    )
-                    drawContext.canvas.nativeCanvas.drawText(
-                        text,
-                        left + (BADGE_HORIZONTAL_PADDING / 2f),
-                        badgeTop + BADGE_TEXT_Y_OFFSET,
-                        labelPaint,
-                    )
-                }
-            }
-            focusPoint?.let { pt ->
-                drawCircle(
-                    color = Color.White,
-                    radius = FOCUS_CIRCLE_RADIUS,
-                    center = pt,
-                    style = Stroke(width = FOCUS_CIRCLE_STROKE),
-                )
-            }
-        }
-
-        // Top Status HUD & Torch Button
-        Row(
-            modifier =
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth()
-                    .padding(top = 16.dp, start = 16.dp, end = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-            ) {
-                Text(
-                    text =
-                        latestResult
-                            ?.let { result ->
-                                buildString {
-                                    append("Objects: ")
-                                    append(result.objectBoxes.size)
-                                    if (result.barcodes.isNotEmpty()) {
-                                        append("  Barcodes: ")
-                                        append(result.barcodes.joinToString())
-                                    }
-                                    latestFrameTime?.let { append("  Analysis: ${it}ms") }
-                                }
-                            }?.let { text ->
-                                barcodeMatch?.let { match -> "$text · ${match.name}" } ?: text
-                            } ?: snapshotStatus ?: "Scanning…",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            IconButton(
-                onClick = {
-                    isTorchOn = !isTorchOn
-                    cameraManager.setTorch(isTorchOn)
+        CameraStatusHud(
+            CameraStatusHudState(
+                latestResult = latestResult,
+                latestFrameTime = latestFrameTime,
+                barcodeMatch = barcodeMatch,
+                snapshotStatus = snapshotStatus,
+                isTorchOn = isTorchOn,
+                onToggleTorch = {
+                isTorchOn = !isTorchOn
+                cameraManager.setTorch(isTorchOn)
                 },
-                modifier =
-                    Modifier
-                        .padding(start = 8.dp)
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f), RoundedCornerShape(12.dp)),
-            ) {
-                Icon(
-                    imageVector = if (isTorchOn) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
-                    contentDescription = "Toggle flashlight",
-                    tint = if (isTorchOn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                )
-            }
-        }
+            ),
+        )
 
         // Live Barcode Match Quick-Add Card
         barcodeMatch?.let { match ->
@@ -431,7 +348,7 @@ fun CameraScreen() {
                                     val now = System.currentTimeMillis()
                                     val exp =
                                         if (match.estimatedShelfLifeDays > 0) {
-                                            now + match.estimatedShelfLifeDays * 86_400_000L
+                                            now + match.estimatedShelfLifeDays * MILLIS_PER_DAY
                                         } else {
                                             null
                                         }
@@ -590,7 +507,7 @@ fun CameraScreen() {
                             estimatedShelfLifeDays = shelfLifeDays,
                         )
                         val now = System.currentTimeMillis()
-                        val exp = if (shelfLifeDays > 0) now + shelfLifeDays * 86_400_000L else null
+                        val exp = if (shelfLifeDays > 0) now + shelfLifeDays * MILLIS_PER_DAY else null
                         repository.insertPantry(
                             PantryItem(
                                 name = name,
@@ -610,6 +527,112 @@ fun CameraScreen() {
                         view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                     }
                 },
+            )
+        }
+    }
+}
+
+@Composable
+private fun CameraStatusHud(
+    state: CameraStatusHudState,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val statusText =
+            state.latestResult?.let { result ->
+                buildString {
+                    append("Objects: ${result.objectBoxes.size}")
+                    if (result.barcodes.isNotEmpty()) append("  Barcodes: ${result.barcodes.joinToString()}")
+                    state.latestFrameTime?.let { append("  Analysis: ${it}ms") }
+                }
+            }?.let { text -> state.barcodeMatch?.let { "$text · ${it.name}" } ?: text }
+                ?: state.snapshotStatus ?: "Scanning…"
+        Box(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+        ) {
+            Text(statusText, style = MaterialTheme.typography.bodyMedium)
+        }
+        IconButton(
+            onClick = state.onToggleTorch,
+            modifier =
+                Modifier
+                    .padding(start = 8.dp)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f), RoundedCornerShape(12.dp)),
+        ) {
+            Icon(
+                imageVector = if (state.isTorchOn) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
+                contentDescription = "Toggle flashlight",
+                tint = if (state.isTorchOn) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CameraPreviewOverlay(
+    latestResult: LiveVisionResult?,
+    focusPoint: Offset?,
+    labelPaint: Paint,
+    badgePaint: Paint,
+) {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val imgW = latestResult?.imageWidth?.takeIf { it > 0 }?.toFloat() ?: size.width
+        val imgH = latestResult?.imageHeight?.takeIf { it > 0 }?.toFloat() ?: size.height
+        val scale = maxOf(size.width / imgW, size.height / imgH)
+        val scaledW = imgW * scale
+        val scaledH = imgH * scale
+        val offsetX = (size.width - scaledW) / 2f
+        val offsetY = (size.height - scaledH) / 2f
+
+        latestResult?.objectBoxes?.forEach { box ->
+            val left = (box.xmin * scaledW + offsetX).coerceIn(0f, size.width)
+            val top = (box.ymin * scaledH + offsetY).coerceIn(0f, size.height)
+            val right = (box.xmax * scaledW + offsetX).coerceIn(0f, size.width)
+            val bottom = (box.ymax * scaledH + offsetY).coerceIn(0f, size.height)
+            drawRect(
+                color = Color.Cyan,
+                topLeft = Offset(left, top),
+                size = Size((right - left).coerceAtLeast(1f), (bottom - top).coerceAtLeast(1f)),
+                style = Stroke(width = BOX_STROKE_WIDTH),
+            )
+            box.label?.let { label ->
+                val confidence = box.confidence?.let { " ${(it * CONFIDENCE_PERCENT_SCALE).toInt()}%" } ?: ""
+                val text = "$label$confidence"
+                val textWidth = labelPaint.measureText(text)
+                val badgeTop = (top - BADGE_TOP_OFFSET).coerceAtLeast(MIN_BADGE_TOP)
+                drawContext.canvas.nativeCanvas.drawRoundRect(
+                    left,
+                    badgeTop,
+                    left + textWidth + BADGE_HORIZONTAL_PADDING,
+                    badgeTop + BADGE_HEIGHT,
+                    BADGE_CORNER_RADIUS,
+                    BADGE_CORNER_RADIUS,
+                    badgePaint,
+                )
+                drawContext.canvas.nativeCanvas.drawText(
+                    text,
+                    left + (BADGE_HORIZONTAL_PADDING / 2f),
+                    badgeTop + BADGE_TEXT_Y_OFFSET,
+                    labelPaint,
+                )
+            }
+        }
+        focusPoint?.let { point ->
+            drawCircle(
+                color = Color.White,
+                radius = FOCUS_CIRCLE_RADIUS,
+                center = point,
+                style = Stroke(width = FOCUS_CIRCLE_STROKE),
             )
         }
     }
