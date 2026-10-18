@@ -77,14 +77,6 @@ object DatabaseBackupManager {
         )
     }
 
-    fun persistAutoBackupTreeUri(
-        context: Context,
-        uri: Uri?,
-    ) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(AUTO_BACKUP_TREE_URI, uri?.toString()).apply()
-    }
-
     fun exportBackup(
         context: Context,
         backupName: String,

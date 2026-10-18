@@ -48,7 +48,7 @@ import com.jeffers.pantrycraft.data.AutomaticBackupScheduler
 import com.jeffers.pantrycraft.data.ByokPreferences
 import com.jeffers.pantrycraft.data.backupRecords as loadBackupRecords
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
-import com.jeffers.pantrycraft.data.persistedAutoBackupTreeUri
+import com.jeffers.pantrycraft.data.persistAutoBackupTreeUri
 import com.jeffers.pantrycraft.data.persistedBackupUri
 import com.jeffers.pantrycraft.data.ExpirationAlertWorker
 import com.jeffers.pantrycraft.data.Repository
@@ -189,7 +189,7 @@ fun SettingsScreen(
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
                     )
                 }
-                DatabaseBackupManager.persistAutoBackupTreeUri(context, uri)
+                persistAutoBackupTreeUri(context, uri)
                 autoBackupTreeUri = uri
             }
         }
