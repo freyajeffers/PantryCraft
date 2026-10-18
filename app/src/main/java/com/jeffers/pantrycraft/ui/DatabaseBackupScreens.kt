@@ -78,6 +78,43 @@ private fun formatFileSize(bytes: Long): String =
         else -> "%.1f MB".format(bytes / BYTES_IN_MB.toDouble())
     }
 
+private data class BackupListDialogState(
+    val records: List<BackupRecord>,
+    val onDismiss: () -> Unit,
+    val onSelect: (BackupRecord) -> Unit,
+)
+
+@Composable
+private fun BackupListDialog(state: BackupListDialogState) {
+    AlertDialog(
+        onDismissRequest = state.onDismiss,
+        title = { Text("Choose a backup to restore") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (state.records.isEmpty()) {
+                    Text("No backups have been created yet.")
+                } else {
+                    state.records.forEach { record ->
+                        TextButton(onClick = { state.onSelect(record) }, modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(record.createdAtLabel)
+                                Text(
+                                    record.exportedUri?.let {
+                                        "File: ${Uri.parse(it).lastPathSegment ?: it}"
+                                    } ?: "Location: app backup storage",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(record.backupName, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = state.onDismiss) { Text("Cancel") } },
+    )
+}
+
 @Composable
 fun SettingsScreen(
     context: android.content.Context,
@@ -314,45 +351,20 @@ fun SettingsScreen(
     var catalogDialog by remember { mutableStateOf<CatalogDialog?>(null) }
     var confirmCatalogDelete by remember { mutableStateOf(false) }
     if (showBackupList) {
-        AlertDialog(
-            onDismissRequest = { showBackupList = false },
-            title = { Text("Choose a backup to restore") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (backupRecords.isEmpty()) {
-                        Text("No backups have been created yet.")
-                    } else {
-                        backupRecords.forEach { record ->
-                            TextButton(
-                                onClick = {
-                                    showBackupList = false
-                                    pinDialogAction.value = { suppliedPin ->
-                                        record.exportedUri?.let { restoreFromUri(Uri.parse(it), suppliedPin) }
-                                            ?: restoreFromInternal(record.backupName, suppliedPin)
-                                    }
-                                    pinText = ""
-                                    showPinDialog = true
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Column(modifier = Modifier.fillMaxWidth()) {
-                                    Text(record.createdAtLabel)
-                                    Text(
-                                        record.exportedUri?.let {
-                                            "File: ${Uri.parse(it).lastPathSegment ?: it}"
-                                        } ?: "Location: app backup storage",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                    Text(record.backupName, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                        }
+        BackupListDialog(
+            BackupListDialogState(
+                records = backupRecords,
+                onDismiss = { showBackupList = false },
+                onSelect = { record ->
+                    showBackupList = false
+                    pinDialogAction.value = { suppliedPin ->
+                        record.exportedUri?.let { restoreFromUri(Uri.parse(it), suppliedPin) }
+                            ?: restoreFromInternal(record.backupName, suppliedPin)
                     }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showBackupList = false }) { Text("Cancel") }
-            },
+                    pinText = ""
+                    showPinDialog = true
+                },
+            ),
         )
     }
     catalogDialog?.let { dialog ->
