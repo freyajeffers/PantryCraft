@@ -173,130 +173,70 @@ fun BatchReviewBottomSheet(
                 val displayedShelfLife =
                     if (items.size == 1) editShelfLifeDays else reviewItem.item.estimatedShelfLifeDays
 
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text(
-                                displayedName.ifBlank { "New item" },
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.weight(1f),
+                ReviewItemCard(
+                    ReviewItemCardState(
+                        index = index,
+                        itemsCount = items.size,
+                        reviewItem = reviewItem,
+                        displayedName = displayedName,
+                        displayedCategory = displayedCategory,
+                        displayedUnit = displayedUnit,
+                        displayedStorage = displayedStorage,
+                        displayedShelfLife = displayedShelfLife,
+                        rawUnit = rawUnit,
+                        quantityText = quantityTextByIndex[index],
+                        onEdit = {
+                        editName = reviewItem.item.name
+                        editCategory = reviewItem.item.category
+                        editUnit = reviewItem.item.unit
+                        editCustomUnitName = reviewItem.item.customUnitName ?: ""
+                        editStorageLocation = reviewItem.item.storageLocation
+                        editShelfLifeDays = reviewItem.item.estimatedShelfLifeDays
+                        editNotes = reviewItem.item.conditionNotes ?: ""
+                        editIsAromatic = reviewItem.item.isAromaticOrSeasoning
+                        editIsOpened = reviewItem.item.isOpened
+                        editThresholdText = formatQuantity(reviewItem.item.threshold)
+                        editBarcode = reviewItem.item.barcode
+                        quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity)
+                        editingIndex = index
+                    },
+                    onToggleIncluded = {
+                        reviewItems = reviewItems.toMutableList().also {
+                            it[index] = it[index].copy(included = !it[index].included)
+                        }
+                    },
+                    onDecrease = {
+                        reviewItems = reviewItems.toMutableList().also {
+                            it[index] = it[index].copy(
+                                item = it[index].item.copy(
+                                    quantity = (it[index].item.quantity - 1f).coerceAtLeast(1f),
+                                ),
                             )
-                            if (items.size > 1) {
-                                TextButton(
-                                    onClick = {
-                                        editName = reviewItem.item.name
-                                        editCategory = reviewItem.item.category
-                                        editUnit = reviewItem.item.unit
-                                        editCustomUnitName = reviewItem.item.customUnitName ?: ""
-                                        editStorageLocation = reviewItem.item.storageLocation
-                                        editShelfLifeDays = reviewItem.item.estimatedShelfLifeDays
-                                        editNotes = reviewItem.item.conditionNotes ?: ""
-                                        editIsAromatic = reviewItem.item.isAromaticOrSeasoning
-                                        editIsOpened = reviewItem.item.isOpened
-                                        editThresholdText = formatQuantity(reviewItem.item.threshold)
-                                        editBarcode = reviewItem.item.barcode
-                                        quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity)
-                                        editingIndex = index
-                                    },
-                                ) {
-                                    Text("Edit")
-                                }
-                                TextButton(
-                                    onClick = {
-                                        reviewItems =
-                                            reviewItems.toMutableList().also {
-                                                it[index] = it[index].copy(included = !it[index].included)
-                                            }
-                                    },
-                                ) {
-                                    Text(if (reviewItem.included) "Remove" else "Add")
-                                }
+                        }
+                        quantityTextByIndex[index] = formatQuantity((reviewItem.item.quantity - 1f).coerceAtLeast(1f))
+                    },
+                    onIncrease = {
+                        reviewItems = reviewItems.toMutableList().also {
+                            it[index] = it[index].copy(
+                                item = it[index].item.copy(
+                                    quantity = it[index].item.quantity + 1f,
+                                ),
+                            )
+                        }
+                        quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity + 1f)
+                    },
+                    onSetQuantityText = { text ->
+                        quantityTextByIndex[index] = text
+                        text.toFloatOrNull()?.takeIf { it > 0f }?.let { quantity ->
+                            reviewItems = reviewItems.toMutableList().also {
+                                it[index] = it[index].copy(
+                                    item = it[index].item.copy(quantity = quantity),
+                                )
                             }
                         }
-                        Text(
-                            "Category: $displayedCategory · Unit: $displayedUnit",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                        Text(
-                            "Storage: $displayedStorage",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                        Text(
-                            "Shelf life: ${displayedShelfLife.toShelfLifeLabel()}",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                        if (items.size > 1) {
-                            Text(
-                                "Confidence ${(reviewItem.item.confidence * PERCENT_SCALE).toInt()}%",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                        if (rawUnit in PantryTaxonomy.integerQuantityUnits) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Quantity", modifier = Modifier.weight(1f))
-                                IconButton(
-                                    enabled = reviewItem.item.quantity > 1f,
-                                    onClick = {
-                                        reviewItems =
-                                            reviewItems.toMutableList().also {
-                                                it[index] =
-                                                    reviewItem.copy(
-                                                        item =
-                                                            reviewItem.item.copy(
-                                                                quantity =
-                                                                    (reviewItem.item.quantity - 1f).coerceAtLeast(1f),
-                                                            ),
-                                                    )
-                                            }
-                                        quantityTextByIndex[index] =
-                                            formatQuantity((reviewItem.item.quantity - 1f).coerceAtLeast(1f))
-                                    },
-                                ) {
-                                    Icon(Icons.Filled.Remove, contentDescription = "Decrease quantity")
-                                }
-                                Text(formatQuantity(reviewItem.item.quantity))
-                                IconButton(
-                                    onClick = {
-                                        reviewItems =
-                                            reviewItems.toMutableList().also {
-                                                it[index] =
-                                                    reviewItem.copy(
-                                                        item =
-                                                            reviewItem.item.copy(
-                                                                quantity = reviewItem.item.quantity + 1f,
-                                                            ),
-                                                    )
-                                            }
-                                        quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity + 1f)
-                                    },
-                                ) {
-                                    Icon(Icons.Filled.Add, contentDescription = "Increase quantity")
-                                }
-                            }
-                        } else {
-                            OutlinedTextField(
-                                value = quantityTextByIndex[index] ?: formatQuantity(reviewItem.item.quantity),
-                                onValueChange = { text ->
-                                    quantityTextByIndex[index] = text
-                                    text.toFloatOrNull()?.takeIf { it > 0f }?.let { quantity ->
-                                        reviewItems =
-                                            reviewItems.toMutableList().also {
-                                                it[index] =
-                                                    reviewItem.copy(item = reviewItem.item.copy(quantity = quantity))
-                                            }
-                                    }
-                                },
-                                label = { Text("Quantity ($displayedUnit)") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                singleLine = true,
-                            )
-                        }
-                    }
-                }
+                    },
+                    ),
+                )
             }
         }
         if (items.size == 1) {
@@ -439,12 +379,99 @@ private data class ReviewEditorProps(
     val onScanBarcodeClick: () -> Unit = {},
 )
 
+private data class ReviewItemCardState(
+    val index: Int,
+    val itemsCount: Int,
+    val reviewItem: ReviewItem,
+    val displayedName: String,
+    val displayedCategory: String,
+    val displayedUnit: String,
+    val displayedStorage: String,
+    val displayedShelfLife: Int,
+    val rawUnit: String,
+    val quantityText: String?,
+    val onEdit: () -> Unit,
+    val onToggleIncluded: () -> Unit,
+    val onDecrease: () -> Unit,
+    val onIncrease: () -> Unit,
+    val onSetQuantityText: (String) -> Unit,
+)
+
+@Composable
+private fun ReviewItemCard(state: ReviewItemCardState) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    state.displayedName.ifBlank { "New item" },
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                if (state.itemsCount > 1) {
+                    TextButton(onClick = state.onEdit) { Text("Edit") }
+                    TextButton(onClick = state.onToggleIncluded) {
+                        Text(if (state.reviewItem.included) "Remove" else "Add")
+                    }
+                }
+            }
+            Text(
+                "Category: ${state.displayedCategory} · Unit: ${state.displayedUnit}",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text("Storage: ${state.displayedStorage}", style = MaterialTheme.typography.bodySmall)
+            Text(
+                "Shelf life: ${state.displayedShelfLife.toShelfLifeLabel()}",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            if (state.itemsCount > 1) {
+                Text(
+                    "Confidence ${(state.reviewItem.item.confidence * PERCENT_SCALE).toInt()}%",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            if (state.rawUnit in PantryTaxonomy.integerQuantityUnits) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Quantity", modifier = Modifier.weight(1f))
+                    IconButton(enabled = state.reviewItem.item.quantity > 1f, onClick = state.onDecrease) {
+                        Icon(Icons.Filled.Remove, contentDescription = "Decrease quantity")
+                    }
+                    Text(formatQuantity(state.reviewItem.item.quantity))
+                    IconButton(onClick = state.onIncrease) {
+                        Icon(Icons.Filled.Add, contentDescription = "Increase quantity")
+                    }
+                }
+            } else {
+                OutlinedTextField(
+                    value = state.quantityText ?: formatQuantity(state.reviewItem.item.quantity),
+                    onValueChange = state.onSetQuantityText,
+                    label = { Text("Quantity (${state.displayedUnit})") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun ReviewEditorFields(props: ReviewEditorProps) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         ReviewIdentityFields(props)
         ReviewInventoryFields(props)
-        ReviewFlags(props)
+        ReviewCheckbox(
+            checked = props.isOpened,
+            onCheckedChange = props.onOpenedChange,
+            label = "Already opened (accelerates perishability)",
+        )
+        ReviewCheckbox(
+            checked = props.isAromatic,
+            onCheckedChange = props.onAromaticChange,
+            label = "Aromatic / Seasoning (spices, herbs, oils)",
+        )
     }
 }
 
@@ -510,20 +537,6 @@ private fun ReviewInventoryFields(props: ReviewEditorProps) {
         label = { Text("Notes / Condition") },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
-    )
-}
-
-@Composable
-private fun ReviewFlags(props: ReviewEditorProps) {
-    ReviewCheckbox(
-        checked = props.isOpened,
-        onCheckedChange = props.onOpenedChange,
-        label = "Already opened (accelerates perishability)",
-    )
-    ReviewCheckbox(
-        checked = props.isAromatic,
-        onCheckedChange = props.onAromaticChange,
-        label = "Aromatic / Seasoning (spices, herbs, oils)",
     )
 }
 

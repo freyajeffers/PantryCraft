@@ -931,6 +931,15 @@ fun SettingsScreen(
 }
 
 @Composable
+private fun RecoveryResetDialogHost(
+    visible: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    if (visible) RecoveryResetDialog(onDismiss = onDismiss, onConfirm = onConfirm)
+}
+
+@Composable
 private fun RecoveryResetDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
@@ -1069,14 +1078,9 @@ fun DatabaseRecoveryScreen(
                 }
             }
         }
-    if (confirmReset) {
-        RecoveryResetDialog(
-            onDismiss = { confirmReset = false },
-            onConfirm = {
-                confirmReset = false
-                onReset()
-            },
-        )
+    RecoveryResetDialogHost(confirmReset, { confirmReset = false }) {
+        confirmReset = false
+        onReset()
     }
     RecoveryContent(
         RecoveryContentState(
