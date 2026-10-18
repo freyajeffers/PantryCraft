@@ -405,40 +405,11 @@ fun CameraScreen() {
             }
         }
 
-        // Unknown Barcode Association Banner
-        if (barcodeMatch == null && unresolvedBarcode != null) {
-            val code = unresolvedBarcode!!
-            Card(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 96.dp, start = 16.dp, end = 16.dp)
-                        .fillMaxWidth(),
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    ),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Unknown Barcode: $code", style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            "Tap to name this item and save for future scans",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        )
-                    }
-                    Button(onClick = { associateDialogBarcode = code }) {
-                        Icon(Icons.Filled.QrCode, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                        Text("Name")
-                    }
-                }
-            }
-        }
+        UnknownBarcodeCard(
+            code = unresolvedBarcode,
+            visible = barcodeMatch == null,
+            onName = { associateDialogBarcode = it },
+        )
 
         // Shelf Snapshot FAB
         FloatingActionButton(
@@ -528,6 +499,42 @@ fun CameraScreen() {
                     }
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun BoxScope.UnknownBarcodeCard(
+    code: String?,
+    visible: Boolean,
+    onName: (String) -> Unit,
+) {
+    if (!visible || code == null) return
+    Card(
+        modifier =
+            Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 96.dp, start = 16.dp, end = 16.dp)
+                .fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Unknown Barcode: $code", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    "Tap to name this item and save for future scans",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+            }
+            Button(onClick = { onName(code) }) {
+                Icon(Icons.Filled.QrCode, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                Text("Name")
+            }
         }
     }
 }
