@@ -50,6 +50,7 @@ import com.jeffers.pantrycraft.data.DatabaseBackupManager
 import com.jeffers.pantrycraft.data.ExpirationAlertWorker
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -207,42 +208,19 @@ fun SettingsScreen(
         )
     }
 
-    fun restoreFromUri(
-        uri: Uri,
-        suppliedPin: CharArray,
-    ) {
-        scope.launch {
-            restoreResult =
-                withContext(Dispatchers.IO) {
-                    runCatching {
-                        DatabaseBackupManager.restoreEncryptedBackupFromUri(context, uri, suppliedPin)
-                    }.exceptionOrNull()?.message
-                }
-            if (restoreResult == null) (context as? android.app.Activity)?.recreate()
-        }
-    }
-
-    fun restoreFromInternal(
-        backupName: String,
-        suppliedPin: CharArray,
-    ) {
-        scope.launch {
-            restoreResult =
-                withContext(Dispatchers.IO) {
-                    runCatching {
-                        DatabaseBackupManager.restoreEncryptedBackup(context, backupName, suppliedPin)
-                    }.exceptionOrNull()?.message
-                }
-            if (restoreResult == null) (context as? android.app.Activity)?.recreate()
-        }
-    }
-
     val openRestoreLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.OpenDocument(),
         ) { uri ->
             if (uri != null) {
-                pinDialogAction.value = { suppliedPin -> restoreFromUri(uri, suppliedPin) }
+                pinDialogAction.value = { suppliedPin ->
+                    launchRestore(
+                        context = context,
+                        scope = scope,
+                        restore = { DatabaseBackupManager.restoreEncryptedBackupFromUri(context, uri, suppliedPin) },
+                        onResult = { restoreResult = it },
+                    )
+                }
                 pinText = ""
                 showPinDialog = true
             }
@@ -358,8 +336,23 @@ fun SettingsScreen(
                 onSelect = { record ->
                     showBackupList = false
                     pinDialogAction.value = { suppliedPin ->
-                        record.exportedUri?.let { restoreFromUri(Uri.parse(it), suppliedPin) }
-                            ?: restoreFromInternal(record.backupName, suppliedPin)
+                        record.exportedUri?.let { uri ->
+                            launchRestore(
+                                context,
+                                scope,
+                                {
+                                    DatabaseBackupManager.restoreEncryptedBackupFromUri(
+                                        context,
+                                        Uri.parse(uri),
+                                        suppliedPin,
+                                    )
+                                },
+                            ) { restoreResult = it }
+                        } ?: launchRestore(
+                            context,
+                            scope,
+                            { DatabaseBackupManager.restoreEncryptedBackup(context, record.backupName, suppliedPin) },
+                        ) { restoreResult = it }
                     }
                     pinText = ""
                     showPinDialog = true
@@ -1054,6 +1047,19 @@ private fun BackupPinDialog(
         confirmButton = { TextButton(onClick = onConfirm) { Text("OK") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
+}
+
+private fun launchRestore(
+    context: android.content.Context,
+    scope: CoroutineScope,
+    restore: suspend () -> Unit,
+    onResult: (String?) -> Unit,
+) {
+    scope.launch {
+        val result = withContext(Dispatchers.IO) { runCatching { restore() }.exceptionOrNull()?.message }
+        onResult(result)
+        if (result == null) (context as? android.app.Activity)?.recreate()
+    }
 }
 
 @Composable
