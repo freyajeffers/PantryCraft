@@ -12,57 +12,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 class Repository private constructor(
-    private val db: AppDatabase,
-    private val appContext: Context,
+    internal val db: AppDatabase,
+    internal val appContext: Context,
 ) {
-    private val pantryDao = db.pantryDao()
+    internal val pantryDao = db.pantryDao()
     internal val groceryDao = db.groceryDao()
-
-    fun observePantryItems(): Flow<List<PantryItem>> = pantryDao.observeAllPantryItems()
-
-    fun offlineBarcodeResolver(): OfflineBarcodeResolver =
-        OfflineBarcodeResolver(
-            customBarcodeDao = db.customBarcodeDao(),
-            assetBarcodeDatabase = runCatching { AssetBarcodeDatabase(appContext) }.getOrNull(),
-            assetBarcodeDatabaseProvider = { runCatching { AssetBarcodeDatabase(appContext) }.getOrNull() },
-        )
-
-    suspend fun downloadOfflineCatalog(onProgress: (downloadedBytes: Long, totalBytes: Long) -> Unit = { _, _ -> }) =
-        CatalogDownloadService(appContext).downloadIfNeeded(onProgress = onProgress)
-
-    fun searchPantryItems(query: String): Flow<List<PantryItem>> {
-        val sanitized = sanitizeSearchQuery(query)
-        val ftsQuery =
-            if (sanitized.isEmpty()) {
-                ""
-            } else {
-                sanitized
-                    .split(Regex("\\s+"))
-                    .filter { it.isNotBlank() }
-                    .joinToString(" ") { term ->
-                        "\"${term.replace("\"", "\"\"")}\"*"
-                    }
-            }
-        return if (ftsQuery.isBlank()) {
-            observePantryItems()
-        } else {
-            pantryDao.search(
-                SimpleSQLiteQuery(
-                    "SELECT pantry_items.* FROM pantry_items " +
-                        "JOIN pantry_items_fts ON pantry_items.rowid = pantry_items_fts.rowid " +
-                        "WHERE pantry_items.isDeleted = 0 AND pantry_items_fts MATCH ? " +
-                        "ORDER BY pantry_items.name COLLATE NOCASE",
-                    arrayOf(ftsQuery),
-                ),
-            )
-        }
-    }
-
-    fun observeLowStock(): Flow<List<PantryItem>> = pantryDao.observeLowStock()
-
-    suspend fun findPantryItemByBarcode(barcode: String): PantryItem? = pantryDao.findByBarcode(barcode)
-
-    suspend fun findAnyPantryItemByBarcode(barcode: String): PantryItem? = pantryDao.findAnyByBarcode(barcode)
 
     suspend fun decrementQuantity(
         item: PantryItem,
@@ -151,10 +105,6 @@ class Repository private constructor(
     }
 
     companion object {
-        private const val CSV_HEADER =
-            "Name,Category,StorageLocation,Quantity,Unit,CustomUnitName," +
-                "Threshold,ExpirationDate,IsOpened,Notes\n"
-
         @Volatile
         private var INSTANCE: Repository? = null
 
