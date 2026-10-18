@@ -318,100 +318,58 @@ class Repository private constructor(
             val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
             var importedCount = 0
             lines.drop(1).forEach { line ->
-                val cols = parseCsvLine(line)
-                val name = cols.getOrNull(0)?.trim().orEmpty()
-                if (name.isNotEmpty()) {
-                    val category =
-                        cols
-                            .getOrNull(1)
-                            ?.trim()
-                            ?.uppercase()
-                            ?.takeIf { it.isNotEmpty() } ?: "OTHER"
-                    val location =
-                        cols
-                            .getOrNull(2)
-                            ?.trim()
-                            ?.uppercase()
-                            ?.takeIf { it in PantryTaxonomy.storageLocations }
-                            ?: "PANTRY"
-                    val quantity =
-                        cols
-                            .getOrNull(QUANTITY_COLUMN)
-                            ?.trim()
-                            ?.toFloatOrNull()
-                            ?.coerceAtLeast(0f) ?: 1f
-                    val unit =
-                        cols
-                            .getOrNull(UNIT_COLUMN)
-                            ?.trim()
-                            ?.uppercase()
-                            ?.takeIf { it.isNotEmpty() } ?: "COUNT"
-                    val hasExtendedCols = cols.size >= EXTENDED_CSV_COLUMN_COUNT
-                    val customUnit =
-                        if (hasExtendedCols) {
-                            cols
-                                .getOrNull(CUSTOM_UNIT_COLUMN)
-                                ?.trim()
-                                ?.takeIf { it.isNotEmpty() }
-                        } else {
-                            null
-                        }
-                    val threshold =
-                        if (hasExtendedCols) {
-                            cols
-                                .getOrNull(THRESHOLD_COLUMN)
-                                ?.trim()
-                                ?.toFloatOrNull()
-                                ?.coerceAtLeast(0f) ?: 0f
-                        } else {
-                            0f
-                        }
-                    val expDateStr =
-                        (
-                            if (hasExtendedCols) {
-                                cols.getOrNull(EXPIRATION_COLUMN)
-                            } else {
-                                cols.getOrNull(LEGACY_EXPIRATION_COLUMN)
-                            }
-                        )?.trim()
-                            .orEmpty()
-                    val expTimestamp =
-                        expDateStr.takeIf { it.isNotEmpty() }?.let {
-                            runCatching { dateFormat.parse(it)?.time }.getOrNull()
-                        }
-                    val isOpened =
-                        (
-                            if (hasExtendedCols) {
-                                cols.getOrNull(IS_OPENED_COLUMN)
-                            } else {
-                                cols.getOrNull(LEGACY_IS_OPENED_COLUMN)
-                            }
-                        )?.trim()
-                            ?.toBoolean() ?: false
-                    val notes =
-                        (if (hasExtendedCols) cols.getOrNull(NOTES_COLUMN) else cols.getOrNull(LEGACY_NOTES_COLUMN))
-                            ?.trim()
-                            ?.takeIf { it.isNotEmpty() }
-                    insertPantry(
-                        PantryItem(
-                            name = name,
-                            category = category,
-                            storageLocation = location,
-                            quantity = quantity,
-                            unit = unit,
-                            customUnitName = customUnit,
-                            threshold = threshold,
-                            expirationTimestamp = expTimestamp,
-                            isOpened = isOpened,
-                            openedTimestamp = if (isOpened) System.currentTimeMillis() else null,
-                            notes = notes,
-                        ),
-                    )
+                parsePantryCsvItem(parseCsvLine(line), dateFormat)?.let { item ->
+                    insertPantry(item)
                     importedCount++
                 }
             }
             importedCount
         }
+
+    private fun parsePantryCsvItem(
+        cols: List<String>,
+        dateFormat: java.text.SimpleDateFormat,
+    ): PantryItem? {
+        val name = cols.getOrNull(0)?.trim().orEmpty()
+        if (name.isEmpty()) return null
+        val category = cols.getOrNull(1)?.trim()?.uppercase()?.takeIf(String::isNotEmpty) ?: "OTHER"
+        val location =
+            cols.getOrNull(2)?.trim()?.uppercase()?.takeIf { it in PantryTaxonomy.storageLocations } ?: "PANTRY"
+        val quantity = cols.getOrNull(QUANTITY_COLUMN)?.trim()?.toFloatOrNull()?.coerceAtLeast(0f) ?: 1f
+        val unit = cols.getOrNull(UNIT_COLUMN)?.trim()?.uppercase()?.takeIf(String::isNotEmpty) ?: "COUNT"
+        val extended = cols.size >= EXTENDED_CSV_COLUMN_COUNT
+        val customUnit = optionalCsvValue(cols, CUSTOM_UNIT_COLUMN, extended)
+        val threshold =
+            if (extended) {
+                cols.getOrNull(THRESHOLD_COLUMN)?.trim()?.toFloatOrNull()?.coerceAtLeast(0f) ?: 0f
+            } else {
+                0f
+            }
+        val expirationColumn = if (extended) EXPIRATION_COLUMN else LEGACY_EXPIRATION_COLUMN
+        val expiration = cols.getOrNull(expirationColumn)?.trim().orEmpty().takeIf(String::isNotEmpty)?.let {
+            runCatching { dateFormat.parse(it)?.time }.getOrNull()
+        }
+        val openedColumn = if (extended) IS_OPENED_COLUMN else LEGACY_IS_OPENED_COLUMN
+        val isOpened = cols.getOrNull(openedColumn)?.trim()?.toBoolean() ?: false
+        val notesColumn = if (extended) NOTES_COLUMN else LEGACY_NOTES_COLUMN
+        val notes = cols.getOrNull(notesColumn)?.trim()?.takeIf(String::isNotEmpty)
+        return PantryItem(
+            name = name,
+            category = category,
+            storageLocation = location,
+            quantity = quantity,
+            unit = unit,
+            customUnitName = customUnit,
+            threshold = threshold,
+            expirationTimestamp = expiration,
+            isOpened = isOpened,
+            openedTimestamp = if (isOpened) System.currentTimeMillis() else null,
+            notes = notes,
+        )
+    }
+
+    private fun optionalCsvValue(cols: List<String>, index: Int, available: Boolean): String? =
+        if (available) cols.getOrNull(index)?.trim()?.takeIf(String::isNotEmpty) else null
 
     private fun parseCsvLine(line: String): List<String> {
         val result = mutableListOf<String>()
