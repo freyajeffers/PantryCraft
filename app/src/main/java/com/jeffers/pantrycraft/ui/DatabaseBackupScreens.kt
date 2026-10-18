@@ -1060,23 +1060,17 @@ fun DatabaseRecoveryScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var confirmReset by remember { mutableStateOf(false) }
     var pendingRestorePin by remember { mutableStateOf<CharArray?>(null) }
-    val openBackupLauncher =
-        rememberLauncherForActivityResult(
-            ActivityResultContracts.OpenDocument(),
-        ) { uri ->
-            val suppliedPin = pendingRestorePin
-            pendingRestorePin = null
-            if (uri != null && suppliedPin != null) {
-                scope.launch {
-                    error =
-                        withContext(Dispatchers.IO) {
-                            runCatching { onRestore(uri.toString(), suppliedPin) }
-                                .exceptionOrNull()
-                                ?.message
-                        }
+    val openBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val suppliedPin = pendingRestorePin
+        pendingRestorePin = null
+        if (uri != null && suppliedPin != null) {
+            scope.launch {
+                error = withContext(Dispatchers.IO) {
+                    runCatching { onRestore(uri.toString(), suppliedPin) }.exceptionOrNull()?.message
                 }
             }
         }
+    }
     RecoveryResetDialogHost(confirmReset, { confirmReset = false }) {
         confirmReset = false
         onReset()
