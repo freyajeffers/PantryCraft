@@ -303,6 +303,25 @@ fun PantryScreen(viewModel: PantryViewModel) {
     }
 }
 
+@Composable
+private fun PantrySwipeBackground(state: androidx.compose.material3.SwipeToDismissBoxState) {
+    val direction = state.dismissDirection
+    val color = when (state.targetValue) {
+        SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
+        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+    val alignment = if (direction == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
+    val icon = if (direction == SwipeToDismissBoxValue.StartToEnd) Icons.Filled.Remove else Icons.Filled.Delete
+    val description = if (direction == SwipeToDismissBoxValue.StartToEnd) "Use 1" else "Delete"
+    Box(
+        modifier = Modifier.fillMaxSize().background(color).padding(horizontal = 20.dp),
+        contentAlignment = alignment,
+    ) {
+        Icon(imageVector = icon, contentDescription = description)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PantryItemRow(
@@ -334,40 +353,7 @@ private fun PantryItemRow(
     }
     SwipeToDismissBox(
         state = dismissState,
-        backgroundContent = {
-            val direction = dismissState.dismissDirection
-            val color =
-                when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
-                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
-                    else -> MaterialTheme.colorScheme.surfaceVariant
-                }
-            val alignment =
-                when (direction) {
-                    SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
-                    else -> Alignment.CenterEnd
-                }
-            val icon =
-                when (direction) {
-                    SwipeToDismissBoxValue.StartToEnd -> Icons.Filled.Remove
-                    else -> Icons.Filled.Delete
-                }
-            val desc =
-                when (direction) {
-                    SwipeToDismissBoxValue.StartToEnd -> "Use 1"
-                    else -> "Delete"
-                }
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(color)
-                        .padding(horizontal = 20.dp),
-                contentAlignment = alignment,
-            ) {
-                Icon(imageVector = icon, contentDescription = desc)
-            }
-        },
+        backgroundContent = { PantrySwipeBackground(dismissState) },
         content = {
             Row(
                 modifier =
