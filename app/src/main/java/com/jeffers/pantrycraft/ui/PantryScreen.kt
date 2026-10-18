@@ -67,7 +67,7 @@ private val FreshColor = Color(FRESH_COLOR_VALUE)
 private const val EXPIRING_SOON_HOURS = 48L
 private const val EXPIRING_SOON_DAYS = 5L
 
-private data class PantryItemRowActions(
+internal data class PantryItemRowActions(
     val onDecrement: () -> Unit,
     val onIncrement: () -> Unit,
     val onUse: () -> Unit,
