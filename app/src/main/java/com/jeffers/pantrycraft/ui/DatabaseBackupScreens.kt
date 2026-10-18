@@ -484,49 +484,12 @@ fun SettingsScreen(
                 catalogDialogSetter = { catalogDialog = it },
             ),
         )
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Notifications & Alerts", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    "Receive a private, local daily notification on this device if any pantry items " +
-                        "are expiring within 48 hours. No external servers or cloud services are contacted.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Daily expiration alerts")
-                        Text(
-                            "Checks once daily for expiring food",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                    Switch(
-                        checked = expirationAlertsEnabled,
-                        onCheckedChange = { enabled ->
-                            if (
-                                enabled &&
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                                ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.POST_NOTIFICATIONS,
-                                ) != PackageManager.PERMISSION_GRANTED
-                            ) {
-                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            } else {
-                                expirationAlertsEnabled = enabled
-                                ExpirationAlertWorker.setEnabled(context, enabled)
-                            }
-                        },
-                        modifier = Modifier.padding(start = 12.dp),
-                    )
-                }
-            }
-        }
+        NotificationSettingsCard(
+            context = context,
+            enabled = expirationAlertsEnabled,
+            onEnabledChange = { expirationAlertsEnabled = it },
+            permissionLauncher = notificationPermissionLauncher,
+        )
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Encrypted backup", style = MaterialTheme.typography.titleLarge)
