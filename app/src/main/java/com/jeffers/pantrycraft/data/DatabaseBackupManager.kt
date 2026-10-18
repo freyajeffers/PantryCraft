@@ -260,12 +260,6 @@ object DatabaseBackupManager {
         return dest.name
     }
 
-    private fun ensureDatabasePresent(dbFile: File) {
-        if (!dbFile.exists()) {
-            throw IOException("Database file not found")
-        }
-    }
-
     private fun writeEncryptedBackup(
         temp: File,
         dbFile: File,
@@ -398,6 +392,12 @@ object DatabaseBackupManager {
         }
     }
 
+}
+
+private fun ensureDatabasePresent(dbFile: File) {
+    if (!dbFile.exists()) {
+        throw IOException("Database file not found")
+    }
 }
 
 private fun replaceDatabaseFile(temp: File, dbFile: File) {
