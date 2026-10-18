@@ -46,6 +46,7 @@ import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.AutomaticBackupPreferences
 import com.jeffers.pantrycraft.data.AutomaticBackupScheduler
 import com.jeffers.pantrycraft.data.ByokPreferences
+import com.jeffers.pantrycraft.data.backupRecords as loadBackupRecords
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
 import com.jeffers.pantrycraft.data.ExpirationAlertWorker
 import com.jeffers.pantrycraft.data.Repository
@@ -128,7 +129,7 @@ fun SettingsScreen(
     var backupResult by remember { mutableStateOf<String?>(null) }
     var pendingBackupName by remember { mutableStateOf<String?>(null) }
     var lastExportedUri by remember { mutableStateOf(DatabaseBackupManager.persistedBackupUri(context)) }
-    var backupRecords by remember { mutableStateOf(DatabaseBackupManager.backupRecords(context)) }
+    var backupRecords by remember { mutableStateOf(loadBackupRecords(context)) }
     var autoBackupTreeUri by remember {
         mutableStateOf(DatabaseBackupManager.persistedAutoBackupTreeUri(context))
     }
@@ -169,7 +170,7 @@ fun SettingsScreen(
                         }
                     }.onSuccess {
                         lastExportedUri = uri
-                        backupRecords = DatabaseBackupManager.backupRecords(context)
+                        backupRecords = loadBackupRecords(context)
                         Toast.makeText(context, "Encrypted backup saved", Toast.LENGTH_SHORT).show()
                     }.onFailure {
                         backupResult = "Backup export failed: ${it.message}"
@@ -713,7 +714,7 @@ fun SettingsScreen(
                                                 )
                                             }.fold(
                                                 onSuccess = {
-                                                    backupRecords = DatabaseBackupManager.backupRecords(context)
+                                                    backupRecords = loadBackupRecords(context)
                                                     pendingBackupName = it
                                                     createBackupLauncher.launch(it)
                                                     "Backup created. Choose where to save the encrypted file."
@@ -759,7 +760,7 @@ fun SettingsScreen(
                     OutlinedButton(
                         onClick = {
                             showBackupList = true
-                            backupRecords = DatabaseBackupManager.backupRecords(context)
+                            backupRecords = loadBackupRecords(context)
                         },
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     ) { Text("Restore saved backup") }

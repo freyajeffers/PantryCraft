@@ -66,29 +66,6 @@ object DatabaseBackupManager {
         val exportedUri: String?,
     )
 
-    fun backupRecords(context: Context): List<BackupRecord> {
-        val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val stored =
-            runCatching {
-                val json = JSONArray(preferences.getString(BACKUP_RECORDS, "[]"))
-                (0 until json.length()).map { index ->
-                    val item = json.getJSONObject(index)
-                    BackupRecord(
-                        backupName = item.getString("name"),
-                        createdAt = item.getLong("createdAt"),
-                        createdAtLabel = item.optString("createdAtLabel", item.getString("name")),
-                        exportedUri = item.optString("uri").takeIf { it.isNotBlank() },
-                    )
-                }
-            }.getOrDefault(emptyList())
-        val known = stored.mapTo(mutableSetOf()) { it.backupName }
-        val missing =
-            listBackups(context)
-                .filterNot(known::contains)
-                .map { name -> BackupRecord(name, backupTimestamp(name), name, null) }
-        return (stored + missing).sortedByDescending { it.createdAt }
-    }
-
     fun recordCreatedBackup(
         context: Context,
         backupName: String,
