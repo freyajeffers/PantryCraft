@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -84,64 +85,85 @@ fun GroceryScreen(viewModel: GroceryViewModel) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Grocery list") },
-                actions = {
-                    if (checkedCount > 0) {
-                        IconButton(
-                            onClick = { viewModel.restockChecked() },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Inventory2,
-                                contentDescription = "Restock checked items to pantry",
-                            )
-                        }
-                        IconButton(
-                            onClick = { viewModel.clearChecked() },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.ClearAll,
-                                contentDescription = "Clear checked items",
-                            )
-                        }
-                    }
-                },
+            GroceryTopBar(
+                checkedCount = checkedCount,
+                onRestock = viewModel::restockChecked,
+                onClear = viewModel::clearChecked,
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showAddDialog = true },
-                text = { Text("Add") },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Filled.AddShoppingCart,
-                        contentDescription = "Add grocery item",
-                    )
-                },
-            )
+            GroceryAddButton(onClick = { showAddDialog = true })
         },
     ) { padding ->
-        if (items.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    "Your grocery list is empty. Tap Add to create items or replenish from low stock.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        } else {
-            LazyColumn(modifier = Modifier.padding(padding)) {
-                items(items, key = { it.id }) { item ->
-                    GroceryItemRow(
-                        item = item,
-                        onChecked = { checked ->
-                            viewModel.update(item.copy(checked = checked))
-                        },
-                        onDelete = { viewModel.delete(item) },
-                    )
+        GroceryListContent(
+            items = items,
+            padding = padding,
+            onChecked = { item, checked -> viewModel.update(item.copy(checked = checked)) },
+            onDelete = viewModel::delete,
+        )
+    }
+}
+
+@Composable
+private fun GroceryAddButton(onClick: () -> Unit) {
+    ExtendedFloatingActionButton(
+        onClick = onClick,
+        text = { Text("Add") },
+        icon = {
+            Icon(
+                imageVector = Icons.Filled.AddShoppingCart,
+                contentDescription = "Add grocery item",
+            )
+        },
+    )
+}
+
+@Composable
+private fun GroceryTopBar(
+    checkedCount: Int,
+    onRestock: () -> Unit,
+    onClear: () -> Unit,
+) {
+    TopAppBar(
+        title = { Text("Grocery list") },
+        actions = {
+            if (checkedCount > 0) {
+                IconButton(onClick = onRestock) {
+                    Icon(Icons.Filled.Inventory2, contentDescription = "Restock checked items to pantry")
                 }
+                IconButton(onClick = onClear) {
+                    Icon(Icons.Filled.ClearAll, contentDescription = "Clear checked items")
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun GroceryListContent(
+    items: List<GroceryItem>,
+    padding: PaddingValues,
+    onChecked: (GroceryItem, Boolean) -> Unit,
+    onDelete: (GroceryItem) -> Unit,
+) {
+    if (items.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "Your grocery list is empty. Tap Add to create items or replenish from low stock.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    } else {
+        LazyColumn(modifier = Modifier.padding(padding)) {
+            items(items, key = { it.id }) { item ->
+                GroceryItemRow(
+                    item = item,
+                    onChecked = { checked -> onChecked(item, checked) },
+                    onDelete = { onDelete(item) },
+                )
             }
         }
     }
