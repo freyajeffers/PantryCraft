@@ -66,17 +66,6 @@ object DatabaseBackupManager {
         val exportedUri: String?,
     )
 
-    fun recordCreatedBackup(
-        context: Context,
-        backupName: String,
-    ) {
-        val timestamp = backupTimestamp(backupName)
-        saveBackupRecord(
-            context,
-            BackupRecord(backupName, timestamp, formatBackupTimestamp(timestamp), null),
-        )
-    }
-
     fun exportBackup(
         context: Context,
         backupName: String,
@@ -107,38 +96,6 @@ object DatabaseBackupManager {
         )
     }
 
-    fun dbChecksum(context: Context): String? {
-        val dbFile = context.getDatabasePath(DB_NAME)
-        if (!dbFile.exists() || !dbFile.isFile) return null
-        return runCatching {
-            val digest = java.security.MessageDigest.getInstance("SHA-256")
-            dbFile.inputStream().use { input ->
-                val buffer = ByteArray(STREAM_BUFFER_BYTES)
-                var read: Int
-                while (input.read(buffer).also { read = it } > 0) {
-                    digest.update(buffer, 0, read)
-                }
-            }
-            digest.digest().joinToString("") { "%02x".format(it) }
-        }.getOrNull()
-    }
-
-    fun lastDbChecksum(context: Context): String? =
-        context
-            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getString(LAST_DB_CHECKSUM, null)
-
-    fun saveLastDbChecksum(
-        context: Context,
-        checksum: String?,
-    ) {
-        context
-            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putString(LAST_DB_CHECKSUM, checksum)
-            .apply()
-    }
-
     fun restoreEncryptedBackupFromUri(
         context: Context,
         uri: Uri,
@@ -155,17 +112,6 @@ object DatabaseBackupManager {
         } finally {
             imported.delete()
         }
-    }
-
-    fun listBackups(context: Context): List<String> {
-        val dir = File(context.filesDir, BACKUP_DIR)
-        if (!dir.exists() || !dir.isDirectory) return emptyList()
-        return dir
-            .listFiles()
-            ?.filter { it.isFile && it.name.endsWith(".pcbk") }
-            ?.sortedByDescending { it.lastModified() }
-            ?.map { it.name }
-            ?: emptyList()
     }
 
     @Throws(IOException::class)
@@ -214,7 +160,11 @@ object DatabaseBackupManager {
             Arrays.fill(pin, '\u0000')
         }
 
-        recordCreatedBackup(context, dest.name)
+        val timestamp = backupTimestamp(dest.name)
+        saveBackupRecord(
+            context,
+            BackupRecord(dest.name, timestamp, formatBackupTimestamp(timestamp), null),
+        )
         return dest.name
     }
 
@@ -425,33 +375,6 @@ private fun decryptBackupToTemp(
         return Pair(passphrase, temp)
     } finally {
         derived?.fill(0)
-    }
-}
-
-private fun ensureDatabasePresent(dbFile: File) {
-    if (!dbFile.exists()) {
-        throw IOException("Database file not found")
-    }
-}
-
-private fun replaceDatabaseFile(temp: File, dbFile: File) {
-    FileInputStream(temp).use { input ->
-        FileOutputStream(dbFile).use { output ->
-            input.copyTo(output, STREAM_BUFFER_BYTES)
-            output.fd.sync()
-        }
-    }
-    if (!temp.delete()) throw IOException("Unable to remove temporary restored database")
-}
-
-private fun streamDecryptedDatabase(input: CipherInputStream, temp: File) {
-    FileOutputStream(temp).use { fos ->
-        val buffer = ByteArray(STREAM_BUFFER_BYTES)
-        var read: Int
-        while (input.read(buffer).also { read = it } > 0) {
-            fos.write(buffer, 0, read)
-        }
-        fos.fd.sync()
     }
 }
 

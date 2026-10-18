@@ -43,6 +43,7 @@ import com.jeffers.pantrycraft.data.DatabaseBackupManager
 import com.jeffers.pantrycraft.data.ExpirationAlertWorker
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.persistAutoBackupTreeUri
+import com.jeffers.pantrycraft.data.listBackupFiles
 import com.jeffers.pantrycraft.data.persistedBackupUri
 import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
 import kotlinx.coroutines.CoroutineScope
@@ -908,7 +909,7 @@ fun DatabaseRecoveryScreen(
     val scope = rememberCoroutineScope()
     val backups =
         remember {
-            DatabaseBackupManager.listBackups(context) +
+            listBackupFiles(context) +
                 listOfNotNull(persistedBackupUri(context)?.toString())
         }
     var selectedBackup by remember { mutableStateOf(backups.firstOrNull()) }

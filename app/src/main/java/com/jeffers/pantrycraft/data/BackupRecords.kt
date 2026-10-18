@@ -26,7 +26,7 @@ internal fun backupRecords(context: Context): List<DatabaseBackupManager.BackupR
     return (stored + missing).sortedByDescending { it.createdAt }
 }
 
-private fun listBackupFiles(context: Context): List<String> {
+internal fun listBackupFiles(context: Context): List<String> {
     val dir = File(context.filesDir, "backups")
     if (!dir.exists() || !dir.isDirectory) return emptyList()
     return dir.listFiles()?.filter { it.isFile && it.name.endsWith(".pcbk") }
