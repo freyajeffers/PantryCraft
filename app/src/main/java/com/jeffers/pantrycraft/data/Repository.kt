@@ -175,48 +175,6 @@ class Repository private constructor(
             allChecked.size
         }
 
-    suspend fun exportInventoryToJson(): String {
-        val pantry = pantryDao.observeAllPantryItems().first()
-        val grocery = groceryDao.observeAllGroceryItems().first()
-
-        val json = JSONObject()
-        json.put("version", 1)
-        json.put("exportedAt", System.currentTimeMillis())
-
-        val pantryArray = JSONArray()
-        pantry.forEach { item ->
-            val obj = JSONObject()
-            obj.put("name", item.name)
-            obj.put("quantity", item.quantity.toDouble())
-            obj.put("unit", item.unit ?: "COUNT")
-            obj.put("customUnitName", item.customUnitName ?: JSONObject.NULL)
-            obj.put("threshold", item.threshold.toDouble())
-            obj.put("barcode", item.barcode ?: "")
-            obj.put("storageLocation", item.storageLocation)
-            obj.put("category", item.category)
-            obj.put("expirationTimestamp", item.expirationTimestamp ?: JSONObject.NULL)
-            obj.put("isOpened", item.isOpened)
-            obj.put("openedTimestamp", item.openedTimestamp ?: JSONObject.NULL)
-            obj.put("isAromaticOrSeasoning", item.isAromaticOrSeasoning)
-            obj.put("notes", item.notes ?: "")
-            pantryArray.put(obj)
-        }
-        json.put("pantry", pantryArray)
-
-        val groceryArray = JSONArray()
-        grocery.forEach { item ->
-            val obj = JSONObject()
-            obj.put("name", item.name)
-            obj.put("quantity", item.quantity.toDouble())
-            obj.put("unit", item.unit ?: "COUNT")
-            obj.put("checked", item.checked)
-            groceryArray.put(obj)
-        }
-        json.put("grocery", groceryArray)
-
-        return json.toString(2)
-    }
-
     suspend fun importInventoryFromJson(jsonString: String): Int =
         db.withTransaction {
             val json = JSONObject(jsonString)
