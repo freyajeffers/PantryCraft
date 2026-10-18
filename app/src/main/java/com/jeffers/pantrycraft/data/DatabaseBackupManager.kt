@@ -32,32 +32,32 @@ import javax.crypto.spec.SecretKeySpec
  *  - iv: 12 bytes
  *  - ciphertext: AES/GCM over (passphrase-length(2 bytes BE) || passphrase || database-bytes)
  */
-object DatabaseBackupManager {
-    private const val BACKUP_DIR = "backups"
-    private const val DB_NAME = "pantry_grocery_encrypted.db"
-    private const val MAGIC = "PCBK"
-    private const val VERSION: Byte = 1
-    private const val SALT_LEN = 16
-    private const val IV_LEN = 12
-    private const val ITERATIONS = 200_000
-    private const val KEY_LEN_BITS = 256
-    private const val GCM_TAG_LENGTH_BITS = 128
-    private const val STREAM_BUFFER_BYTES = 16 * 1024
+private const val BACKUP_DIR = "backups"
+private const val DB_NAME = "pantry_grocery_encrypted.db"
+private const val MAGIC = "PCBK"
+private const val VERSION: Byte = 1
+private const val SALT_LEN = 16
+private const val IV_LEN = 12
+private const val ITERATIONS = 200_000
+private const val KEY_LEN_BITS = 256
+private const val GCM_TAG_LENGTH_BITS = 128
+private const val STREAM_BUFFER_BYTES = 16 * 1024
 
+private const val BYTE_MASK = 0xFF
+private const val BYTE_SHIFT = 8
+private const val PREFS_NAME = "backup_preferences"
+private const val LAST_EXPORTED_URI = "last_exported_uri"
+private const val LAST_DB_CHECKSUM = "last_db_checksum"
+private const val BACKUP_RECORDS = "backup_records"
+private const val AUTO_BACKUP_TREE_URI = "auto_backup_tree_uri"
+
+object DatabaseBackupManager {
     private data class EncryptedBackupPayload(
         val passphrase: ByteArray?,
         val secretKey: SecretKeySpec,
         val salt: ByteArray,
         val iv: ByteArray,
     )
-
-    private const val BYTE_MASK = 0xFF
-    private const val BYTE_SHIFT = 8
-    private const val PREFS_NAME = "backup_preferences"
-    private const val LAST_EXPORTED_URI = "last_exported_uri"
-    private const val LAST_DB_CHECKSUM = "last_db_checksum"
-    private const val BACKUP_RECORDS = "backup_records"
-    private const val AUTO_BACKUP_TREE_URI = "auto_backup_tree_uri"
 
     data class BackupRecord(
         val backupName: String,
