@@ -211,75 +211,54 @@ fun PantryScreen(viewModel: PantryViewModel) {
                 )
             }
         },
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = viewModel::setSearchQuery,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                singleLine = true,
-                label = { Text("Search pantry") },
-            )
-            LazyRow(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(PantryLocationFilter.entries) { filter ->
-                    FilterChip(
-                        selected = selectedLocation == filter,
-                        onClick = { viewModel.selectLocation(filter) },
-                        label = { Text(filter.label) },
+    ) { _ ->
+        PantryListContent(
+            PantryListContentProps(
+                items = items,
+                selectedLocation = selectedLocation,
+                searchQuery = searchQuery,
+                onSearchQueryChange = viewModel::setSearchQuery,
+                onLocationSelected = viewModel::selectLocation,
+                itemContent = { item ->
+                    PantryItemRow(
+                        item = item,
+                        actions = PantryItemRowActions(
+                            onDecrement = { viewModel.decrement(item, 1f) },
+                            onIncrement = { viewModel.update(item.copy(quantity = item.quantity + 1f)) },
+                            onUse = {
+                                useAmount = ""
+                                useItem = item
+                            },
+                            onEdit = {
+                                editorItem = item
+                                showAddDialog = true
+                            },
+                            onMarkOpened = { viewModel.update(item.markOpened()) },
+                            onAddToGrocery = {
+                                viewModel.addGroceryItem(
+                                    name = item.name,
+                                    quantity = 1f,
+                                    unit = item.unit,
+                                    fromPantryId = item.id,
+                                )
+                            },
+                            onDelete = {
+                                viewModel.delete(item)
+                                scope.launch {
+                                    val result = snackbarHostState.showSnackbar(
+                                        message = "${item.name} deleted",
+                                        actionLabel = "Undo",
+                                    )
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        viewModel.restore(item)
+                                    }
+                                }
+                            },
+                        ),
                     )
-                }
-            }
-
-            if (items.isEmpty()) {
-                Text("Your pantry is empty.", modifier = Modifier.padding(16.dp))
-            } else {
-                LazyColumn {
-                    items(items, key = { it.id }) { item ->
-                        PantryItemRow(
-                            item = item,
-                            actions =
-                                PantryItemRowActions(
-                                    onDecrement = { viewModel.decrement(item, 1f) },
-                                    onIncrement = { viewModel.update(item.copy(quantity = item.quantity + 1f)) },
-                                    onUse = {
-                                        useAmount = ""
-                                        useItem = item
-                                    },
-                                    onEdit = {
-                                        editorItem = item
-                                        showAddDialog = true
-                                    },
-                                    onMarkOpened = { viewModel.update(item.markOpened()) },
-                                    onAddToGrocery = {
-                                        viewModel.addGroceryItem(
-                                            name = item.name,
-                                            quantity = 1f,
-                                            unit = item.unit,
-                                            fromPantryId = item.id,
-                                        )
-                                    },
-                                    onDelete = {
-                                        viewModel.delete(item)
-                                        scope.launch {
-                                            val result =
-                                                snackbarHostState.showSnackbar(
-                                                    message = "${item.name} deleted",
-                                                    actionLabel = "Undo",
-                                                )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                viewModel.restore(item)
-                                            }
-                                        }
-                                    },
-                                ),
-                        )
-                    }
-                }
-            }
-        }
+                },
+            ),
+        )
     }
 }
 
