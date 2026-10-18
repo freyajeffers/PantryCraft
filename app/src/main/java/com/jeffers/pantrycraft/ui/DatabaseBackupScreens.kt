@@ -1051,11 +1051,10 @@ fun DatabaseRecoveryScreen(
     onReset: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val backups =
-        remember {
-            DatabaseBackupManager.listBackups(context) +
-                listOfNotNull(DatabaseBackupManager.persistedBackupUri(context)?.toString())
-        }
+    val backups = remember {
+        DatabaseBackupManager.listBackups(context) +
+            listOfNotNull(DatabaseBackupManager.persistedBackupUri(context)?.toString())
+    }
     var selectedBackup by remember { mutableStateOf(backups.firstOrNull()) }
     var pin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
