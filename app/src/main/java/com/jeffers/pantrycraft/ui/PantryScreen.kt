@@ -24,7 +24,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -55,12 +54,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.PantryTaxonomy
 import com.jeffers.pantrycraft.data.markOpened
-import com.jeffers.pantrycraft.feature.camera.ui.BatchReviewBottomSheet
-import com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox
-import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
-import com.jeffers.pantrycraft.feature.camera.vision.toPantryItem
-import com.jeffers.pantrycraft.feature.camera.vision.toParsedVisionItem
-import com.jeffers.pantrycraft.feature.camera.vision.toUpdatedPantryItem
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
@@ -83,20 +76,6 @@ private data class PantryItemRowActions(
     val onAddToGrocery: () -> Unit,
     val onDelete: () -> Unit,
 )
-
-private fun newPantryDraft() =
-    ParsedVisionItem(
-        name = "",
-        category = "OTHER",
-        storageLocation = "PANTRY",
-        quantity = 1f,
-        unit = "COUNT",
-        confidence = 1f,
-        estimatedShelfLifeDays = 0,
-        isAromaticOrSeasoning = false,
-        boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-        conditionNotes = null,
-    )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,24 +107,17 @@ fun PantryScreen(viewModel: PantryViewModel) {
     }
 
     if (showAddDialog) {
-        ModalBottomSheet(onDismissRequest = { showAddDialog = false }) {
-            BatchReviewBottomSheet(
-                items = listOf(editorItem?.toParsedVisionItem() ?: newPantryDraft()),
-                title = if (editorItem == null) "Add pantry item" else "Edit pantry item",
-                description = "Review the pantry item details before saving.",
-                onConfirm = { drafts ->
-                    drafts.firstOrNull()?.let { draft ->
-                        if (editorItem == null) {
-                            viewModel.add(draft.toPantryItem())
-                        } else {
-                            viewModel.update(draft.toUpdatedPantryItem(editorItem!!))
-                        }
-                    }
-                    showAddDialog = false
-                },
-                onDismiss = { showAddDialog = false },
-            )
-        }
+        PantryItemEditorSheet(
+            editorItem = editorItem,
+            onSaveDraft = { isNew, item ->
+                if (isNew) {
+                    viewModel.add(item)
+                } else {
+                    viewModel.update(item)
+                }
+            },
+            onDismiss = { showAddDialog = false },
+        )
     }
 
     useItem?.let { item ->
