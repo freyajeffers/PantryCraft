@@ -153,36 +153,15 @@ fun PantryScreen(viewModel: PantryViewModel) {
     }
 
     useItem?.let { item ->
-        val unitLabel =
-            if (item.unit == "CUSTOM" && !item.customUnitName.isNullOrBlank()) {
-                item.customUnitName
-            } else {
-                item.unit.orEmpty()
-            }
-        AlertDialog(
-            onDismissRequest = { useItem = null },
-            title = { Text("Use ${item.name}") },
-            text = {
-                OutlinedTextField(
-                    value = useAmount,
-                    onValueChange = { useAmount = it },
-                    label = { Text("Amount ($unitLabel)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
-                )
+        UsePantryItemDialog(
+            item = item,
+            amount = useAmount,
+            onAmountChange = { useAmount = it },
+            onConfirm = { amount ->
+                viewModel.decrement(item, amount)
+                useItem = null
             },
-            confirmButton = {
-                TextButton(
-                    enabled = useAmount.toFloatOrNull()?.let { it > 0f } == true,
-                    onClick = {
-                        useAmount.toFloatOrNull()?.takeIf { it > 0f }?.let { amount ->
-                            viewModel.decrement(item, amount)
-                        }
-                        useItem = null
-                    },
-                ) { Text("Use") }
-            },
-            dismissButton = { TextButton(onClick = { useItem = null }) { Text("Cancel") } },
+            onDismiss = { useItem = null },
         )
     }
 
@@ -302,6 +281,41 @@ fun PantryScreen(viewModel: PantryViewModel) {
             }
         }
     }
+}
+
+@Composable
+private fun UsePantryItemDialog(
+    item: PantryItem,
+    amount: String,
+    onAmountChange: (String) -> Unit,
+    onConfirm: (Float) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val unitLabel = if (item.unit == "CUSTOM" && !item.customUnitName.isNullOrBlank()) {
+        item.customUnitName
+    } else {
+        item.unit.orEmpty()
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Use ${item.name}") },
+        text = {
+            OutlinedTextField(
+                value = amount,
+                onValueChange = onAmountChange,
+                label = { Text("Amount ($unitLabel)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true,
+            )
+        },
+        confirmButton = {
+            TextButton(
+                enabled = amount.toFloatOrNull()?.let { it > 0f } == true,
+                onClick = { amount.toFloatOrNull()?.takeIf { it > 0f }?.let(onConfirm) },
+            ) { Text("Use") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 @Composable
