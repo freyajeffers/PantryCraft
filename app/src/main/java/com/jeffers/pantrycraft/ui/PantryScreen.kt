@@ -133,74 +133,39 @@ fun PantryScreen(viewModel: PantryViewModel) {
         )
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            PantryTopBar(
-                selectedSortOrder = selectedSortOrder,
-                onSortSelected = viewModel::selectSortOrder,
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = {
+    PantryScaffoldContent(
+        PantryScaffoldProps(
+            selectedSortOrder = selectedSortOrder,
+            onSortSelected = viewModel::selectSortOrder,
+            onAddClick = {
                 editorItem = null
                 showAddDialog = true
-            }) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Add pantry item",
-                )
-            }
-        },
-    ) { _ ->
-        PantryListContent(
-            PantryListContentProps(
-                items = items,
-                selectedLocation = selectedLocation,
-                searchQuery = searchQuery,
-                onSearchQueryChange = viewModel::setSearchQuery,
-                onLocationSelected = viewModel::selectLocation,
-                itemContent = { item ->
-                    PantryItemRow(
-                        item = item,
-                        actions = PantryItemRowActions(
-                            onDecrement = { viewModel.decrement(item, 1f) },
-                            onIncrement = { viewModel.update(item.copy(quantity = item.quantity + 1f)) },
-                            onUse = {
-                                useAmount = ""
-                                useItem = item
-                            },
-                            onEdit = {
-                                editorItem = item
-                                showAddDialog = true
-                            },
-                            onMarkOpened = { viewModel.update(item.markOpened()) },
-                            onAddToGrocery = {
-                                viewModel.addGroceryItem(
-                                    name = item.name,
-                                    quantity = 1f,
-                                    unit = item.unit,
-                                    fromPantryId = item.id,
-                                )
-                            },
-                            onDelete = {
-                                viewModel.delete(item)
-                                scope.launch {
-                                    val result = snackbarHostState.showSnackbar(
-                                        message = "${item.name} deleted",
-                                        actionLabel = "Undo",
-                                    )
-                                    if (result == SnackbarResult.ActionPerformed) {
-                                        viewModel.restore(item)
-                                    }
-                                }
-                            },
-                        ),
-                    )
-                },
-            ),
-        )
-    }
+            },
+            items = items,
+            selectedLocation = selectedLocation,
+            searchQuery = searchQuery,
+            onSearchQueryChange = viewModel::setSearchQuery,
+            onLocationSelected = viewModel::selectLocation,
+            onDecrement = { viewModel.decrement(it, 1f) },
+            onIncrement = { viewModel.update(it.copy(quantity = it.quantity + 1f)) },
+            onUse = {
+                useAmount = ""
+                useItem = it
+            },
+            onEdit = {
+                editorItem = it
+                showAddDialog = true
+            },
+            onMarkOpened = { viewModel.update(it.markOpened()) },
+            onAddToGrocery = {
+                viewModel.addGroceryItem(it.name, 1f, it.unit, fromPantryId = it.id)
+            },
+            onDelete = viewModel::delete,
+            onRestore = viewModel::restore,
+            snackbarHostState = snackbarHostState,
+            scope = scope,
+        ),
+    )
 }
 
 @Composable
@@ -339,7 +304,7 @@ private fun PantryItemActions(item: PantryItem, isLowStock: Boolean, actions: Pa
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PantryItemRow(
+internal fun PantryItemRow(
     item: PantryItem,
     actions: PantryItemRowActions,
 ) {
