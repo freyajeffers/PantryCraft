@@ -441,122 +441,49 @@ fun SettingsScreen(
             "Manage offline barcode data and protect your pantry information.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors =
-                CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("FoodFacts barcode catalog", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    "This optional catalog helps PantryCraft recognize packaged foods when you scan a barcode. " +
-                        "Download it once to make barcode lookups work offline. The catalog is saved only inside " +
-                        "the app and does not contain your pantry or grocery list.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    if (catalogReady) {
-                        "Ready for offline barcode scans · ${formatFileSize(catalogFileSize ?: 0L)}"
-                    } else {
-                        "Not downloaded"
-                    },
-                    color =
-                        if (catalogReady) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
+        FoodFactsCard(
+            repository = repository,
+            scope = scope,
+            props = FoodFactsProps(
+                catalogReady = catalogReady,
+                catalogFileSize = catalogFileSize,
+                catalogDownloading = catalogDownloading,
+                catalogDownloadedBytes = catalogDownloadedBytes,
+                catalogTotalBytes = catalogTotalBytes,
+                onStartDownload = {
+                    catalogDownloading = true
+                    catalogDownloadedBytes = 0L
+                    catalogTotalBytes = -1L
+                },
+                onDownloadResult = { result ->
+                    catalogDownloading = false
+                    result.fold(
+                        onSuccess = { file ->
+                            catalogReady = true
+                            catalogFileSize = file.length()
+                            Toast.makeText(
+                                context,
+                                "Food catalog downloaded (${formatFileSize(file.length())})",
+                                Toast.LENGTH_SHORT,
+                            ).show()
                         },
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.padding(top = 12.dp),
-                )
-                if (catalogDownloading) {
-                    val progress =
-                        if (catalogTotalBytes > 0) {
-                            catalogDownloadedBytes.toFloat() / catalogTotalBytes
-                        } else {
-                            null
-                        }
-                    if (progress == null) {
-                        LinearProgressIndicator(
-                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                        )
-                    } else {
-                        LinearProgressIndicator(
-                            progress = { progress.coerceIn(0f, 1f) },
-                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                        )
-                    }
-                    Text(
-                        if (catalogTotalBytes > 0) {
-                            "Downloading ${formatFileSize(catalogDownloadedBytes)} of " +
-                                formatFileSize(catalogTotalBytes)
-                        } else {
-                            "Downloading ${formatFileSize(catalogDownloadedBytes)}"
+                        onFailure = {
+                            catalogDialog = CatalogDialog(
+                                "Download failed",
+                                it.message ?: "The catalog could not be downloaded. Check your connection and try again.",
+                                true,
+                            )
                         },
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp),
                     )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (!catalogReady) {
-                        Button(
-                            enabled = !catalogDownloading,
-                            onClick = {
-                                catalogDownloading = true
-                                catalogDownloadedBytes = 0L
-                                catalogTotalBytes = -1L
-                                scope.launch {
-                                    val result =
-                                        withContext(Dispatchers.IO) {
-                                            runCatching {
-                                                repository.downloadOfflineCatalog { downloaded, total ->
-                                                    catalogDownloadedBytes = downloaded
-                                                    catalogTotalBytes = total
-                                                }
-                                            }
-                                        }
-                                    catalogDownloading = false
-                                    result.fold(
-                                        onSuccess = { file ->
-                                            catalogReady = true
-                                            catalogFileSize = file.length()
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    "Food catalog downloaded (${formatFileSize(file.length())})",
-                                                    Toast.LENGTH_SHORT,
-                                                ).show()
-                                        },
-                                        onFailure = {
-                                            catalogDialog =
-                                                CatalogDialog(
-                                                    "Download failed",
-                                                    it.message
-                                                        ?: "The catalog could not be downloaded. " +
-                                                        "Check your connection and try again.",
-                                                    true,
-                                                )
-                                        },
-                                    )
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                        ) { Text("Download food catalog") }
-                    }
-                    if (catalogReady) {
-                        OutlinedButton(
-                            onClick = { confirmCatalogDelete = true },
-                            enabled = !catalogDownloading,
-                        ) { Text("Delete") }
-                    }
-                }
-            }
-        }
+                },
+                onProgress = { downloaded, total ->
+                    catalogDownloadedBytes = downloaded
+                    catalogTotalBytes = total
+                },
+                onDelete = { confirmCatalogDelete = true },
+                catalogDialogSetter = { catalogDialog = it },
+            ),
+        )
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Notifications & Alerts", style = MaterialTheme.typography.titleLarge)
