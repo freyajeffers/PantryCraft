@@ -390,32 +390,15 @@ fun SettingsScreen(
         )
     }
     if (confirmCatalogDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmCatalogDelete = false },
-            title = { Text("Delete downloaded catalog?") },
-            text = {
-                Text(
-                    "This removes the offline barcode catalog from this device. " +
-                        "You can download it again later.",
-                )
+        CatalogDeleteDialog(
+            context = context,
+            onDismiss = { confirmCatalogDelete = false },
+            onDeleted = {
+                catalogReady = false
+                catalogFileSize = null
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        confirmCatalogDelete = false
-                        val file = File(context.noBackupFilesDir, CatalogDownloadService.CATALOG_FILE_NAME)
-                        if (file.delete()) {
-                            catalogReady = false
-                            catalogFileSize = null
-                        } else {
-                            catalogDialog =
-                                CatalogDialog("Delete failed", "The downloaded catalog could not be removed.", true)
-                        }
-                    },
-                ) { Text("Delete") }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmCatalogDelete = false }) { Text("Cancel") }
+            onFailure = {
+                catalogDialog = CatalogDialog("Delete failed", "The downloaded catalog could not be removed.", true)
             },
         )
     }
