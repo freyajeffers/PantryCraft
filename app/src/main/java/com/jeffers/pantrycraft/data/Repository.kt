@@ -303,7 +303,8 @@ class Repository private constructor(
                 val escapedNotes = "\"${(item.notes ?: "").replace("\"", "\"\"")}\""
                 append(
                     "$escapedName,${item.category},${item.storageLocation},${item.quantity}," +
-                        "${item.unit.orEmpty()},$escapedCustomUnit,${item.threshold},$expDate,${item.isOpened},$escapedNotes\n",
+                        "${item.unit.orEmpty()},$escapedCustomUnit,${item.threshold}," +
+                        "$expDate,${item.isOpened},$escapedNotes\n",
                 )
             }
         }
@@ -365,16 +366,26 @@ class Repository private constructor(
                             0f
                         }
                     val expDateStr =
-                        (if (hasExtendedCols) cols.getOrNull(EXPIRATION_COLUMN) else cols.getOrNull(LEGACY_EXPIRATION_COLUMN))
-                            ?.trim()
+                        (
+                            if (hasExtendedCols) {
+                                cols.getOrNull(EXPIRATION_COLUMN)
+                            } else {
+                                cols.getOrNull(LEGACY_EXPIRATION_COLUMN)
+                            }
+                        )?.trim()
                             .orEmpty()
                     val expTimestamp =
                         expDateStr.takeIf { it.isNotEmpty() }?.let {
                             runCatching { dateFormat.parse(it)?.time }.getOrNull()
                         }
                     val isOpened =
-                        (if (hasExtendedCols) cols.getOrNull(IS_OPENED_COLUMN) else cols.getOrNull(LEGACY_IS_OPENED_COLUMN))
-                            ?.trim()
+                        (
+                            if (hasExtendedCols) {
+                                cols.getOrNull(IS_OPENED_COLUMN)
+                            } else {
+                                cols.getOrNull(LEGACY_IS_OPENED_COLUMN)
+                            }
+                        )?.trim()
                             ?.toBoolean() ?: false
                     val notes =
                         (if (hasExtendedCols) cols.getOrNull(NOTES_COLUMN) else cols.getOrNull(LEGACY_NOTES_COLUMN))

@@ -73,9 +73,30 @@ class PantryViewModelTest {
 
     @Test
     fun sortPantryItems_sortsByRecentlyUpdatedAndCategoryAndStorageZone() {
-        val itemA = PantryItem(id = 1, name = "Yogurt", category = "DAIRY", storageLocation = "FRIDGE", updatedAt = 100L)
-        val itemB = PantryItem(id = 2, name = "Apples", category = "PRODUCE", storageLocation = "COUNTER", updatedAt = 500L)
-        val itemC = PantryItem(id = 3, name = "Beans", category = "CANNED", storageLocation = "PANTRY", updatedAt = 200L)
+        val itemA =
+            PantryItem(
+                id = 1,
+                name = "Yogurt",
+                category = "DAIRY",
+                storageLocation = "FRIDGE",
+                updatedAt = 100L,
+            )
+        val itemB =
+            PantryItem(
+                id = 2,
+                name = "Apples",
+                category = "PRODUCE",
+                storageLocation = "COUNTER",
+                updatedAt = 500L,
+            )
+        val itemC =
+            PantryItem(
+                id = 3,
+                name = "Beans",
+                category = "CANNED",
+                storageLocation = "PANTRY",
+                updatedAt = 200L,
+            )
 
         val byUpdated = sortPantryItems(listOf(itemA, itemB, itemC), PantrySortOrder.RECENTLY_UPDATED)
         assertEquals(listOf(2L, 3L, 1L), byUpdated.map { it.id })

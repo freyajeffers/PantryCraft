@@ -414,7 +414,8 @@ fun CameraScreen() {
                                 style = MaterialTheme.typography.titleMedium,
                             )
                             Text(
-                                "Category: ${match.category} · Unit: ${match.unit} · Shelf life: ${match.estimatedShelfLifeDays}d",
+                                "Category: ${match.category} · Unit: ${match.unit} · " +
+                                    "Shelf life: ${match.estimatedShelfLifeDays}d",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

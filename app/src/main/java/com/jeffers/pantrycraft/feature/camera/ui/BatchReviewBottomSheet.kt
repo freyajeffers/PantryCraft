@@ -170,7 +170,8 @@ fun BatchReviewBottomSheet(
                         rawUnit
                     }
                 val displayedStorage = if (items.size == 1) editStorageLocation else reviewItem.item.storageLocation
-                val displayedShelfLife = if (items.size == 1) editShelfLifeDays else reviewItem.item.estimatedShelfLifeDays
+                val displayedShelfLife =
+                    if (items.size == 1) editShelfLifeDays else reviewItem.item.estimatedShelfLifeDays
 
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp)) {
@@ -251,7 +252,8 @@ fun BatchReviewBottomSheet(
                                                             ),
                                                     )
                                             }
-                                        quantityTextByIndex[index] = formatQuantity((reviewItem.item.quantity - 1f).coerceAtLeast(1f))
+                                        quantityTextByIndex[index] =
+                                            formatQuantity((reviewItem.item.quantity - 1f).coerceAtLeast(1f))
                                     },
                                 ) {
                                     Icon(Icons.Filled.Remove, contentDescription = "Decrease quantity")
@@ -283,7 +285,8 @@ fun BatchReviewBottomSheet(
                                     text.toFloatOrNull()?.takeIf { it > 0f }?.let { quantity ->
                                         reviewItems =
                                             reviewItems.toMutableList().also {
-                                                it[index] = reviewItem.copy(item = reviewItem.item.copy(quantity = quantity))
+                                                it[index] =
+                                                    reviewItem.copy(item = reviewItem.item.copy(quantity = quantity))
                                             }
                                     }
                                 },

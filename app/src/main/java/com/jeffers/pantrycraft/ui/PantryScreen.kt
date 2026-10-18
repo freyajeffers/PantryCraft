@@ -453,7 +453,8 @@ fun StorageDiagnosticDialog(
         title = { Text("Storage space required") },
         text = {
             Text(
-                "$message\n\nFree device storage, then retry the operation. Temporary inference media was cleared automatically.",
+                "$message\n\nFree device storage, then retry the operation. " +
+                    "Temporary inference media was cleared automatically.",
             )
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } },

@@ -392,7 +392,10 @@ fun SettingsScreen(
             onDismissRequest = { confirmDatabaseReset = false },
             title = { Text("Reset local database?") },
             text = {
-                Text("This permanently deletes pantry and grocery data on this device. Restore a backup first if needed.")
+                Text(
+                    "This permanently deletes pantry and grocery data on this device. " +
+                        "Restore a backup first if needed.",
+                )
             },
             confirmButton = {
                 TextButton(
@@ -496,7 +499,8 @@ fun SettingsScreen(
                     }
                     Text(
                         if (catalogTotalBytes > 0) {
-                            "Downloading ${formatFileSize(catalogDownloadedBytes)} of ${formatFileSize(catalogTotalBytes)}"
+                            "Downloading ${formatFileSize(catalogDownloadedBytes)} of " +
+                                formatFileSize(catalogTotalBytes)
                         } else {
                             "Downloading ${formatFileSize(catalogDownloadedBytes)}"
                         },
@@ -566,7 +570,8 @@ fun SettingsScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Notifications & Alerts", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    "Receive a private, local daily notification on this device if any pantry items are expiring within 48 hours. No external servers or cloud services are contacted.",
+                    "Receive a private, local daily notification on this device if any pantry items " +
+                        "are expiring within 48 hours. No external servers or cloud services are contacted.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Row(
@@ -801,7 +806,8 @@ fun SettingsScreen(
                 Text("Data Sovereignty & Portability", style = MaterialTheme.typography.titleLarge)
                 Text(
                     "Export your inventory in human-readable and standard formats (JSON or CSV) for backup, " +
-                        "spreadsheets, or data migration. You can also import previously exported JSON inventory files.",
+                        "spreadsheets, or data migration. You can also import previously exported " +
+                        "JSON inventory files.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Row(
@@ -826,7 +832,11 @@ fun SettingsScreen(
                         modifier = Modifier.weight(1f),
                     ) { Text("Import JSON") }
                     OutlinedButton(
-                        onClick = { importCsvLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/*")) },
+                        onClick = {
+                            importCsvLauncher.launch(
+                                arrayOf("text/csv", "text/comma-separated-values", "text/*"),
+                            )
+                        },
                         modifier = Modifier.weight(1f),
                     ) { Text("Import CSV") }
                 }
@@ -976,7 +986,10 @@ fun DatabaseRecoveryScreen(
             onDismissRequest = { confirmReset = false },
             title = { Text("Reset local database?") },
             text = {
-                Text("This permanently deletes the local pantry and grocery database. Restore a backup first if you need to keep it.")
+                Text(
+                    "This permanently deletes the local pantry and grocery database. " +
+                        "Restore a backup first if you need to keep it.",
+                )
             },
             confirmButton = {
                 TextButton(
