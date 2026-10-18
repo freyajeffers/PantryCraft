@@ -82,7 +82,8 @@ class OfflineBarcodeResolver(
         assetBarcodeDatabase = null
     }
 
-    private fun CustomBarcodeItem.toMatch(barcode: String) = BarcodeMatch(barcode, name, category, defaultUnit, estimatedShelfLifeDays)
+    private fun CustomBarcodeItem.toMatch(barcode: String) =
+        BarcodeMatch(barcode, name, category, defaultUnit, estimatedShelfLifeDays)
 
     private fun EmbeddedProduct.toMatch(barcode: String) = BarcodeMatch(barcode, name, category, unit, shelfLifeDays)
 

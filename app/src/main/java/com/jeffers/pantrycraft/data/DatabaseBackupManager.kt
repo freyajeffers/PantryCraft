@@ -352,10 +352,8 @@ object DatabaseBackupManager {
                 AppDatabase.closeDatabase()
                 Repository.resetInstance()
                 DatabaseKeyProvider.reset(context)
-                DatabaseKeyProvider.restorePassphrase(
-                    context,
-                    passphrase ?: throw IOException("Backup omitted database passphrase"),
-                )
+                val dbPass = requirePassphrase(passphrase)
+                DatabaseKeyProvider.restorePassphrase(context, dbPass)
                 val dbFile = context.getDatabasePath(DB_NAME)
                 if (!temp.renameTo(dbFile)) {
                     FileInputStream(temp).use { input ->
@@ -364,11 +362,11 @@ object DatabaseBackupManager {
                             output.fd.sync()
                         }
                     }
-                    check(temp.delete()) { "Unable to remove temporary restored database" }
+                    if (!temp.delete()) throw IOException("Unable to remove temporary restored database")
                 }
             } catch (e: IOException) {
                 temp.delete()
-                throw IOException("Failed to restore backup: ${e.message}", e)
+                throwRestoreFailure(e)
             } finally {
                 passphrase?.fill(0)
                 Arrays.fill(pin, '\u0000')
@@ -381,17 +379,7 @@ object DatabaseBackupManager {
         pin: CharArray,
         context: Context,
     ): Pair<ByteArray?, File> {
-        val magicBytes = ByteArray(MAGIC.length)
-        if (fis.read(magicBytes) != magicBytes.size) throw IOException("Truncated backup")
-        if (!magicBytes.contentEquals(MAGIC.toByteArray(Charsets.UTF_8))) {
-            throw IOException("Invalid backup magic")
-        }
-        val version = fis.read()
-        if (version != VERSION.toInt()) throw IOException("Unsupported backup version: $version")
-        val salt = ByteArray(SALT_LEN)
-        if (fis.read(salt) != SALT_LEN) throw IOException("Truncated backup salt")
-        val iv = ByteArray(IV_LEN)
-        if (fis.read(iv) != IV_LEN) throw IOException("Truncated backup IV")
+        val (salt, iv) = readBackupHeader(fis)
 
         var derived: ByteArray? = null
         var passphrase: ByteArray? = null
@@ -403,17 +391,7 @@ object DatabaseBackupManager {
             cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(derived, "AES"), GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
 
             CipherInputStream(fis, cipher).use { cis ->
-                val lengthHigh = cis.read()
-                val lengthLow = cis.read()
-                if (lengthHigh < 0 || lengthLow < 0) throw IOException("Truncated backup payload")
-                val passphraseLength = (lengthHigh shl BYTE_SHIFT) or lengthLow
-                passphrase = ByteArray(passphraseLength)
-                var offset = 0
-                while (offset < passphraseLength) {
-                    val read = cis.read(passphrase, offset, passphraseLength - offset)
-                    if (read < 0) throw IOException("Truncated backup passphrase")
-                    offset += read
-                }
+                passphrase = readBackupPassphrase(cis)
                 FileOutputStream(temp).use { fos ->
                     val buffer = ByteArray(STREAM_BUFFER_BYTES)
                     var read: Int
@@ -428,6 +406,50 @@ object DatabaseBackupManager {
         } finally {
             derived?.fill(0)
         }
+    }
+
+    private fun readBackupHeader(fis: FileInputStream): Pair<ByteArray, ByteArray> {
+        val magicBytes = ByteArray(MAGIC.length)
+        readExact(fis, magicBytes, "Truncated backup")
+        if (!magicBytes.contentEquals(MAGIC.toByteArray(Charsets.UTF_8))) {
+            throw IOException("Invalid backup magic")
+        }
+        val version = fis.read()
+        if (version != VERSION.toInt()) throw IOException("Unsupported backup version: $version")
+        val salt = ByteArray(SALT_LEN)
+        readExact(fis, salt, "Truncated backup salt")
+        val iv = ByteArray(IV_LEN)
+        readExact(fis, iv, "Truncated backup IV")
+        return salt to iv
+    }
+
+    private fun readExact(
+        input: FileInputStream,
+        buffer: ByteArray,
+        message: String,
+    ) {
+        if (input.read(buffer) != buffer.size) throw IOException(message)
+    }
+
+    private fun requirePassphrase(passphrase: ByteArray?): ByteArray =
+        passphrase ?: throw IOException("Backup omitted database passphrase")
+
+    private fun throwRestoreFailure(error: IOException): Nothing =
+        throw IOException("Failed to restore backup: ${error.message}", error)
+
+    private fun readBackupPassphrase(input: CipherInputStream): ByteArray {
+        val lengthHigh = input.read()
+        val lengthLow = input.read()
+        if (lengthHigh < 0 || lengthLow < 0) throw IOException("Truncated backup payload")
+        val passphraseLength = (lengthHigh shl BYTE_SHIFT) or lengthLow
+        val passphrase = ByteArray(passphraseLength)
+        var offset = 0
+        while (offset < passphraseLength) {
+            val read = input.read(passphrase, offset, passphraseLength - offset)
+            if (read < 0) throw IOException("Truncated backup passphrase")
+            offset += read
+        }
+        return passphrase
     }
 
     private fun deriveKeyBytes(

@@ -22,7 +22,8 @@ object AutomaticBackupPreferences {
 
     fun isEnabled(context: Context): Boolean = preferences(context).getBoolean(ENABLED_KEY, false)
 
-    fun intervalMinutes(context: Context): Long = preferences(context).getLong(INTERVAL_MINUTES_KEY, DEFAULT_INTERVAL_MINUTES)
+    fun intervalMinutes(context: Context): Long =
+        preferences(context).getLong(INTERVAL_MINUTES_KEY, DEFAULT_INTERVAL_MINUTES)
 
     fun setSchedule(
         context: Context,

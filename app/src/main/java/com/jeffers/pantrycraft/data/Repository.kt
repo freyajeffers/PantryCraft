@@ -134,7 +134,8 @@ class Repository private constructor(
         return pantryDao.insert(validated)
     }
 
-    suspend fun updatePantry(item: PantryItem) = pantryDao.update(validate(item).copy(updatedAt = System.currentTimeMillis()))
+    suspend fun updatePantry(item: PantryItem) =
+        pantryDao.update(validate(item).copy(updatedAt = System.currentTimeMillis()))
 
     suspend fun deletePantry(item: PantryItem) = pantryDao.softDelete(item.id)
 
