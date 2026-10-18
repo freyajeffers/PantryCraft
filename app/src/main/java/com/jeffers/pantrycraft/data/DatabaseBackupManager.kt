@@ -395,19 +395,23 @@ object DatabaseBackupManager {
 
             CipherInputStream(fis, cipher).use { cis ->
                 passphrase = readBackupPassphrase(cis)
-                FileOutputStream(temp).use { fos ->
-                    val buffer = ByteArray(STREAM_BUFFER_BYTES)
-                    var read: Int
-                    while (cis.read(buffer).also { read = it } > 0) {
-                        fos.write(buffer, 0, read)
-                    }
-                    fos.fd.sync()
-                }
+                streamDecryptedDatabase(cis, temp)
             }
 
             return Pair(passphrase, temp)
         } finally {
             derived?.fill(0)
+        }
+    }
+
+    private fun streamDecryptedDatabase(input: CipherInputStream, temp: File) {
+        FileOutputStream(temp).use { fos ->
+            val buffer = ByteArray(STREAM_BUFFER_BYTES)
+            var read: Int
+            while (input.read(buffer).also { read = it } > 0) {
+                fos.write(buffer, 0, read)
+            }
+            fos.fd.sync()
         }
     }
 
