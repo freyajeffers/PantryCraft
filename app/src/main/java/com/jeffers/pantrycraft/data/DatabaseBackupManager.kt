@@ -398,89 +398,90 @@ object DatabaseBackupManager {
         }
     }
 
-    private fun replaceDatabaseFile(temp: File, dbFile: File) {
-        FileInputStream(temp).use { input ->
-            FileOutputStream(dbFile).use { output ->
-                input.copyTo(output, STREAM_BUFFER_BYTES)
-                output.fd.sync()
-            }
-        }
-        if (!temp.delete()) throw IOException("Unable to remove temporary restored database")
-    }
+}
 
-    private fun streamDecryptedDatabase(input: CipherInputStream, temp: File) {
-        FileOutputStream(temp).use { fos ->
-            val buffer = ByteArray(STREAM_BUFFER_BYTES)
-            var read: Int
-            while (input.read(buffer).also { read = it } > 0) {
-                fos.write(buffer, 0, read)
-            }
-            fos.fd.sync()
+private fun replaceDatabaseFile(temp: File, dbFile: File) {
+    FileInputStream(temp).use { input ->
+        FileOutputStream(dbFile).use { output ->
+            input.copyTo(output, STREAM_BUFFER_BYTES)
+            output.fd.sync()
         }
     }
+    if (!temp.delete()) throw IOException("Unable to remove temporary restored database")
+}
 
-    private fun readBackupHeader(fis: FileInputStream): Pair<ByteArray, ByteArray> {
-        val magicBytes = ByteArray(MAGIC.length)
-        readExact(fis, magicBytes, "Truncated backup")
-        if (!magicBytes.contentEquals(MAGIC.toByteArray(Charsets.UTF_8))) {
-            throw IOException("Invalid backup magic")
+private fun streamDecryptedDatabase(input: CipherInputStream, temp: File) {
+    FileOutputStream(temp).use { fos ->
+        val buffer = ByteArray(STREAM_BUFFER_BYTES)
+        var read: Int
+        while (input.read(buffer).also { read = it } > 0) {
+            fos.write(buffer, 0, read)
         }
-        val version = fis.read()
-        if (version != VERSION.toInt()) throw IOException("Unsupported backup version: $version")
-        val salt = ByteArray(SALT_LEN)
-        readExact(fis, salt, "Truncated backup salt")
-        val iv = ByteArray(IV_LEN)
-        readExact(fis, iv, "Truncated backup IV")
-        return salt to iv
+        fos.fd.sync()
     }
+}
 
-    private fun readExact(
-        input: FileInputStream,
-        buffer: ByteArray,
-        message: String,
-    ) {
-        if (input.read(buffer) != buffer.size) throw IOException(message)
+private fun readBackupHeader(fis: FileInputStream): Pair<ByteArray, ByteArray> {
+    val magicBytes = ByteArray(MAGIC.length)
+    readExact(fis, magicBytes, "Truncated backup")
+    if (!magicBytes.contentEquals(MAGIC.toByteArray(Charsets.UTF_8))) {
+        throw IOException("Invalid backup magic")
     }
+    val version = fis.read()
+    if (version != VERSION.toInt()) throw IOException("Unsupported backup version: $version")
+    val salt = ByteArray(SALT_LEN)
+    readExact(fis, salt, "Truncated backup salt")
+    val iv = ByteArray(IV_LEN)
+    readExact(fis, iv, "Truncated backup IV")
+    return salt to iv
+}
 
-    private fun requirePassphrase(passphrase: ByteArray?): ByteArray =
-        passphrase ?: throw IOException("Backup omitted database passphrase")
+private fun readExact(
+    input: FileInputStream,
+    buffer: ByteArray,
+    message: String,
+) {
+    if (input.read(buffer) != buffer.size) throw IOException(message)
+}
 
-    private fun throwRestoreFailure(error: IOException): Nothing =
-        throw IOException("Failed to restore backup: ${error.message}", error)
+private fun requirePassphrase(passphrase: ByteArray?): ByteArray =
+    passphrase ?: throw IOException("Backup omitted database passphrase")
 
-    private fun readBackupPassphrase(input: CipherInputStream): ByteArray {
-        val lengthHigh = input.read()
-        val lengthLow = input.read()
-        if (lengthHigh < 0 || lengthLow < 0) throw IOException("Truncated backup payload")
-        val passphraseLength = (lengthHigh shl BYTE_SHIFT) or lengthLow
-        val passphrase = ByteArray(passphraseLength)
-        var offset = 0
-        while (offset < passphraseLength) {
-            val read = input.read(passphrase, offset, passphraseLength - offset)
-            if (read < 0) throw IOException("Truncated backup passphrase")
-            offset += read
-        }
-        return passphrase
+private fun throwRestoreFailure(error: IOException): Nothing =
+    throw IOException("Failed to restore backup: ${error.message}", error)
+
+private fun readBackupPassphrase(input: CipherInputStream): ByteArray {
+    val lengthHigh = input.read()
+    val lengthLow = input.read()
+    if (lengthHigh < 0 || lengthLow < 0) throw IOException("Truncated backup payload")
+    val passphraseLength = (lengthHigh shl BYTE_SHIFT) or lengthLow
+    val passphrase = ByteArray(passphraseLength)
+    var offset = 0
+    while (offset < passphraseLength) {
+        val read = input.read(passphrase, offset, passphraseLength - offset)
+        if (read < 0) throw IOException("Truncated backup passphrase")
+        offset += read
     }
+    return passphrase
+}
 
-    private fun deriveKeyBytes(
-        pin: CharArray,
-        salt: ByteArray,
-    ): ByteArray {
-        val spec = PBEKeySpec(pin, salt, ITERATIONS, KEY_LEN_BITS)
-        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-        val key = factory.generateSecret(spec).encoded
-        spec.clearPassword()
-        return key
-    }
+private fun deriveKeyBytes(
+    pin: CharArray,
+    salt: ByteArray,
+): ByteArray {
+    val spec = PBEKeySpec(pin, salt, ITERATIONS, KEY_LEN_BITS)
+    val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+    val key = factory.generateSecret(spec).encoded
+    spec.clearPassword()
+    return key
+}
 
-    private fun backupFile(
-        context: Context,
-        backupName: String,
-    ): File {
-        if (backupName != File(backupName).name || !backupName.endsWith(".pcbk")) {
-            throw IOException("Invalid backup name")
-        }
-        return File(context.filesDir, "$BACKUP_DIR/$backupName")
+private fun backupFile(
+    context: Context,
+    backupName: String,
+): File {
+    if (backupName != File(backupName).name || !backupName.endsWith(".pcbk")) {
+        throw IOException("Invalid backup name")
     }
+    return File(context.filesDir, "$BACKUP_DIR/$backupName")
 }
