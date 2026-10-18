@@ -7,7 +7,6 @@ import com.jeffers.pantrycraft.data.GroceryItem
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.PantryTaxonomy
 import com.jeffers.pantrycraft.data.Repository
-import com.jeffers.pantrycraft.data.markOpened
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -85,11 +84,6 @@ class PantryViewModel(
     fun add(item: PantryItem) = launchDatabaseOperation("Unable to add pantry item") { repo.insertPantry(item) }
 
     fun update(item: PantryItem) = launchDatabaseOperation("Unable to update pantry item") { repo.updatePantry(item) }
-
-    fun markOpened(item: PantryItem) =
-        launchDatabaseOperation("Unable to mark item as opened") {
-            repo.updatePantry(item.markOpened())
-        }
 
     fun decrement(
         item: PantryItem,

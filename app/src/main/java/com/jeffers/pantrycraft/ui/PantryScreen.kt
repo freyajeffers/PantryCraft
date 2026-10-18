@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.PantryTaxonomy
+import com.jeffers.pantrycraft.data.markOpened
 import com.jeffers.pantrycraft.feature.camera.ui.BatchReviewBottomSheet
 import com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
@@ -272,7 +273,7 @@ fun PantryScreen(viewModel: PantryViewModel) {
                                         editorItem = item
                                         showAddDialog = true
                                     },
-                                    onMarkOpened = { viewModel.markOpened(item) },
+                                    onMarkOpened = { viewModel.update(item.markOpened()) },
                                     onAddToGrocery = {
                                         viewModel.addGroceryItem(
                                             name = item.name,
