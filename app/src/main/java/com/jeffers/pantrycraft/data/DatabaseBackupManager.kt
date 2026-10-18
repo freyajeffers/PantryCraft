@@ -47,9 +47,7 @@ private const val BYTE_MASK = 0xFF
 private const val BYTE_SHIFT = 8
 private const val PREFS_NAME = "backup_preferences"
 private const val LAST_EXPORTED_URI = "last_exported_uri"
-private const val LAST_DB_CHECKSUM = "last_db_checksum"
 private const val BACKUP_RECORDS = "backup_records"
-private const val AUTO_BACKUP_TREE_URI = "auto_backup_tree_uri"
 
 object DatabaseBackupManager {
     private data class EncryptedBackupPayload(

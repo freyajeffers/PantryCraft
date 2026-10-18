@@ -55,13 +55,6 @@ import com.jeffers.pantrycraft.data.backupRecords as loadBackupRecords
 
 private const val BYTES_IN_KB = 1024L
 private const val BYTES_IN_MB = BYTES_IN_KB * 1024L
-private const val MINUTES_PER_HOUR = 60L
-private const val HOURS_PER_DAY = 24L
-private const val DAYS_PER_WEEK = 7L
-private const val DAYS_PER_MONTH = 30L
-private const val THREE_HOURS = 3L
-private const val SIX_HOURS = 6L
-private const val TWELVE_HOURS = 12L
 
 private data class CatalogDialog(
     val title: String,

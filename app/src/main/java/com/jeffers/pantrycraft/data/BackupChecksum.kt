@@ -3,13 +3,15 @@ package com.jeffers.pantrycraft.data
 import android.content.Context
 import java.security.MessageDigest
 
+private const val CHECKSUM_BUFFER_BYTES = 16 * 1024
+
 internal fun dbChecksum(context: Context): String? {
     val dbFile = context.getDatabasePath("pantry_grocery_encrypted.db")
     if (!dbFile.exists() || !dbFile.isFile) return null
     return runCatching {
         val digest = MessageDigest.getInstance("SHA-256")
         dbFile.inputStream().use { input ->
-            val buffer = ByteArray(16 * 1024)
+            val buffer = ByteArray(CHECKSUM_BUFFER_BYTES)
             var read: Int
             while (input.read(buffer).also { read = it } > 0) digest.update(buffer, 0, read)
         }
