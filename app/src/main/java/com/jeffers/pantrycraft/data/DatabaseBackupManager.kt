@@ -359,13 +359,7 @@ object DatabaseBackupManager {
                 DatabaseKeyProvider.restorePassphrase(context, dbPass)
                 val dbFile = context.getDatabasePath(DB_NAME)
                 if (!temp.renameTo(dbFile)) {
-                    FileInputStream(temp).use { input ->
-                        FileOutputStream(dbFile).use { output ->
-                            input.copyTo(output, STREAM_BUFFER_BYTES)
-                            output.fd.sync()
-                        }
-                    }
-                    if (!temp.delete()) throw IOException("Unable to remove temporary restored database")
+                    replaceDatabaseFile(temp, dbFile)
                 }
             } catch (e: IOException) {
                 temp.delete()
@@ -402,6 +396,16 @@ object DatabaseBackupManager {
         } finally {
             derived?.fill(0)
         }
+    }
+
+    private fun replaceDatabaseFile(temp: File, dbFile: File) {
+        FileInputStream(temp).use { input ->
+            FileOutputStream(dbFile).use { output ->
+                input.copyTo(output, STREAM_BUFFER_BYTES)
+                output.fd.sync()
+            }
+        }
+        if (!temp.delete()) throw IOException("Unable to remove temporary restored database")
     }
 
     private fun streamDecryptedDatabase(input: CipherInputStream, temp: File) {
