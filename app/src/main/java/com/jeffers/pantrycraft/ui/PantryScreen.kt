@@ -17,10 +17,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -113,7 +110,6 @@ fun PantryScreen(viewModel: PantryViewModel) {
     var useItem by remember { mutableStateOf<PantryItem?>(null) }
     var useAmount by rememberSaveable { mutableStateOf("") }
     var storageError by rememberSaveable { mutableStateOf<String?>(null) }
-    var sortMenuExpanded by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -168,36 +164,9 @@ fun PantryScreen(viewModel: PantryViewModel) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Pantry") },
-                actions = {
-                    Box {
-                        IconButton(onClick = { sortMenuExpanded = true }) {
-                            Icon(
-                                imageVector = Icons.Filled.Sort,
-                                contentDescription = "Sort pantry items",
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = sortMenuExpanded,
-                            onDismissRequest = { sortMenuExpanded = false },
-                        ) {
-                            PantrySortOrder.entries.forEach { order ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            if (selectedSortOrder == order) "✓ ${order.label}" else order.label,
-                                        )
-                                    },
-                                    onClick = {
-                                        viewModel.selectSortOrder(order)
-                                        sortMenuExpanded = false
-                                    },
-                                )
-                            }
-                        }
-                    }
-                },
+            PantryTopBar(
+                selectedSortOrder = selectedSortOrder,
+                onSortSelected = viewModel::selectSortOrder,
             )
         },
         floatingActionButton = {
