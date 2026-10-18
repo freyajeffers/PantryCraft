@@ -44,7 +44,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.PantryTaxonomy
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
-import java.math.BigDecimal
 
 private const val PERCENT_SCALE = 100
 
@@ -153,92 +152,70 @@ fun BatchReviewBottomSheet(
             description,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        LazyColumn(
-            modifier = Modifier.weight(1f, fill = false),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            itemsIndexed(reviewItems) { index, reviewItem ->
-                val displayedName = if (items.size == 1 && editName.isNotBlank()) editName else reviewItem.item.name
-                val displayedCategory = if (items.size == 1) editCategory else reviewItem.item.category
-                val rawUnit = if (items.size == 1) editUnit else reviewItem.item.unit
-                val displayedUnit =
-                    if (items.size == 1 && editUnit == "CUSTOM" && editCustomUnitName.isNotBlank()) {
-                        editCustomUnitName
-                    } else if (reviewItem.item.unit == "CUSTOM" && !reviewItem.item.customUnitName.isNullOrBlank()) {
-                        reviewItem.item.customUnitName
-                    } else {
-                        rawUnit
+        ReviewListContent(
+            ReviewListState(
+                reviewItems = reviewItems,
+                itemsSize = items.size,
+                quantityTextByIndex = quantityTextByIndex,
+                singleName = editName,
+                singleCategory = editCategory,
+                singleUnit = editUnit,
+                singleCustomUnitName = editCustomUnitName,
+                singleStorage = editStorageLocation,
+                singleShelfLifeDays = editShelfLifeDays,
+                onEdit = { index ->
+                val reviewItem = reviewItems[index]
+                editName = reviewItem.item.name
+                editCategory = reviewItem.item.category
+                editUnit = reviewItem.item.unit
+                editCustomUnitName = reviewItem.item.customUnitName ?: ""
+                editStorageLocation = reviewItem.item.storageLocation
+                editShelfLifeDays = reviewItem.item.estimatedShelfLifeDays
+                editNotes = reviewItem.item.conditionNotes ?: ""
+                editIsAromatic = reviewItem.item.isAromaticOrSeasoning
+                editIsOpened = reviewItem.item.isOpened
+                editThresholdText = formatQuantity(reviewItem.item.threshold)
+                editBarcode = reviewItem.item.barcode
+                quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity)
+                editingIndex = index
+            },
+            onToggleIncluded = { index ->
+                reviewItems = reviewItems.toMutableList().also {
+                    it[index] = it[index].copy(included = !it[index].included)
+                }
+            },
+            onDecrease = { index ->
+                reviewItems = reviewItems.toMutableList().also {
+                    it[index] = it[index].copy(
+                        item = it[index].item.copy(
+                            quantity = (it[index].item.quantity - 1f).coerceAtLeast(1f),
+                        ),
+                    )
+                }
+                quantityTextByIndex[index] = formatQuantity((reviewItems[index].item.quantity).coerceAtLeast(1f))
+            },
+            onIncrease = { index ->
+                reviewItems = reviewItems.toMutableList().also {
+                    it[index] = it[index].copy(
+                        item = it[index].item.copy(
+                            quantity = it[index].item.quantity + 1f,
+                        ),
+                    )
+                }
+                quantityTextByIndex[index] = formatQuantity(reviewItems[index].item.quantity)
+            },
+            onSetQuantityText = { index, text ->
+                quantityTextByIndex[index] = text
+                text.toFloatOrNull()?.takeIf { it > 0f }?.let { quantity ->
+                    reviewItems = reviewItems.toMutableList().also {
+                        it[index] = it[index].copy(
+                            item = it[index].item.copy(quantity = quantity),
+                        )
                     }
-                val displayedStorage = if (items.size == 1) editStorageLocation else reviewItem.item.storageLocation
-                val displayedShelfLife =
-                    if (items.size == 1) editShelfLifeDays else reviewItem.item.estimatedShelfLifeDays
-
-                ReviewItemCard(
-                    ReviewItemCardState(
-                        index = index,
-                        itemsCount = items.size,
-                        reviewItem = reviewItem,
-                        displayedName = displayedName,
-                        displayedCategory = displayedCategory,
-                        displayedUnit = displayedUnit,
-                        displayedStorage = displayedStorage,
-                        displayedShelfLife = displayedShelfLife,
-                        rawUnit = rawUnit,
-                        quantityText = quantityTextByIndex[index],
-                        onEdit = {
-                        editName = reviewItem.item.name
-                        editCategory = reviewItem.item.category
-                        editUnit = reviewItem.item.unit
-                        editCustomUnitName = reviewItem.item.customUnitName ?: ""
-                        editStorageLocation = reviewItem.item.storageLocation
-                        editShelfLifeDays = reviewItem.item.estimatedShelfLifeDays
-                        editNotes = reviewItem.item.conditionNotes ?: ""
-                        editIsAromatic = reviewItem.item.isAromaticOrSeasoning
-                        editIsOpened = reviewItem.item.isOpened
-                        editThresholdText = formatQuantity(reviewItem.item.threshold)
-                        editBarcode = reviewItem.item.barcode
-                        quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity)
-                        editingIndex = index
-                    },
-                    onToggleIncluded = {
-                        reviewItems = reviewItems.toMutableList().also {
-                            it[index] = it[index].copy(included = !it[index].included)
-                        }
-                    },
-                    onDecrease = {
-                        reviewItems = reviewItems.toMutableList().also {
-                            it[index] = it[index].copy(
-                                item = it[index].item.copy(
-                                    quantity = (it[index].item.quantity - 1f).coerceAtLeast(1f),
-                                ),
-                            )
-                        }
-                        quantityTextByIndex[index] = formatQuantity((reviewItem.item.quantity - 1f).coerceAtLeast(1f))
-                    },
-                    onIncrease = {
-                        reviewItems = reviewItems.toMutableList().also {
-                            it[index] = it[index].copy(
-                                item = it[index].item.copy(
-                                    quantity = it[index].item.quantity + 1f,
-                                ),
-                            )
-                        }
-                        quantityTextByIndex[index] = formatQuantity(reviewItem.item.quantity + 1f)
-                    },
-                    onSetQuantityText = { text ->
-                        quantityTextByIndex[index] = text
-                        text.toFloatOrNull()?.takeIf { it > 0f }?.let { quantity ->
-                            reviewItems = reviewItems.toMutableList().also {
-                                it[index] = it[index].copy(
-                                    item = it[index].item.copy(quantity = quantity),
-                                )
-                            }
-                        }
-                    },
-                    ),
-                )
-            }
-        }
+                }
+                },
+            ),
+        )
         if (items.size == 1) {
             Column(
                 modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
@@ -396,6 +373,63 @@ private data class ReviewItemCardState(
     val onIncrease: () -> Unit,
     val onSetQuantityText: (String) -> Unit,
 )
+
+private data class ReviewListState(
+    val reviewItems: List<ReviewItem>,
+    val itemsSize: Int,
+    val quantityTextByIndex: Map<Int, String>,
+    val singleName: String,
+    val singleCategory: String,
+    val singleUnit: String,
+    val singleCustomUnitName: String,
+    val singleStorage: String,
+    val singleShelfLifeDays: Int,
+    val onEdit: (Int) -> Unit,
+    val onToggleIncluded: (Int) -> Unit,
+    val onDecrease: (Int) -> Unit,
+    val onIncrease: (Int) -> Unit,
+    val onSetQuantityText: (Int, String) -> Unit,
+)
+
+@Composable
+private fun ReviewListContent(state: ReviewListState) {
+    LazyColumn(
+        modifier = Modifier.weight(1f, fill = false),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        itemsIndexed(state.reviewItems) { index, reviewItem ->
+            val displayedName = if (state.itemsSize == 1) state.singleName else reviewItem.item.name
+            val displayedCategory = if (state.itemsSize == 1) state.singleCategory else reviewItem.item.category
+            val rawUnit = if (state.itemsSize == 1) state.singleUnit else reviewItem.item.unit
+            val customUnitName =
+                if (state.itemsSize == 1) state.singleCustomUnitName else reviewItem.item.customUnitName
+            val displayedUnit =
+                if (rawUnit == "CUSTOM" && !customUnitName.isNullOrBlank()) customUnitName else rawUnit
+            val displayedStorage = if (state.itemsSize == 1) state.singleStorage else reviewItem.item.storageLocation
+            val displayedShelfLife =
+                if (state.itemsSize == 1) state.singleShelfLifeDays else reviewItem.item.estimatedShelfLifeDays
+            ReviewItemCard(
+                ReviewItemCardState(
+                    index = index,
+                    itemsCount = state.itemsSize,
+                    reviewItem = reviewItem,
+                    displayedName = displayedName,
+                    displayedCategory = displayedCategory,
+                    displayedUnit = displayedUnit,
+                    displayedStorage = displayedStorage,
+                    displayedShelfLife = displayedShelfLife,
+                    rawUnit = rawUnit,
+                    quantityText = state.quantityTextByIndex[index],
+                    onEdit = { state.onEdit(index) },
+                    onToggleIncluded = { state.onToggleIncluded(index) },
+                    onDecrease = { state.onDecrease(index) },
+                    onIncrease = { state.onIncrease(index) },
+                    onSetQuantityText = { state.onSetQuantityText(index, it) },
+                ),
+            )
+        }
+    }
+}
 
 @Composable
 private fun ReviewItemCard(state: ReviewItemCardState) {
@@ -632,5 +666,3 @@ private fun ReviewDropdown(
         }
     }
 }
-
-private fun formatQuantity(quantity: Float) = BigDecimal(quantity.toString()).stripTrailingZeros().toPlainString()
