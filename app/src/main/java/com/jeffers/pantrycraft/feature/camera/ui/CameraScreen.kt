@@ -638,6 +638,63 @@ private fun CameraPreviewOverlay(
     }
 }
 
+private data class AssociateBarcodeFieldsState(
+    val barcode: String,
+    val name: String,
+    val onNameChange: (String) -> Unit,
+    val category: String,
+    val onCategoryChange: (String) -> Unit,
+    val unit: String,
+    val onUnitChange: (String) -> Unit,
+    val storageLocation: String,
+    val onStorageLocationChange: (String) -> Unit,
+    val shelfLifeDaysText: String,
+    val onShelfLifeChange: (String) -> Unit,
+)
+
+@Composable
+private fun AssociateBarcodeFields(state: AssociateBarcodeFieldsState) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Barcode: ${state.barcode}", style = MaterialTheme.typography.bodySmall)
+        OutlinedTextField(
+            state.name,
+            state.onNameChange,
+            label = { Text("Item Name") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(
+            state.category,
+            state.onCategoryChange,
+            label = { Text("Category (e.g. PRODUCE, DAIRY, SNACKS)") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(
+            state.unit,
+            state.onUnitChange,
+            label = { Text("Unit (COUNT, G, KG, ML, L, CAN)") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(
+            state.storageLocation,
+            state.onStorageLocationChange,
+            label = { Text("Storage (PANTRY, FRIDGE, FREEZER, COUNTER)") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(
+            state.shelfLifeDaysText,
+            state.onShelfLifeChange,
+            label = { Text("Estimated Shelf Life (Days)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
 @Composable
 private fun AssociateBarcodeDialog(
     barcode: String,
@@ -654,45 +711,21 @@ private fun AssociateBarcodeDialog(
         onDismissRequest = onDismiss,
         title = { Text("Name Scanned Barcode") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Barcode: $barcode", style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Item Name") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = category,
-                    onValueChange = { category = it },
-                    label = { Text("Category (e.g. PRODUCE, DAIRY, SNACKS)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = unit,
-                    onValueChange = { unit = it },
-                    label = { Text("Unit (COUNT, G, KG, ML, L, CAN)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = storageLocation,
-                    onValueChange = { storageLocation = it },
-                    label = { Text("Storage (PANTRY, FRIDGE, FREEZER, COUNTER)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = shelfLifeDaysText,
-                    onValueChange = { shelfLifeDaysText = it },
-                    label = { Text("Estimated Shelf Life (Days)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            AssociateBarcodeFields(
+                AssociateBarcodeFieldsState(
+                    barcode = barcode,
+                    name = name,
+                    onNameChange = { name = it },
+                    category = category,
+                    onCategoryChange = { category = it },
+                    unit = unit,
+                    onUnitChange = { unit = it },
+                    storageLocation = storageLocation,
+                    onStorageLocationChange = { storageLocation = it },
+                    shelfLifeDaysText = shelfLifeDaysText,
+                    onShelfLifeChange = { shelfLifeDaysText = it },
+                ),
+            )
         },
         confirmButton = {
             Button(
