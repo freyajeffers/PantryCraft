@@ -322,6 +322,86 @@ private fun PantrySwipeBackground(state: androidx.compose.material3.SwipeToDismi
     }
 }
 
+@Composable
+private fun PantryItemContent(
+    item: PantryItem,
+    expiration: ExpirationStatus,
+    isLowStock: Boolean,
+    actions: PantryItemRowActions,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(item.name, style = MaterialTheme.typography.titleMedium)
+            val unitDisplay =
+                if (item.unit == "CUSTOM" && !item.customUnitName.isNullOrBlank()) {
+                    item.customUnitName
+                } else {
+                    item.unit.orEmpty()
+                }
+            Text("${item.quantity} $unitDisplay", style = MaterialTheme.typography.bodySmall)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    "${item.storageLocation} • ${expiration.label}",
+                    color = expiration.color,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                if (item.isOpened) {
+                    Text(
+                        "• Opened",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                if (isLowStock) {
+                    Text(
+                        "• Low Stock",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        }
+        PantryItemActions(item, isLowStock, actions)
+    }
+}
+
+@Composable
+private fun PantryItemActions(item: PantryItem, isLowStock: Boolean, actions: PantryItemRowActions) {
+        if (!item.isOpened) TextButton(onClick = actions.onMarkOpened) { Text("Open") }
+        if (isLowStock) {
+            IconButton(onClick = actions.onAddToGrocery) {
+                Icon(
+                    Icons.Filled.AddShoppingCart,
+                    contentDescription = "Add to grocery list",
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+        if (item.unit.orEmpty() in PantryTaxonomy.integerQuantityUnits) {
+            IconButton(onClick = actions.onDecrement, enabled = item.quantity > 0f) {
+                Icon(Icons.Filled.Remove, contentDescription = "Decrease quantity")
+            }
+            Text(formatPantryQuantity(item.quantity))
+            IconButton(onClick = actions.onIncrement) {
+                Icon(Icons.Filled.Add, contentDescription = "Increase quantity")
+            }
+        } else {
+            TextButton(onClick = actions.onUse, enabled = item.quantity > 0f) { Text("Use") }
+        }
+        TextButton(onClick = actions.onEdit) { Text("Edit") }
+        TextButton(onClick = actions.onDelete) { Text("Delete") }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PantryItemRow(
@@ -355,74 +435,7 @@ private fun PantryItemRow(
         state = dismissState,
         backgroundContent = { PantrySwipeBackground(dismissState) },
         content = {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(item.name, style = MaterialTheme.typography.titleMedium)
-                    val unitDisplay =
-                        if (item.unit == "CUSTOM" && !item.customUnitName.isNullOrBlank()) {
-                            item.customUnitName
-                        } else {
-                            item.unit.orEmpty()
-                        }
-                    Text("${item.quantity} $unitDisplay", style = MaterialTheme.typography.bodySmall)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = "${item.storageLocation} • ${expiration.label}",
-                            color = expiration.color,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                        if (item.isOpened) {
-                            Text(
-                                text = "• Opened",
-                                color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                        if (isLowStock) {
-                            Text(
-                                text = "• Low Stock",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-                }
-                if (!item.isOpened) {
-                    TextButton(onClick = actions.onMarkOpened) { Text("Open") }
-                }
-                if (isLowStock) {
-                    IconButton(onClick = actions.onAddToGrocery) {
-                        Icon(
-                            imageVector = Icons.Filled.AddShoppingCart,
-                            contentDescription = "Add to grocery list",
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
-                if (item.unit.orEmpty() in PantryTaxonomy.integerQuantityUnits) {
-                    IconButton(onClick = actions.onDecrement, enabled = item.quantity > 0f) {
-                        Icon(Icons.Filled.Remove, contentDescription = "Decrease quantity")
-                    }
-                    Text(formatPantryQuantity(item.quantity))
-                    IconButton(onClick = actions.onIncrement) {
-                        Icon(Icons.Filled.Add, contentDescription = "Increase quantity")
-                    }
-                } else {
-                    TextButton(onClick = actions.onUse, enabled = item.quantity > 0f) { Text("Use") }
-                }
-                TextButton(onClick = actions.onEdit) { Text("Edit") }
-                TextButton(onClick = actions.onDelete) { Text("Delete") }
-            }
+            PantryItemContent(item, expiration, isLowStock, actions)
         },
     )
 }
