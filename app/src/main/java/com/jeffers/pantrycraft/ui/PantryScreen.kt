@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -19,21 +17,15 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -53,8 +45,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.PantryTaxonomy
-import com.jeffers.pantrycraft.data.markOpened
-import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
 
@@ -92,95 +82,64 @@ fun PantryScreen(viewModel: PantryViewModel) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(viewModel) {
-        viewModel.operationErrors.collect { message ->
-            if (message.startsWith("Storage is full")) storageError = message
-            snackbarHostState.showSnackbar(message)
-        }
-    }
-
-    storageError?.let { message ->
-        StorageDiagnosticDialog(
-            message = message,
-            onDismiss = { storageError = null },
-        )
-    }
-
-    if (showAddDialog) {
-        PantryItemEditorSheet(
-            editorItem = editorItem,
-            onSaveDraft = { isNew, item ->
-                if (isNew) {
-                    viewModel.add(item)
-                } else {
-                    viewModel.update(item)
-                }
-            },
-            onDismiss = { showAddDialog = false },
-        )
-    }
-
-    useItem?.let { item ->
-        UsePantryItemDialog(
-            item = item,
-            amount = useAmount,
-            onAmountChange = { useAmount = it },
-            onConfirm = { amount ->
-                viewModel.decrement(item, amount)
+    PantryScreenErrorHandler(
+        viewModel = viewModel,
+        snackbarHostState = snackbarHostState,
+        onStorageError = { storageError = it },
+    )
+    PantryScreenOverlays(
+        PantryScreenOverlayProps(
+            showAddDialog,
+            editorItem,
+            { isNew, item -> if (isNew) viewModel.add(item) else viewModel.update(item) },
+            { showAddDialog = false },
+            useItem,
+            useAmount,
+            { useAmount = it },
+            { amount ->
+                useItem?.let { viewModel.decrement(it, amount) }
                 useItem = null
             },
-            onDismiss = { useItem = null },
-        )
-    }
-
-    PantryScaffoldContent(
-        PantryScaffoldProps(
-            selectedSortOrder = selectedSortOrder,
-            onSortSelected = viewModel::selectSortOrder,
-            onAddClick = {
-                editorItem = null
-                showAddDialog = true
-            },
-            items = items,
-            selectedLocation = selectedLocation,
-            searchQuery = searchQuery,
-            onSearchQueryChange = viewModel::setSearchQuery,
-            onLocationSelected = viewModel::selectLocation,
-            onDecrement = { viewModel.decrement(it, 1f) },
-            onIncrement = { viewModel.update(it.copy(quantity = it.quantity + 1f)) },
-            onUse = {
-                useAmount = ""
-                useItem = it
-            },
-            onEdit = {
+            { useItem = null },
+            storageError,
+            { storageError = null },
+        ),
+    )
+    PantryScreenScaffold(
+        PantryScreenScaffoldState(
+            viewModel,
+            items,
+            selectedLocation,
+            selectedSortOrder,
+            searchQuery,
+            {
                 editorItem = it
                 showAddDialog = true
             },
-            onMarkOpened = { viewModel.update(it.markOpened()) },
-            onAddToGrocery = {
-                viewModel.addGroceryItem(it.name, 1f, it.unit, fromPantryId = it.id)
+            {
+                useAmount = ""
+                useItem = it
             },
-            onDelete = viewModel::delete,
-            onRestore = viewModel::restore,
-            snackbarHostState = snackbarHostState,
-            scope = scope,
+            snackbarHostState,
+            scope,
         ),
     )
 }
 
 @Composable
-private fun UsePantryItemDialog(
+internal fun UsePantryItemDialog(
     item: PantryItem,
     amount: String,
     onAmountChange: (String) -> Unit,
     onConfirm: (Float) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val unitLabel = if (item.unit == "CUSTOM" && !item.customUnitName.isNullOrBlank()) {
-        item.customUnitName
-    } else {
-        item.unit.orEmpty()
-    }
+    val unitLabel =
+        if (item.unit == "CUSTOM" && !item.customUnitName.isNullOrBlank()) {
+            item.customUnitName
+        } else {
+            item.unit.orEmpty()
+        }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Use ${item.name}") },
@@ -203,14 +162,16 @@ private fun UsePantryItemDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PantrySwipeBackground(state: androidx.compose.material3.SwipeToDismissBoxState) {
     val direction = state.dismissDirection
-    val color = when (state.targetValue) {
-        SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
-        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
-        else -> MaterialTheme.colorScheme.surfaceVariant
-    }
+    val color =
+        when (state.targetValue) {
+            SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
+            SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
+            else -> MaterialTheme.colorScheme.surfaceVariant
+        }
     val alignment = if (direction == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
     val icon = if (direction == SwipeToDismissBoxValue.StartToEnd) Icons.Filled.Remove else Icons.Filled.Delete
     val description = if (direction == SwipeToDismissBoxValue.StartToEnd) "Use 1" else "Delete"
@@ -276,30 +237,34 @@ private fun PantryItemContent(
 }
 
 @Composable
-private fun PantryItemActions(item: PantryItem, isLowStock: Boolean, actions: PantryItemRowActions) {
-        if (!item.isOpened) TextButton(onClick = actions.onMarkOpened) { Text("Open") }
-        if (isLowStock) {
-            IconButton(onClick = actions.onAddToGrocery) {
-                Icon(
-                    Icons.Filled.AddShoppingCart,
-                    contentDescription = "Add to grocery list",
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
+private fun PantryItemActions(
+    item: PantryItem,
+    isLowStock: Boolean,
+    actions: PantryItemRowActions,
+) {
+    if (!item.isOpened) TextButton(onClick = actions.onMarkOpened) { Text("Open") }
+    if (isLowStock) {
+        IconButton(onClick = actions.onAddToGrocery) {
+            Icon(
+                Icons.Filled.AddShoppingCart,
+                contentDescription = "Add to grocery list",
+                tint = MaterialTheme.colorScheme.primary,
+            )
         }
-        if (item.unit.orEmpty() in PantryTaxonomy.integerQuantityUnits) {
-            IconButton(onClick = actions.onDecrement, enabled = item.quantity > 0f) {
-                Icon(Icons.Filled.Remove, contentDescription = "Decrease quantity")
-            }
-            Text(formatPantryQuantity(item.quantity))
-            IconButton(onClick = actions.onIncrement) {
-                Icon(Icons.Filled.Add, contentDescription = "Increase quantity")
-            }
-        } else {
-            TextButton(onClick = actions.onUse, enabled = item.quantity > 0f) { Text("Use") }
+    }
+    if (item.unit.orEmpty() in PantryTaxonomy.integerQuantityUnits) {
+        IconButton(onClick = actions.onDecrement, enabled = item.quantity > 0f) {
+            Icon(Icons.Filled.Remove, contentDescription = "Decrease quantity")
         }
-        TextButton(onClick = actions.onEdit) { Text("Edit") }
-        TextButton(onClick = actions.onDelete) { Text("Delete") }
+        Text(formatPantryQuantity(item.quantity))
+        IconButton(onClick = actions.onIncrement) {
+            Icon(Icons.Filled.Add, contentDescription = "Increase quantity")
+        }
+    } else {
+        TextButton(onClick = actions.onUse, enabled = item.quantity > 0f) { Text("Use") }
+    }
+    TextButton(onClick = actions.onEdit) { Text("Edit") }
+    TextButton(onClick = actions.onDelete) { Text("Delete") }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

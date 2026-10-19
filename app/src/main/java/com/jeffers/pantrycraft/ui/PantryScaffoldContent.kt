@@ -6,13 +6,8 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
-import com.jeffers.pantrycraft.data.PantryItem
-import com.jeffers.pantrycraft.data.PantryLocationFilter
-import com.jeffers.pantrycraft.data.PantrySortOrder
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
@@ -44,26 +39,28 @@ fun PantryScaffoldContent(props: PantryScaffoldProps) {
                 itemContent = { item ->
                     PantryItemRow(
                         item = item,
-                        actions = PantryItemRowActions(
-                            onDecrement = { props.onDecrement(item) },
-                            onIncrement = { props.onIncrement(item) },
-                            onUse = { props.onUse(item) },
-                            onEdit = { props.onEdit(item) },
-                            onMarkOpened = { props.onMarkOpened(item) },
-                            onAddToGrocery = { props.onAddToGrocery(item) },
-                            onDelete = {
-                                props.onDelete(item)
-                                props.scope.launch {
-                                    val result = props.snackbarHostState.showSnackbar(
-                                        message = "${item.name} deleted",
-                                        actionLabel = "Undo",
-                                    )
-                                    if (result == SnackbarResult.ActionPerformed) {
-                                        props.onRestore(item)
+                        actions =
+                            PantryItemRowActions(
+                                onDecrement = { props.onDecrement(item) },
+                                onIncrement = { props.onIncrement(item) },
+                                onUse = { props.onUse(item) },
+                                onEdit = { props.onEdit(item) },
+                                onMarkOpened = { props.onMarkOpened(item) },
+                                onAddToGrocery = { props.onAddToGrocery(item) },
+                                onDelete = {
+                                    props.onDelete(item)
+                                    props.scope.launch {
+                                        val result =
+                                            props.snackbarHostState.showSnackbar(
+                                                message = "${item.name} deleted",
+                                                actionLabel = "Undo",
+                                            )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            props.onRestore(item)
+                                        }
                                     }
-                                }
-                            },
-                        ),
+                                },
+                            ),
                     )
                 },
             ),

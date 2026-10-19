@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.PantryItem
-import com.jeffers.pantrycraft.data.PantryLocationFilter
 
 data class PantryListContentProps(
     val items: List<PantryItem>,
@@ -36,7 +35,9 @@ fun PantryListContent(props: PantryListContentProps) {
         )
         LazyRow(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+            horizontalArrangement =
+                androidx.compose.foundation.layout.Arrangement
+                    .spacedBy(8.dp),
         ) {
             items(PantryLocationFilter.entries) { filter ->
                 FilterChip(
@@ -50,7 +51,9 @@ fun PantryListContent(props: PantryListContentProps) {
             Text("Your pantry is empty.", modifier = Modifier.padding(16.dp))
         } else {
             LazyColumn {
-                items(props.items, key = { it.id }, content = props.itemContent)
+                items(items = props.items, key = { it.id }) {
+                    props.itemContent(it)
+                }
             }
         }
     }

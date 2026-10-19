@@ -2,8 +2,6 @@ package com.jeffers.pantrycraft.ui
 
 import androidx.compose.material3.SnackbarHostState
 import com.jeffers.pantrycraft.data.PantryItem
-import com.jeffers.pantrycraft.data.PantryLocationFilter
-import com.jeffers.pantrycraft.data.PantrySortOrder
 import kotlinx.coroutines.CoroutineScope
 
 data class PantryScaffoldProps(
