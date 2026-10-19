@@ -7,6 +7,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import android.content.Context
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,6 +27,16 @@ class AppDatabaseMigrationTest {
                     DatabaseKeyProvider.getKey(ApplicationProvider.getApplicationContext()),
                 ),
             )
+
+    @Before
+    @After
+    fun cleanupDatabases() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        context.deleteDatabase("migration-test")
+        context.deleteDatabase("migration-test-2-3")
+        context.deleteDatabase("migration-test-1-3")
+    }
+
 
     @Test
     fun migrate1To2_preservesExistingDataAndAddsInventoryFields() {

@@ -1,26 +1,61 @@
 package com.jeffers.pantrycraft.data
 
 import android.content.Context
+import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class RepositoryTest {
+    private lateinit var context: Context
+    private lateinit var repository: Repository
+    private var preexistingCheckedItems: List<GroceryItem> = emptyList()
+
+    @Before
+    fun setUp() {
+        context = ApplicationProvider.getApplicationContext()
+        repository = Repository.getInstance(context)
+        runBlocking {
+            cleanup(context)
+            preexistingCheckedItems = repository.observeGroceryItems().first().filter { it.checked }
+            preexistingCheckedItems.forEach { repository.updateGrocery(it.copy(checked = false)) }
+        }
+    }
+
+    @After
+    fun tearDown() {
+        runBlocking {
+            cleanup(context)
+            preexistingCheckedItems.forEach { repository.updateGrocery(it) }
+        }
+    }
+
+    private suspend fun cleanup(context: Context) {
+        val db = AppDatabase.getDatabase(context)
+        db.pantryDao().deleteByNamePrefix("repository-")
+        db.pantryDao().deleteByBarcodePrefix("barcode-repository-")
+        db.groceryDao().deleteByNamePrefix("repository-")
+    }
+
     @Test
     fun repositoryPantryAndGroceryContracts() =
         runBlocking {
-            val context = ApplicationProvider.getApplicationContext<Context>()
-            val repository = Repository.getInstance(context)
             val marker = "repository-${System.nanoTime()}"
+
+
+
             val item =
                 PantryItem(
                     name = "  $marker  ",

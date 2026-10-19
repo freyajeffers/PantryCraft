@@ -16,32 +16,55 @@ import java.io.File
 @RunWith(AndroidJUnit4::class)
 class DatabaseBackupManagerTest {
     private lateinit var context: Context
+    private var preservedDb: File? = null
+    private var preservedKey: ByteArray? = null
+    private var createdBackupName: String? = null
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        AppDatabase.checkpointForBackup(context)
         AppDatabase.closeDatabase()
-        removeRoundTripEntries()
+        Repository.resetInstance()
+
+        val dbFile = context.getDatabasePath("pantry_grocery_encrypted.db")
+        if (dbFile.exists()) {
+            preservedDb = File.createTempFile("preserved_pantry_", ".db", context.cacheDir)
+            dbFile.copyTo(preservedDb!!, overwrite = true)
+            preservedKey = DatabaseKeyProvider.getKey(context).copyOf()
+        }
     }
 
     @After
     fun tearDown() {
         AppDatabase.closeDatabase()
-        removeRoundTripEntries()
+        Repository.resetInstance()
+
+        createdBackupName?.let {
+            File(context.filesDir, "backups/$it").delete()
+        }
+
+        val dbFile = context.getDatabasePath("pantry_grocery_encrypted.db")
+        if (preservedDb != null && preservedDb!!.exists() && preservedKey != null) {
+            preservedDb!!.copyTo(dbFile, overwrite = true)
+            preservedDb!!.delete()
+            DatabaseKeyProvider.restorePassphrase(context, preservedKey!!)
+            preservedKey!!.fill(0)
+        } else {
+            removeRoundTripEntries()
+        }
         AppDatabase.closeDatabase()
-        File(context.filesDir, "backups").deleteRecursively()
+        Repository.resetInstance()
     }
 
-    private fun removeRoundTripEntries() =
+    private fun removeRoundTripEntries() {
         runBlocking {
             AppDatabase
                 .getDatabase(context)
                 .pantryDao()
-                .observeAllPantryItems()
-                .first()
-                .filter { it.name.startsWith("backup-round-trip-") }
-                .forEach { AppDatabase.getDatabase(context).pantryDao().delete(it) }
+                .deleteByNamePrefix("backup-round-trip-")
         }
+    }
 
     @Test
     fun encryptedBackupRoundTripsDatabaseAndRejectsWrongPin() =
@@ -55,7 +78,9 @@ class DatabaseBackupManagerTest {
                     context,
                     "correct-pin".toCharArray(),
                 )
-            assertTrue(DatabaseBackupManager.listBackups(context).contains(backupName))
+            createdBackupName = backupName
+            assertTrue(listBackupFiles(context).contains(backupName))
+
 
             var wrongPinRejected = false
             try {
