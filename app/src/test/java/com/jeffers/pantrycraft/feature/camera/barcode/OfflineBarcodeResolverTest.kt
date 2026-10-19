@@ -61,5 +61,18 @@ class OfflineBarcodeResolverTest {
         override suspend fun upsert(item: CustomBarcodeItem) {
             this.item = item
         }
+
+        override suspend fun delete(item: CustomBarcodeItem) {
+            if (this.item?.barcode == item.barcode) this.item = null
+        }
+
+        override suspend fun deleteByBarcodePrefix(prefix: String): Int =
+            if (this.item?.barcode?.startsWith(prefix) == true) {
+                this.item = null
+                1
+            } else {
+                0
+            }
     }
 }
+
