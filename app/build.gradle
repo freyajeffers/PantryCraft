@@ -125,6 +125,7 @@ dependencies {
     testImplementation 'org.json:json:20250517'
     androidTestImplementation 'androidx.room:room-testing:2.8.5'
     androidTestImplementation 'net.zetetic:sqlcipher-android:4.19.1'
+    androidTestImplementation 'androidx.work:work-testing:2.9.0'
     androidTestImplementation 'androidx.test:core:1.5.0'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
