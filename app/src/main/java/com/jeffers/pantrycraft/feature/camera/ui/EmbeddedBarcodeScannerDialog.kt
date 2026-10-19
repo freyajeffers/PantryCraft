@@ -44,6 +44,7 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.objects.ObjectDetection
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import com.jeffers.pantrycraft.data.Repository
+import com.jeffers.pantrycraft.data.offlineBarcodeResolver
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer
 import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
 import com.jeffers.pantrycraft.feature.camera.core.CameraManager
@@ -85,21 +86,23 @@ private fun CameraPreviewScanner(
     val repository = remember { Repository.getInstance(context) }
     val barcodeResolver = remember { repository.offlineBarcodeResolver() }
     var hasResolved by remember { mutableStateOf(false) }
-    val previewView = remember(context) {
-        PreviewView(context).apply { implementationMode = PreviewView.ImplementationMode.PERFORMANCE }
-    }
-    val analyzer = remember {
-        createBarcodeAnalyzer(analysisExecutor) { rawCode ->
-            if (!hasResolved) {
-                hasResolved = true
-                scope.launch {
-                    val match = runCatching { barcodeResolver.resolveBarcode(rawCode) }.getOrNull()
-                    triggerBarcodeHapticTick(context, view)
-                    onBarcodeResolved(rawCode.rawValue.orEmpty(), match)
+    val previewView =
+        remember(context) {
+            PreviewView(context).apply { implementationMode = PreviewView.ImplementationMode.PERFORMANCE }
+        }
+    val analyzer =
+        remember {
+            createBarcodeAnalyzer(analysisExecutor) { rawCode ->
+                if (!hasResolved) {
+                    hasResolved = true
+                    scope.launch {
+                        val match = runCatching { barcodeResolver.resolveBarcode(rawCode) }.getOrNull()
+                        triggerBarcodeHapticTick(context, view)
+                        onBarcodeResolved(rawCode, match)
+                    }
                 }
             }
         }
-    }
     val cameraManager = remember { CameraManager(context, analyzer, analysisExecutor) }
     DisposableEffect(cameraManager, lifecycleOwner) {
         cameraManager.bind(lifecycleOwner, previewView)
@@ -126,19 +129,23 @@ private fun CameraPreviewScanner(
 
 private fun createBarcodeAnalyzer(
     executor: java.util.concurrent.ExecutorService,
-    onBarcode: (Barcode) -> Unit,
+    onBarcode: (String) -> Unit,
 ): LiveVisionAnalyzer {
-    val barcodeOptions = BarcodeScannerOptions.Builder()
-        .setBarcodeFormats(
-            Barcode.FORMAT_UPC_A,
-            Barcode.FORMAT_UPC_E,
-            Barcode.FORMAT_EAN_8,
-            Barcode.FORMAT_EAN_13,
-            Barcode.FORMAT_QR_CODE,
-        ).build()
-    val objectOptions = ObjectDetectorOptions.Builder()
-        .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-        .build()
+    val barcodeOptions =
+        BarcodeScannerOptions
+            .Builder()
+            .setBarcodeFormats(
+                Barcode.FORMAT_UPC_A,
+                Barcode.FORMAT_UPC_E,
+                Barcode.FORMAT_EAN_8,
+                Barcode.FORMAT_EAN_13,
+                Barcode.FORMAT_QR_CODE,
+            ).build()
+    val objectOptions =
+        ObjectDetectorOptions
+            .Builder()
+            .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
+            .build()
     return LiveVisionAnalyzer(
         barcodeScanner = BarcodeScanning.getClient(barcodeOptions),
         objectDetector = ObjectDetection.getClient(objectOptions),

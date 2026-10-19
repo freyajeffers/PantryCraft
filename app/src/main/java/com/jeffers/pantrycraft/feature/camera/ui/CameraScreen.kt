@@ -1,19 +1,11 @@
 package com.jeffers.pantrycraft.feature.camera.ui
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.graphics.Paint
-import android.graphics.Typeface
-import android.view.HapticFeedbackConstants
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,34 +14,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
-import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,57 +39,31 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
-import com.google.mlkit.vision.barcode.BarcodeScannerOptions
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.objects.ObjectDetection
-import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
-import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.PantryTaxonomy
-import com.jeffers.pantrycraft.data.Repository
-import com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats
-import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult
 import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
-import com.jeffers.pantrycraft.feature.camera.core.CameraManager
-import com.jeffers.pantrycraft.feature.camera.vision.MlKitSnapshotModel
-import com.jeffers.pantrycraft.feature.camera.vision.ModelRouter
-import com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox
-import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
-import com.jeffers.pantrycraft.feature.camera.vision.SnapshotVisionService
-import com.jeffers.pantrycraft.feature.camera.vision.toPantryItem
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import java.util.concurrent.Executors
 
-private const val FOCUS_CLEAR_DELAY_MILLIS = 1_200L
-private const val LABEL_TEXT_SIZE = 34f
-private const val BADGE_ALPHA = 200
-private const val BADGE_COLOR_RED = 20
-private const val BADGE_COLOR_GREEN = 30
-private const val BADGE_COLOR_BLUE = 45
-private const val BOX_STROKE_WIDTH = 4f
-private const val BADGE_HORIZONTAL_PADDING = 24f
-private const val BADGE_HEIGHT = 44f
-private const val BADGE_CORNER_RADIUS = 12f
-private const val BADGE_TEXT_Y_OFFSET = 32f
-private const val BADGE_TOP_OFFSET = 40f
-private const val FOCUS_CIRCLE_RADIUS = 48f
-private const val FOCUS_CIRCLE_STROKE = 3f
-private const val ZOOM_SENSITIVITY = 0.5f
-private const val CONFIDENCE_PERCENT_SCALE = 100
-private const val MILLIS_PER_DAY = 86_400_000L
-private const val MIN_BADGE_TOP = 8f
+internal const val FOCUS_CLEAR_DELAY_MILLIS = 1_200L
+internal const val LABEL_TEXT_SIZE = 34f
+internal const val BADGE_ALPHA = 200
+internal const val BADGE_COLOR_RED = 20
+internal const val BADGE_COLOR_GREEN = 30
+internal const val BADGE_COLOR_BLUE = 45
+internal const val BADGE_TEXT_Y_OFFSET = 32f
+internal const val BADGE_TOP_OFFSET = 40f
+internal const val BOX_STROKE_WIDTH = 4f
+internal const val BADGE_HORIZONTAL_PADDING = 24f
+internal const val BADGE_HEIGHT = 44f
+internal const val BADGE_CORNER_RADIUS = 12f
+internal const val FOCUS_CIRCLE_RADIUS = 48f
+internal const val FOCUS_CIRCLE_STROKE = 3f
+internal const val ZOOM_SENSITIVITY = 0.5f
+internal const val CONFIDENCE_PERCENT_SCALE = 100
+internal const val MIN_BADGE_TOP = 8f
 
-private data class CameraStatusHudState(
+internal data class CameraStatusHudState(
     val latestResult: LiveVisionResult?,
     val latestFrameTime: Long?,
     val barcodeMatch: BarcodeMatch?,
@@ -118,393 +73,10 @@ private data class CameraStatusHudState(
 )
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
-fun CameraScreen() {
-    val context = LocalContext.current
-    val view = LocalView.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    var hasCameraPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                PackageManager.PERMISSION_GRANTED,
-        )
-    }
-    val requestPermission =
-        rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestPermission(),
-        ) { hasCameraPermission = it }
-
-    if (!hasCameraPermission) {
-        CameraPermissionPrompt { requestPermission.launch(Manifest.permission.CAMERA) }
-        return
-    }
-
-    val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
-    val scope = rememberCoroutineScope()
-    var snapshotStatus by remember { mutableStateOf<String?>(null) }
-    var barcodeMatch by remember { mutableStateOf<BarcodeMatch?>(null) }
-    var unresolvedBarcode by remember { mutableStateOf<String?>(null) }
-    var associateDialogBarcode by remember { mutableStateOf<String?>(null) }
-    var parsedItems by remember { mutableStateOf<List<ParsedVisionItem>>(emptyList()) }
-    val repository = remember { Repository.getInstance(context) }
-    val barcodeResolver = remember { repository.offlineBarcodeResolver() }
-    val snapshotVisionService =
-        remember {
-            SnapshotVisionService(
-                ModelRouter(
-                    context = context.applicationContext,
-                    localFallbackModel =
-                        MlKitSnapshotModel(
-                            ObjectDetection.getClient(
-                                ObjectDetectorOptions
-                                    .Builder()
-                                    .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
-                                    .enableMultipleObjects()
-                                    .enableClassification()
-                                    .build(),
-                            ),
-                        ),
-                ),
-            )
-        }
-    val previewView =
-        remember(context) {
-            PreviewView(context).apply {
-                implementationMode = PreviewView.ImplementationMode.PERFORMANCE
-                scaleType = PreviewView.ScaleType.FILL_CENTER
-            }
-        }
-    var latestResult by remember { mutableStateOf<LiveVisionResult?>(null) }
-    val frameTimingStats = remember { FrameTimingStats() }
-    var latestFrameTime by remember { mutableStateOf<Long?>(null) }
-    var isTorchOn by remember { mutableStateOf(false) }
-    var focusPoint by remember { mutableStateOf<Offset?>(null) }
-    var zoomRatio by remember { mutableStateOf(0f) }
-
-    LaunchedEffect(focusPoint) {
-        if (focusPoint != null) {
-            delay(FOCUS_CLEAR_DELAY_MILLIS)
-            focusPoint = null
-        }
-    }
-
-    val labelPaint =
-        remember {
-            Paint().apply {
-                color = android.graphics.Color.WHITE
-                textSize = LABEL_TEXT_SIZE
-                isAntiAlias = true
-                typeface = Typeface.DEFAULT_BOLD
-            }
-        }
-    val badgePaint =
-        remember {
-            Paint().apply {
-                color =
-                    android.graphics.Color.argb(
-                        BADGE_ALPHA,
-                        BADGE_COLOR_RED,
-                        BADGE_COLOR_GREEN,
-                        BADGE_COLOR_BLUE,
-                    )
-                style = Paint.Style.FILL
-                isAntiAlias = true
-            }
-        }
-
-    val analyzer =
-        remember {
-            val barcodeOptions =
-                BarcodeScannerOptions
-                    .Builder()
-                    .setBarcodeFormats(
-                        Barcode.FORMAT_UPC_A,
-                        Barcode.FORMAT_UPC_E,
-                        Barcode.FORMAT_EAN_8,
-                        Barcode.FORMAT_EAN_13,
-                        Barcode.FORMAT_QR_CODE,
-                    ).build()
-            val objectOptions =
-                ObjectDetectorOptions
-                    .Builder()
-                    .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-                    .enableMultipleObjects()
-                    .enableClassification()
-                    .build()
-            LiveVisionAnalyzer(
-                barcodeScanner = BarcodeScanning.getClient(barcodeOptions),
-                objectDetector = ObjectDetection.getClient(objectOptions),
-                executor = analysisExecutor,
-                onResult = { result ->
-                    latestResult = result
-                    result.barcodes.firstOrNull()?.let { barcode ->
-                        scope.launch {
-                            val match = runCatching { barcodeResolver.resolveBarcode(barcode) }.getOrNull()
-                            if (match != null) {
-                                barcodeMatch = match
-                                unresolvedBarcode = null
-                                triggerBarcodeHapticTick(context, view)
-                            } else {
-                                unresolvedBarcode = barcode
-                            }
-                        }
-                    }
-                },
-                onProcessingDurationMillis = { durationMillis ->
-                    frameTimingStats.record(durationMillis)
-                    scope.launch { latestFrameTime = durationMillis }
-                },
-            )
-        }
-    val cameraManager = remember { CameraManager(context, analyzer, analysisExecutor) }
-
-    DisposableEffect(cameraManager, lifecycleOwner) {
-        cameraManager.bind(lifecycleOwner, previewView)
-        onDispose {
-            cameraManager.unbind()
-            analyzer.close()
-            barcodeResolver.close()
-            snapshotVisionService.close()
-            analysisExecutor.shutdown()
-        }
-    }
-
-    Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .pointerInput(previewView) {
-                    detectTransformGestures { _, _, zoom, _ ->
-                        zoomRatio = (zoomRatio + (zoom - 1f) * ZOOM_SENSITIVITY).coerceIn(0f, 1f)
-                        cameraManager.setLinearZoom(zoomRatio)
-                    }
-                }.pointerInput(previewView) {
-                    detectTapGestures { offset ->
-                        cameraManager.focusOn(offset.x, offset.y, previewView)
-                        focusPoint = offset
-                    }
-                },
-    ) {
-        AndroidView(
-            factory = { previewView },
-            modifier = Modifier.fillMaxSize(),
-        )
-        CameraPreviewOverlay(latestResult, focusPoint, labelPaint, badgePaint)
-
-        CameraStatusHud(
-            CameraStatusHudState(
-                latestResult = latestResult,
-                latestFrameTime = latestFrameTime,
-                barcodeMatch = barcodeMatch,
-                snapshotStatus = snapshotStatus,
-                isTorchOn = isTorchOn,
-                onToggleTorch = {
-                isTorchOn = !isTorchOn
-                cameraManager.setTorch(isTorchOn)
-                },
-            ),
-        )
-
-        // Live Barcode Match Quick-Add Card
-        barcodeMatch?.let { match ->
-            Card(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 96.dp, start = 16.dp, end = 16.dp)
-                        .fillMaxWidth(),
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                match.name,
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                            Text(
-                                "Category: ${match.category} · Unit: ${match.unit} · " +
-                                    "Shelf life: ${match.estimatedShelfLifeDays}d",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        IconButton(onClick = { barcodeMatch = null }) {
-                            Icon(Icons.Filled.Close, contentDescription = "Dismiss barcode")
-                        }
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    val now = System.currentTimeMillis()
-                                    val exp =
-                                        if (match.estimatedShelfLifeDays > 0) {
-                                            now + match.estimatedShelfLifeDays * MILLIS_PER_DAY
-                                        } else {
-                                            null
-                                        }
-                                    repository.insertPantry(
-                                        PantryItem(
-                                            name = match.name,
-                                            barcode = match.barcode,
-                                            quantity = 1f,
-                                            unit = match.unit,
-                                            category = match.category,
-                                            storageLocation = "PANTRY",
-                                            expirationTimestamp = exp,
-                                            isAromaticOrSeasoning =
-                                                PantryTaxonomy.isAromaticOrSeasoningCategory(match.category),
-                                        ),
-                                    )
-                                    snapshotStatus = "Added ${match.name} to pantry"
-                                    barcodeMatch = null
-                                    view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                            Text("Quick Add (1)")
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                parsedItems =
-                                    listOf(
-                                        ParsedVisionItem(
-                                            name = match.name,
-                                            category = match.category,
-                                            storageLocation = "PANTRY",
-                                            quantity = 1f,
-                                            unit = match.unit,
-                                            confidence = 1f,
-                                            estimatedShelfLifeDays = match.estimatedShelfLifeDays,
-                                            isAromaticOrSeasoning =
-                                                PantryTaxonomy.isAromaticOrSeasoningCategory(match.category),
-                                            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-                                            conditionNotes = null,
-                                            barcode = match.barcode,
-                                        ),
-                                    )
-                                barcodeMatch = null
-                            },
-                        ) {
-                            Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                            Text("Review")
-                        }
-                    }
-                }
-            }
-        }
-
-        UnknownBarcodeCard(
-            code = unresolvedBarcode,
-            visible = barcodeMatch == null,
-            onName = { associateDialogBarcode = it },
-        )
-
-        // Shelf Snapshot FAB
-        FloatingActionButton(
-            onClick = {
-                snapshotStatus = "Capturing shelf snapshot…"
-                scope.launch {
-                    runCatching {
-                        snapshotVisionService.analyze(cameraManager.captureSnapshot())
-                    }.onSuccess {
-                        parsedItems = it
-                        snapshotStatus = "Detected ${it.size} items from shelf"
-                    }.onFailure {
-                        snapshotStatus = "Snapshot failed: ${it.message ?: "Unknown error"}"
-                    }
-                }
-            },
-            modifier =
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(24.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.PhotoCamera,
-                contentDescription = "Capture shelf for scanning",
-            )
-        }
-
-        // Batch Review Bottom Sheet
-        if (parsedItems.isNotEmpty()) {
-            ModalBottomSheet(onDismissRequest = { parsedItems = emptyList() }) {
-                BatchReviewBottomSheet(
-                    items = parsedItems,
-                    onConfirm = { confirmedItems ->
-                        scope.launch {
-                            runCatching {
-                                repository.insertPantryBatch(confirmedItems.map { it.toPantryItem() })
-                            }.onSuccess {
-                                parsedItems = emptyList()
-                                snapshotStatus = "Added ${confirmedItems.size} items to your pantry"
-                                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                            }.onFailure {
-                                snapshotStatus = "Could not add items: ${it.message}"
-                            }
-                        }
-                    },
-                    onDismiss = { parsedItems = emptyList() },
-                )
-            }
-        }
-
-        // Unknown Barcode Association Dialog
-        associateDialogBarcode?.let { barcode ->
-            AssociateBarcodeDialog(
-                barcode = barcode,
-                onDismiss = {
-                    associateDialogBarcode = null
-                    unresolvedBarcode = null
-                },
-                onSave = { name, category, unit, storageLocation, shelfLifeDays ->
-                    scope.launch {
-                        barcodeResolver.associateBarcode(
-                            barcode = barcode,
-                            name = name,
-                            category = category,
-                            defaultUnit = unit,
-                            estimatedShelfLifeDays = shelfLifeDays,
-                        )
-                        val now = System.currentTimeMillis()
-                        val exp = if (shelfLifeDays > 0) now + shelfLifeDays * MILLIS_PER_DAY else null
-                        repository.insertPantry(
-                            PantryItem(
-                                name = name,
-                                barcode = barcode,
-                                quantity = 1f,
-                                unit = unit,
-                                category = category,
-                                storageLocation = storageLocation,
-                                expirationTimestamp = exp,
-                                isAromaticOrSeasoning =
-                                    PantryTaxonomy.isAromaticOrSeasoningCategory(category),
-                            ),
-                        )
-                        snapshotStatus = "Saved and remembered $name"
-                        associateDialogBarcode = null
-                        unresolvedBarcode = null
-                        view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                    }
-                },
-            )
-        }
-    }
-}
+fun CameraScreen() = CameraScreenHost()
 
 @Composable
-private fun BoxScope.UnknownBarcodeCard(
+internal fun BoxScope.UnknownBarcodeCard(
     code: String?,
     visible: Boolean,
     onName: (String) -> Unit,
@@ -540,9 +112,7 @@ private fun BoxScope.UnknownBarcodeCard(
 }
 
 @Composable
-private fun CameraStatusHud(
-    state: CameraStatusHudState,
-) {
+internal fun CameraStatusHud(state: CameraStatusHudState) {
     Row(
         modifier =
             Modifier
@@ -552,13 +122,14 @@ private fun CameraStatusHud(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val statusText =
-            state.latestResult?.let { result ->
-                buildString {
-                    append("Objects: ${result.objectBoxes.size}")
-                    if (result.barcodes.isNotEmpty()) append("  Barcodes: ${result.barcodes.joinToString()}")
-                    state.latestFrameTime?.let { append("  Analysis: ${it}ms") }
-                }
-            }?.let { text -> state.barcodeMatch?.let { "$text · ${it.name}" } ?: text }
+            state.latestResult
+                ?.let { result ->
+                    buildString {
+                        append("Objects: ${result.objectBoxes.size}")
+                        if (result.barcodes.isNotEmpty()) append("  Barcodes: ${result.barcodes.joinToString()}")
+                        state.latestFrameTime?.let { append("  Analysis: ${it}ms") }
+                    }
+                }?.let { text -> state.barcodeMatch?.let { "$text · ${it.name}" } ?: text }
                 ?: state.snapshotStatus ?: "Scanning…"
         Box(
             modifier =
@@ -586,7 +157,7 @@ private fun CameraStatusHud(
 }
 
 @Composable
-private fun CameraPreviewOverlay(
+internal fun CameraPreviewOverlay(
     latestResult: LiveVisionResult?,
     focusPoint: Offset?,
     labelPaint: Paint,
@@ -645,7 +216,7 @@ private fun CameraPreviewOverlay(
     }
 }
 
-private data class AssociateBarcodeFieldsState(
+internal data class AssociateBarcodeFieldsState(
     val barcode: String,
     val name: String,
     val onNameChange: (String) -> Unit,
@@ -660,7 +231,7 @@ private data class AssociateBarcodeFieldsState(
 )
 
 @Composable
-private fun AssociateBarcodeFields(state: AssociateBarcodeFieldsState) {
+internal fun AssociateBarcodeFields(state: AssociateBarcodeFieldsState) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Barcode: ${state.barcode}", style = MaterialTheme.typography.bodySmall)
         OutlinedTextField(
@@ -703,7 +274,7 @@ private fun AssociateBarcodeFields(state: AssociateBarcodeFieldsState) {
 }
 
 @Composable
-private fun AssociateBarcodeDialog(
+internal fun AssociateBarcodeDialog(
     barcode: String,
     onDismiss: () -> Unit,
     onSave: (name: String, category: String, unit: String, storageLocation: String, shelfLifeDays: Int) -> Unit,
@@ -764,7 +335,7 @@ private fun AssociateBarcodeDialog(
 }
 
 @Composable
-private fun CameraPermissionPrompt(onRequestPermission: () -> Unit) {
+internal fun CameraPermissionPrompt(onRequestPermission: () -> Unit) {
     Column(
         modifier =
             Modifier
