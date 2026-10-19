@@ -1,8 +1,8 @@
 package com.jeffers.pantrycraft.data
 
 import android.content.Context
-import java.io.File
 import org.json.JSONArray
+import java.io.File
 
 internal fun backupRecords(context: Context): List<DatabaseBackupManager.BackupRecord> {
     val preferences = context.getSharedPreferences("backup_preferences", Context.MODE_PRIVATE)
@@ -20,17 +20,22 @@ internal fun backupRecords(context: Context): List<DatabaseBackupManager.BackupR
             }
         }.getOrDefault(emptyList())
     val known = stored.mapTo(mutableSetOf()) { it.backupName }
-    val missing = listBackupFiles(context).filterNot(known::contains).map { name ->
-        DatabaseBackupManager.BackupRecord(name, backupRecordTimestamp(name), name, null)
-    }
+    val missing =
+        listBackupFiles(context).filterNot(known::contains).map { name ->
+            DatabaseBackupManager.BackupRecord(name, backupRecordTimestamp(name), name, null)
+        }
     return (stored + missing).sortedByDescending { it.createdAt }
 }
 
 internal fun listBackupFiles(context: Context): List<String> {
     val dir = File(context.filesDir, "backups")
     if (!dir.exists() || !dir.isDirectory) return emptyList()
-    return dir.listFiles()?.filter { it.isFile && it.name.endsWith(".pcbk") }
-        ?.sortedByDescending { it.lastModified() }?.map { it.name }.orEmpty()
+    return dir
+        .listFiles()
+        ?.filter { it.isFile && it.name.endsWith(".pcbk") }
+        ?.sortedByDescending { it.lastModified() }
+        ?.map { it.name }
+        .orEmpty()
 }
 
 private fun backupRecordTimestamp(backupName: String): Long =

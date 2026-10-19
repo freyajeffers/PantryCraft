@@ -1,7 +1,12 @@
 package com.jeffers.pantrycraft.data
 
 import androidx.sqlite.db.SimpleSQLiteQuery
+import com.jeffers.pantrycraft.feature.camera.barcode.AssetBarcodeDatabase
+import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
+import com.jeffers.pantrycraft.feature.camera.barcode.OfflineBarcodeResolver
 import kotlinx.coroutines.flow.Flow
+
+private typealias CatalogProgress = (Long, Long) -> Unit
 
 fun Repository.observePantryItems(): Flow<List<PantryItem>> = pantryDao.observeAllPantryItems()
 
@@ -12,16 +17,22 @@ fun Repository.offlineBarcodeResolver(): OfflineBarcodeResolver =
         assetBarcodeDatabaseProvider = { runCatching { AssetBarcodeDatabase(appContext) }.getOrNull() },
     )
 
-suspend fun Repository.downloadOfflineCatalog(
-    onProgress: (downloadedBytes: Long, totalBytes: Long) -> Unit = { _, _ -> },
-) = CatalogDownloadService(appContext).downloadIfNeeded(onProgress = onProgress)
+suspend fun Repository.downloadOfflineCatalog(onProgress: CatalogProgress): java.io.File =
+    CatalogDownloadService(appContext).downloadIfNeeded(onProgress = onProgress)
+
+suspend fun Repository.downloadOfflineCatalog(): java.io.File = downloadOfflineCatalog { _, _ -> }
 
 fun Repository.searchPantryItems(query: String): Flow<List<PantryItem>> {
     val sanitized = sanitizeSearchQuery(query)
-    val ftsQuery = if (sanitized.isEmpty()) "" else sanitized
-        .split(Regex("\\s+"))
-        .filter { it.isNotBlank() }
-        .joinToString(" ") { term -> "\"${term.replace("\"", "\"\"")}\"*" }
+    val ftsQuery =
+        if (sanitized.isEmpty()) {
+            ""
+        } else {
+            sanitized
+                .split(Regex("\\s+"))
+                .filter { it.isNotBlank() }
+                .joinToString(" ") { term -> "\"${term.replace("\"", "\"\"")}\"*" }
+        }
     return if (ftsQuery.isBlank()) {
         observePantryItems()
     } else {
@@ -41,5 +52,4 @@ fun Repository.observeLowStock(): Flow<List<PantryItem>> = pantryDao.observeLowS
 
 suspend fun Repository.findPantryItemByBarcode(barcode: String): PantryItem? = pantryDao.findByBarcode(barcode)
 
-suspend fun Repository.findAnyPantryItemByBarcode(barcode: String): PantryItem? =
-    pantryDao.findAnyByBarcode(barcode)
+suspend fun Repository.findAnyPantryItemByBarcode(barcode: String): PantryItem? = pantryDao.findAnyByBarcode(barcode)

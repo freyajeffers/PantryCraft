@@ -12,7 +12,10 @@ internal fun ensureDatabasePresent(dbFile: File) {
     if (!dbFile.exists()) throw IOException("Database file not found")
 }
 
-internal fun replaceDatabaseFile(temp: File, dbFile: File) {
+internal fun replaceDatabaseFile(
+    temp: File,
+    dbFile: File,
+) {
     FileInputStream(temp).use { input ->
         FileOutputStream(dbFile).use { output ->
             input.copyTo(output, RESTORE_STREAM_BUFFER_BYTES)
@@ -22,7 +25,10 @@ internal fun replaceDatabaseFile(temp: File, dbFile: File) {
     if (!temp.delete()) throw IOException("Unable to remove temporary restored database")
 }
 
-internal fun streamDecryptedDatabase(input: CipherInputStream, temp: File) {
+internal fun streamDecryptedDatabase(
+    input: CipherInputStream,
+    temp: File,
+) {
     FileOutputStream(temp).use { output ->
         val buffer = ByteArray(RESTORE_STREAM_BUFFER_BYTES)
         var read: Int

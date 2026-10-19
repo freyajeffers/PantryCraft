@@ -58,7 +58,9 @@ enum class AiProvider(
 
     companion object {
         fun fromId(id: String?): AiProvider =
-            entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: OFFLINE_MLKIT
+            entries
+                .firstOrNull { it.id.equals(id, ignoreCase = true) }
+                ?: OFFLINE_MLKIT
     }
 }
 
@@ -164,7 +166,8 @@ object ByokPreferences {
     }
 
     private fun preferences(context: Context) =
-        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        context.applicationContext
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private fun getOrCreateKey(): SecretKey {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }

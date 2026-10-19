@@ -5,9 +5,9 @@ import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
-import android.security.keystore.StrongBoxUnavailableException
 import android.util.Base64
 import java.security.KeyStore
+import java.security.ProviderException
 import java.security.SecureRandom
 import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
@@ -134,9 +134,13 @@ object DatabaseKeyProvider {
         return try {
             generator.init(keySpec(strongBox = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P))
             generator.generateKey()
-        } catch (_: StrongBoxUnavailableException) {
-            generator.init(keySpec(strongBox = false))
-            generator.generateKey()
+        } catch (error: ProviderException) {
+            if (error::class.java.name.endsWith("StrongBoxUnavailableException")) {
+                generator.init(keySpec(strongBox = false))
+                generator.generateKey()
+            } else {
+                throw error
+            }
         }
     }
 

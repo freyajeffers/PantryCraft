@@ -1,6 +1,7 @@
 package com.jeffers.pantrycraft.feature.camera.barcode
 
 import android.content.Context
+import android.os.Build
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -33,7 +34,12 @@ class CatalogDownloadService(
                 if (connection.responseCode !in HTTP_SUCCESS_MIN..HTTP_SUCCESS_MAX) {
                     throw CatalogDownloadException("Catalog download failed: HTTP ${connection.responseCode}")
                 }
-                val contentLength = connection.contentLengthLong
+                val contentLength =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        connection.contentLengthLong
+                    } else {
+                        connection.contentLength.toLong()
+                    }
                 if (contentLength > MAX_BYTES) throw CatalogDownloadException("Catalog exceeds size limit")
                 connection.inputStream.use { input ->
                     temporary.outputStream().use { output ->

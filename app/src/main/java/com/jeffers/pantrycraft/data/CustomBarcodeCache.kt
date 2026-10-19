@@ -1,6 +1,7 @@
 package com.jeffers.pantrycraft.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -23,4 +24,11 @@ interface CustomBarcodeDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(item: CustomBarcodeItem)
+
+    @Delete
+    suspend fun delete(item: CustomBarcodeItem)
+
+    @Query("DELETE FROM custom_barcode_cache WHERE barcode LIKE :prefix || '%'")
+    suspend fun deleteByBarcodePrefix(prefix: String): Int
 }
+

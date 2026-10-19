@@ -198,7 +198,10 @@ object DatabaseBackupManager {
         }
     }
 
-    private fun writeEncryptedDatabase(output: CipherOutputStream, dbFile: File) {
+    private fun writeEncryptedDatabase(
+        output: CipherOutputStream,
+        dbFile: File,
+    ) {
         FileInputStream(dbFile).use { fis ->
             val buffer = ByteArray(STREAM_BUFFER_BYTES)
             var read: Int
@@ -297,7 +300,6 @@ object DatabaseBackupManager {
             derived?.fill(0)
         }
     }
-
 }
 
 private data class EncryptedBackupPayload(
@@ -339,7 +341,10 @@ private fun writeEncryptedBackup(
     }
 }
 
-private fun writeEncryptedDatabase(output: CipherOutputStream, dbFile: File) {
+private fun writeEncryptedDatabase(
+    output: CipherOutputStream,
+    dbFile: File,
+) {
     FileInputStream(dbFile).use { fis ->
         val buffer = ByteArray(STREAM_BUFFER_BYTES)
         var read: Int
@@ -400,10 +405,14 @@ private fun readExact(
 }
 
 private fun requirePassphrase(passphrase: ByteArray?): ByteArray =
-    passphrase ?: throw IOException("Backup omitted database passphrase")
+    passphrase
+        ?: throw IOException("Backup omitted database passphrase")
 
 private fun throwRestoreFailure(error: IOException): Nothing =
-    throw IOException("Failed to restore backup: ${error.message}", error)
+    throw IOException(
+        "Failed to restore backup: ${error.message}",
+        error,
+    )
 
 private fun readBackupPassphrase(input: CipherInputStream): ByteArray {
     val lengthHigh = input.read()

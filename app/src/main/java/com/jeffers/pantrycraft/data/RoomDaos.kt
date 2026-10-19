@@ -73,6 +73,12 @@ interface PantryMutationDao {
 
     @Delete
     suspend fun delete(item: PantryItem)
+
+    @Query("DELETE FROM pantry_items WHERE name LIKE :prefix || '%'")
+    suspend fun deleteByNamePrefix(prefix: String): Int
+
+    @Query("DELETE FROM pantry_items WHERE barcode LIKE :prefix || '%'")
+    suspend fun deleteByBarcodePrefix(prefix: String): Int
 }
 
 @Dao
@@ -96,4 +102,8 @@ interface GroceryDao {
 
     @Query("DELETE FROM grocery_items WHERE checked = 1")
     suspend fun deleteChecked()
+
+    @Query("DELETE FROM grocery_items WHERE name LIKE :prefix || '%'")
+    suspend fun deleteByNamePrefix(prefix: String): Int
 }
+

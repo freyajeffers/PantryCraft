@@ -16,7 +16,7 @@ private const val NOTES_COLUMN = 9
 private const val LEGACY_NOTES_COLUMN = 7
 
 suspend fun Repository.importPantryFromCsv(csvString: String): Int =
-    withTransaction {
+    db.withTransaction {
         val lines = csvString.lines().filter { it.isNotBlank() }
         if (lines.size <= 1) return@withTransaction 0
         val dateFormat = java.text.SimpleDateFormat(DATE_PATTERN, java.util.Locale.US)
@@ -36,24 +36,18 @@ private fun parsePantryCsvItem(
 ): PantryItem? {
     val name = cols.getOrNull(0)?.trim().orEmpty()
     if (name.isEmpty()) return null
-    val category = cols.getOrNull(1)?.trim()?.uppercase()?.takeIf(String::isNotEmpty) ?: "OTHER"
-    val location =
-        cols.getOrNull(2)?.trim()?.uppercase()?.takeIf { it in PantryTaxonomy.storageLocations } ?: "PANTRY"
-    val quantity = cols.getOrNull(QUANTITY_COLUMN)?.trim()?.toFloatOrNull()?.coerceAtLeast(0f) ?: 1f
-    val unit = cols.getOrNull(UNIT_COLUMN)?.trim()?.uppercase()?.takeIf(String::isNotEmpty) ?: "COUNT"
+
     val extended = cols.size >= EXTENDED_CSV_COLUMN_COUNT
+    val category = parseCategory(cols)
+    val location = parseLocation(cols)
+    val quantity = parseQuantity(cols)
+    val unit = parseUnit(cols)
     val customUnit = optionalCsvValue(cols, CUSTOM_UNIT_COLUMN, extended)
-    val threshold =
-        if (extended) cols.getOrNull(THRESHOLD_COLUMN)?.trim()?.toFloatOrNull()?.coerceAtLeast(0f) ?: 0f
-        else 0f
-    val expirationColumn = if (extended) EXPIRATION_COLUMN else LEGACY_EXPIRATION_COLUMN
-    val expiration = cols.getOrNull(expirationColumn)?.trim().orEmpty().takeIf(String::isNotEmpty)?.let {
-        runCatching { dateFormat.parse(it)?.time }.getOrNull()
-    }
-    val openedColumn = if (extended) IS_OPENED_COLUMN else LEGACY_IS_OPENED_COLUMN
-    val isOpened = cols.getOrNull(openedColumn)?.trim()?.toBoolean() ?: false
-    val notesColumn = if (extended) NOTES_COLUMN else LEGACY_NOTES_COLUMN
-    val notes = cols.getOrNull(notesColumn)?.trim()?.takeIf(String::isNotEmpty)
+    val threshold = parseThreshold(cols, extended)
+    val expiration = parseExpiration(cols, dateFormat, extended)
+    val isOpened = parseIsOpened(cols, extended)
+    val notes = parseNotes(cols, extended)
+
     return PantryItem(
         name = name,
         category = category,
@@ -69,31 +63,67 @@ private fun parsePantryCsvItem(
     )
 }
 
-private fun optionalCsvValue(cols: List<String>, index: Int, available: Boolean): String? =
-    if (available) cols.getOrNull(index)?.trim()?.takeIf(String::isNotEmpty) else null
+private fun parseCategory(cols: List<String>): String =
+    cols
+        .getOrNull(1)
+        ?.trim()
+        ?.uppercase()
+        ?.takeIf(String::isNotEmpty) ?: "OTHER"
 
-private fun parseCsvLine(line: String): List<String> {
-    val result = mutableListOf<String>()
-    val current = StringBuilder()
-    var inQuotes = false
-    var index = 0
-    while (index < line.length) {
-        val ch = line[index]
-        if (ch == '"') {
-            if (inQuotes && index + 1 < line.length && line[index + 1] == '"') {
-                current.append('"')
-                index++
-            } else {
-                inQuotes = !inQuotes
-            }
-        } else if (ch == ',' && !inQuotes) {
-            result.add(current.toString())
-            current.clear()
-        } else {
-            current.append(ch)
-        }
-        index++
+private fun parseLocation(cols: List<String>): String =
+    cols
+        .getOrNull(2)
+        ?.trim()
+        ?.uppercase()
+        ?.takeIf { it in PantryTaxonomy.storageLocations } ?: "PANTRY"
+
+private fun parseQuantity(cols: List<String>): Float =
+    cols
+        .getOrNull(QUANTITY_COLUMN)
+        ?.trim()
+        ?.toFloatOrNull()
+        ?.coerceAtLeast(0f) ?: 1f
+
+private fun parseUnit(cols: List<String>): String =
+    cols
+        .getOrNull(UNIT_COLUMN)
+        ?.trim()
+        ?.uppercase()
+        ?.takeIf(String::isNotEmpty) ?: "COUNT"
+
+private fun parseThreshold(
+    cols: List<String>,
+    extended: Boolean,
+): Float =
+    if (extended) {
+        cols
+            .getOrNull(THRESHOLD_COLUMN)
+            ?.trim()
+            ?.toFloatOrNull()
+            ?.coerceAtLeast(0f) ?: 0f
+    } else {
+        0f
     }
-    result.add(current.toString())
-    return result
-}
+
+private fun parseExpiration(
+    cols: List<String>,
+    dateFormat: java.text.SimpleDateFormat,
+    extended: Boolean,
+): Long? =
+    cols
+        .getOrNull(if (extended) EXPIRATION_COLUMN else LEGACY_EXPIRATION_COLUMN)
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?.let {
+            runCatching { dateFormat.parse(it)?.time }.getOrNull()
+        }
+
+private fun parseIsOpened(
+    cols: List<String>,
+    extended: Boolean,
+): Boolean = cols.getOrNull(if (extended) IS_OPENED_COLUMN else LEGACY_IS_OPENED_COLUMN)?.trim()?.toBoolean() ?: false
+
+private fun parseNotes(
+    cols: List<String>,
+    extended: Boolean,
+): String? = cols.getOrNull(if (extended) NOTES_COLUMN else LEGACY_NOTES_COLUMN)?.trim()?.takeIf(String::isNotEmpty)

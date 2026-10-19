@@ -2,14 +2,6 @@ package com.jeffers.pantrycraft.data
 
 import android.content.Context
 import androidx.room.withTransaction
-import androidx.sqlite.db.SimpleSQLiteQuery
-import com.jeffers.pantrycraft.feature.camera.barcode.AssetBarcodeDatabase
-import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
-import com.jeffers.pantrycraft.feature.camera.barcode.OfflineBarcodeResolver
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import org.json.JSONArray
-import org.json.JSONObject
 
 class Repository private constructor(
     internal val db: AppDatabase,
@@ -76,12 +68,13 @@ class Repository private constructor(
     }
 
     suspend fun updatePantry(item: PantryItem) =
-        pantryDao.update(validate(item).copy(updatedAt = System.currentTimeMillis()))
+        pantryDao.update(
+            validate(item).copy(updatedAt = System.currentTimeMillis()),
+        )
 
     suspend fun deletePantry(item: PantryItem) = pantryDao.softDelete(item.id)
 
     suspend fun restorePantry(item: PantryItem) = pantryDao.restore(item.id)
-
 
     fun reclaimTemporaryMedia(): Int {
         val scratch = appContext.cacheDir.resolve("vision_scratch")

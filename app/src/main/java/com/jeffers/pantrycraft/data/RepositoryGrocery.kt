@@ -15,12 +15,13 @@ suspend fun Repository.deleteGrocery(item: GroceryItem) = groceryDao.delete(item
 suspend fun Repository.clearCheckedGrocery() = groceryDao.deleteChecked()
 
 suspend fun Repository.restockCheckedGroceryToPantry(): Int =
-    withTransaction {
+    db.withTransaction {
         val allChecked = groceryDao.observeAllGroceryItems().first().filter { it.checked }
         allChecked.forEach { grocery ->
-            val existing = grocery.fromPantryId?.let { pantryId ->
-                observePantryItems().first().firstOrNull { it.id == pantryId }
-            }
+            val existing =
+                grocery.fromPantryId?.let { pantryId ->
+                    observePantryItems().first().firstOrNull { it.id == pantryId }
+                }
             if (existing != null) {
                 updatePantry(
                     existing.copy(
