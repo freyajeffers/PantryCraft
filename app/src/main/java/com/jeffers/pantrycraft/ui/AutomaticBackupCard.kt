@@ -33,7 +33,7 @@ fun AutomaticBackupCard(props: AutomaticBackupProps) {
 }
 
 @Composable
-private fun BackupDescription() {
+internal fun BackupDescription() {
     Text("Encrypted backup", style = MaterialTheme.typography.titleLarge)
     Text(
         "Save an encrypted copy of your pantry and grocery data on this device. " +

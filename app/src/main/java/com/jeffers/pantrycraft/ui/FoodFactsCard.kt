@@ -15,15 +15,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
-import com.jeffers.pantrycraft.feature.camera.ui.formatFileSize
+import com.jeffers.pantrycraft.data.Repository
+import com.jeffers.pantrycraft.data.downloadOfflineCatalog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
 fun FoodFactsCard(
-    repository: CatalogDownloadService,
+    repository: Repository,
     scope: CoroutineScope,
     props: FoodFactsProps,
 ) {
@@ -54,8 +55,12 @@ private fun FoodFactsSummary(props: FoodFactsProps) {
         } else {
             "Not downloaded"
         },
-        color = if (props.catalogReady) MaterialTheme.colorScheme.primary
-        else MaterialTheme.colorScheme.onSurfaceVariant,
+        color =
+            if (props.catalogReady) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
         style = MaterialTheme.typography.labelLarge,
         modifier = Modifier.padding(top = 12.dp),
     )
@@ -92,7 +97,7 @@ private fun FoodFactsProgress(props: FoodFactsProps) {
 
 @Composable
 private fun FoodFactsActions(
-    repository: CatalogDownloadService,
+    repository: Repository,
     scope: CoroutineScope,
     props: FoodFactsProps,
 ) {
@@ -106,9 +111,10 @@ private fun FoodFactsActions(
                 onClick = {
                     props.onStartDownload()
                     scope.launch {
-                        val result = withContext(Dispatchers.IO) {
-                            runCatching { repository.downloadOfflineCatalog(props.onProgress) }
-                        }
+                        val result =
+                            withContext(Dispatchers.IO) {
+                                runCatching { repository.downloadOfflineCatalog(props.onProgress) }
+                            }
                         props.onDownloadResult(result)
                     }
                 },
@@ -123,3 +129,14 @@ private fun FoodFactsActions(
         }
     }
 }
+
+private const val BYTES_IN_KB = 1024L
+private const val BYTES_IN_MB = BYTES_IN_KB * 1024L
+
+internal fun formatFileSize(bytes: Long): String =
+    when {
+        bytes < BYTES_IN_KB -> "$bytes B"
+        bytes < BYTES_IN_MB -> "%.1f KB".format(bytes / BYTES_IN_KB.toDouble())
+        else -> "%.1f MB".format(bytes / BYTES_IN_MB.toDouble())
+    }
+
