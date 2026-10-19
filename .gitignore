@@ -13,3 +13,4 @@
 *.keystore
 signing.properties
 app/src/main/assets/foodfacts.db
+*.zip
