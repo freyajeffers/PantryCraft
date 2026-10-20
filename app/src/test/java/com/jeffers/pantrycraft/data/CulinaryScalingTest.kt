@@ -154,4 +154,19 @@ class CulinaryScalingTest {
         assertTrue(scaledSeasoning > scaledBulk)
         assertEquals(5.95f, scaledSeasoning, 0.05f)
     }
+
+    @Test
+    fun identicalUnitVolumeConversionReturnsExactQuantity() {
+        assertEquals(50f, CulinaryScaling.convertVolume(50f, "ML", "ML") ?: 0f, 0.001f)
+        assertEquals(2.5f, CulinaryScaling.convertVolume(2.5f, "CUP", "CUP") ?: 0f, 0.001f)
+        assertEquals(1f, CulinaryScaling.convertVolume(1f, "L", "L") ?: 0f, 0.001f)
+        assertEquals(3f, CulinaryScaling.convertVolume(3f, "TBSP", "TBSP") ?: 0f, 0.001f)
+        assertEquals(4f, CulinaryScaling.convertVolume(4f, "TSP", "TSP") ?: 0f, 0.001f)
+    }
+
+    @Test
+    fun zeroVolumeConversionReturnsZero() {
+        assertEquals(0f, CulinaryScaling.convertVolume(0f, "CUP", "ML") ?: -1f, 0.001f)
+        assertEquals(0f, CulinaryScaling.convertVolume(0f, "TBSP", "TSP") ?: -1f, 0.001f)
+    }
 }

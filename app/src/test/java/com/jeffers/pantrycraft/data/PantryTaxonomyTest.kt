@@ -95,4 +95,20 @@ class PantryTaxonomyTest {
             assertTrue(presets[i] < presets[i + 1])
         }
     }
+
+    @Test
+    fun shelfLifeOptionsDaysMatchesPerishablePresets() {
+        assertEquals(listOf(0, 3, 7, 14), PantryTaxonomy.shelfLifeOptionsDays)
+    }
+
+    @Test
+    fun openedShelfLifeDaysIsCaseInsensitive() {
+        assertEquals(3, PantryTaxonomy.openedShelfLifeDays("meat"))
+        assertEquals(3, PantryTaxonomy.openedShelfLifeDays("seafood"))
+        assertEquals(7, PantryTaxonomy.openedShelfLifeDays("dairy"))
+        assertEquals(7, PantryTaxonomy.openedShelfLifeDays("produce"))
+        assertEquals(14, PantryTaxonomy.openedShelfLifeDays("condiments"))
+        assertEquals(30, PantryTaxonomy.openedShelfLifeDays("frozen"))
+        assertEquals(90, PantryTaxonomy.openedShelfLifeDays("spices"))
+    }
 }

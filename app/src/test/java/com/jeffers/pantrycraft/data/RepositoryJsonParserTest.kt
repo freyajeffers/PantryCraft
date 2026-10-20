@@ -115,4 +115,25 @@ class RepositoryJsonParserTest {
         assertEquals(emptyList<PantryItem>(), parsePantryItemsFromJson("{ invalid json }"))
         assertEquals(emptyList<PantryItem>(), parsePantryItemsFromJson("{}"))
     }
+
+    @Test
+    fun zeroOrNegativeTimestampsAndEmptyStringsMapToNullFields() {
+        val json = JSONObject().apply {
+            put("name", "Cinnamon")
+            put("expirationTimestamp", 0L)
+            put("openedTimestamp", -100L)
+            put("barcode", "")
+            put("customUnitName", "")
+            put("notes", "")
+        }
+
+        val item = json.toPantryItem()
+        assertNotNull(item)
+        assertEquals("Cinnamon", item!!.name)
+        assertNull(item.expirationTimestamp)
+        assertNull(item.openedTimestamp)
+        assertNull(item.barcode)
+        assertNull(item.customUnitName)
+        assertNull(item.notes)
+    }
 }
