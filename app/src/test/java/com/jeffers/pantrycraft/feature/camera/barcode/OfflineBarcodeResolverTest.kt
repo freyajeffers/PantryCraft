@@ -53,6 +53,36 @@ class OfflineBarcodeResolverTest {
             assertEquals("Special Blend Coffee", stored?.name)
         }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun invalidBarcodeFormatThrowsException() =
+        runBlocking {
+            val resolver = OfflineBarcodeResolver(FakeDao())
+            resolver.resolveBarcode("invalid-alpha-code")
+            Unit
+        }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun shortBarcodeFormatThrowsException() =
+        runBlocking {
+            val resolver = OfflineBarcodeResolver(FakeDao())
+            resolver.resolveBarcode("123")
+            Unit
+        }
+
+    @Test
+    fun unknownBarcodeReturnsNull() =
+        runBlocking {
+            val resolver = OfflineBarcodeResolver(FakeDao())
+            assertNull(resolver.resolveBarcode("888888888888"))
+        }
+
+    @Test
+    fun closeClosesCleanlyAndRepeatedly() {
+        val resolver = OfflineBarcodeResolver(FakeDao())
+        resolver.close()
+        resolver.close()
+    }
+
     private class FakeDao(
         private var item: CustomBarcodeItem? = null,
     ) : CustomBarcodeDao {

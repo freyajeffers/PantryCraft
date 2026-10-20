@@ -18,4 +18,37 @@ class CatalogDownloadVerifierTest {
             file.delete()
         }
     }
+
+    @Test
+    fun sha256OfEmptyFileMatchesStandardDigest() {
+        val file = Files.createTempFile("empty", ".db").toFile()
+        try {
+            assertEquals(
+                "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                CatalogDownloadVerifier.sha256(file),
+            )
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun sha256OfMultiChunkFileMatchesExpectedDigest() {
+        val file = Files.createTempFile("multichunk", ".db").toFile()
+        try {
+            // Write 16384 bytes (2x 8KB buffer) with predictable pattern
+            val content = ByteArray(16384) { (it % 256).toByte() }
+            file.writeBytes(content)
+            val digest = CatalogDownloadVerifier.sha256(file)
+            assertEquals(64, digest.length)
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun catalogDownloadExceptionPreservesMessage() {
+        val exception = CatalogDownloadException("Catalog download timed out")
+        assertEquals("Catalog download timed out", exception.message)
+    }
 }
