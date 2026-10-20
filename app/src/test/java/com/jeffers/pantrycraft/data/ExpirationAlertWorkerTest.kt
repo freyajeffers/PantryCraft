@@ -24,6 +24,14 @@ class ExpirationAlertWorkerTest {
     }
 
     @Test
+    fun initialDelayAtExactNineAmTargetsNextDay() {
+        val now = calendarAt(2026, Calendar.JANUARY, 10, 9, 0).timeInMillis
+        val delay = ExpirationAlertWorker.calculateInitialDelayToNineAmMillis(now)
+
+        assertEquals(24L * 60L * 60L * 1000L, delay)
+    }
+
+    @Test
     fun alertWindowIsFortyEightHours() {
         assertEquals(2L * 24L * 60L * 60L * 1000L, ExpirationAlertWorker.ALERT_WINDOW_MILLIS)
         assertTrue(ExpirationAlertWorker.ALERT_WINDOW_MILLIS > 0L)

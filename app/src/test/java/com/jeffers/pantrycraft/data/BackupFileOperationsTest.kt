@@ -9,6 +9,9 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.io.IOException
+import javax.crypto.Cipher
+import javax.crypto.CipherInputStream
+import javax.crypto.spec.SecretKeySpec
 
 class BackupFileOperationsTest {
     @get:Rule
@@ -42,5 +45,23 @@ class BackupFileOperationsTest {
 
         assertEquals("restored-database-content", targetDb.readText())
         assertFalse(tempRestored.exists())
+    }
+
+    @Test
+    fun streamDecryptedDatabaseWritesBytesFromCipherStream() {
+        val key = SecretKeySpec(ByteArray(16) { 1 }, "AES")
+        val cipherEncrypt = Cipher.getInstance("AES/ECB/PKCS5Padding")
+        cipherEncrypt.init(Cipher.ENCRYPT_MODE, key)
+        val plaintext = "Streamed decrypted database payload content".toByteArray(Charsets.UTF_8)
+        val ciphertext = cipherEncrypt.doFinal(plaintext)
+
+        val cipherDecrypt = Cipher.getInstance("AES/ECB/PKCS5Padding")
+        cipherDecrypt.init(Cipher.DECRYPT_MODE, key)
+        val cis = CipherInputStream(java.io.ByteArrayInputStream(ciphertext), cipherDecrypt)
+
+        val targetFile = tempFolder.newFile("decrypted_output.db")
+        streamDecryptedDatabase(cis, targetFile)
+
+        assertEquals("Streamed decrypted database payload content", targetFile.readText())
     }
 }

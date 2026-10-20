@@ -120,4 +120,38 @@ class CulinaryScalingTest {
         assertEquals(1000f, CulinaryScaling.convertVolume(1f, "L", "ML") ?: 0f, 0.01f)
         assertNull(CulinaryScaling.convertVolume(1f, "GRAMS", "ML"))
     }
+
+    @Test
+    fun volumeConversionsCaseInsensitiveAndBidirectional() {
+        assertEquals(0.5f, CulinaryScaling.convertVolume(500f, "ml", "l") ?: 0f, 0.01f)
+        assertEquals(1f, CulinaryScaling.convertVolume(240f, "ml", "cup") ?: 0f, 0.01f)
+        assertEquals(2f, CulinaryScaling.convertVolume(30f, "ml", "tbsp") ?: 0f, 0.01f)
+        assertEquals(3f, CulinaryScaling.convertVolume(15f, "ml", "tsp") ?: 0f, 0.01f)
+        assertEquals(3f, CulinaryScaling.convertVolume(1f, "tbsp", "tsp") ?: 0f, 0.01f)
+        assertNull(CulinaryScaling.convertVolume(10f, "UNKNOWN", "ML"))
+        assertNull(CulinaryScaling.convertVolume(10f, "ML", "UNKNOWN"))
+    }
+
+    @Test
+    fun scalingDownPortionsPreservesSeasoningCharacter() {
+        val baseQuantity = 10f
+        // Scaling down from 4 portions to 2 portions (ratio = 0.5)
+        val scaledSeasoning = CulinaryScaling.scaleQuantity(
+            baseQuantity = baseQuantity,
+            basePortions = 4,
+            targetPortions = 2,
+            isAromaticOrSeasoning = true,
+        )
+        val scaledBulk = CulinaryScaling.scaleQuantity(
+            baseQuantity = baseQuantity,
+            basePortions = 4,
+            targetPortions = 2,
+            isAromaticOrSeasoning = false,
+        )
+        // Bulk scales to 5.0 (50%)
+        assertEquals(5.0f, scaledBulk, 0.01f)
+        // Seasoning sub-linear power curve: 10 * 0.5^0.75 ≈ 5.95 (greater than linear 5.0)
+        assertTrue(scaledSeasoning > scaledBulk)
+        assertEquals(5.95f, scaledSeasoning, 0.05f)
+    }
 }

@@ -57,6 +57,7 @@ class PantryTaxonomyTest {
         assertEquals(7, PantryTaxonomy.openedShelfLifeDays("DAIRY"))
         assertEquals(7, PantryTaxonomy.openedShelfLifeDays("PRODUCE"))
         assertEquals(7, PantryTaxonomy.openedShelfLifeDays("BAKERY"))
+        assertEquals(7, PantryTaxonomy.openedShelfLifeDays("BEVERAGES"))
         assertEquals(7, PantryTaxonomy.openedShelfLifeDays("CANNED"))
 
         // Stable items (14 days)
@@ -73,5 +74,25 @@ class PantryTaxonomyTest {
 
         // Default fallback (14 days)
         assertEquals(14, PantryTaxonomy.openedShelfLifeDays("UNKNOWN_CUSTOM"))
+    }
+
+    @Test
+    fun unitsListContainsSupportedMeasurementUnits() {
+        val expectedUnits = listOf(
+            "COUNT", "EACH", "G", "KG", "ML", "L", "OZ", "LB",
+            "PACKAGE", "CAN", "BOTTLE", "CUSTOM"
+        )
+        assertEquals(expectedUnits, PantryTaxonomy.units)
+    }
+
+    @Test
+    fun shelfLifePresetsAreMonotonicallyIncreasing() {
+        val presets = PantryTaxonomy.shelfLifePresetDays
+        assertTrue(presets.isNotEmpty())
+        assertEquals(0, presets.first())
+        assertEquals(365, presets.last())
+        for (i in 0 until presets.size - 1) {
+            assertTrue(presets[i] < presets[i + 1])
+        }
     }
 }

@@ -108,6 +108,29 @@ class PantryViewModelTest {
         assertEquals(listOf("COUNTER", "FRIDGE", "PANTRY"), byZone.map { it.storageLocation })
     }
 
+    @Test
+    fun sortPantryItems_sortsByNameCaseInsensitively() {
+        val itemA = PantryItem(id = 1, name = "banana")
+        val itemB = PantryItem(id = 2, name = "Apple")
+        val itemC = PantryItem(id = 3, name = "carrot")
+
+        val sorted = sortPantryItems(listOf(itemA, itemB, itemC), PantrySortOrder.NAME_ASC)
+        assertEquals(listOf("Apple", "banana", "carrot"), sorted.map { it.name })
+    }
+
+    @Test
+    fun sortPantryItems_breaksTiesByName() {
+        val now = 1_000_000L
+        val itemA = PantryItem(id = 1, name = "Zucchini", category = "PRODUCE", expirationTimestamp = now)
+        val itemB = PantryItem(id = 2, name = "Artichoke", category = "PRODUCE", expirationTimestamp = now)
+
+        val byExpiration = sortPantryItems(listOf(itemA, itemB), PantrySortOrder.EXPIRATION_SOONEST)
+        assertEquals(listOf("Artichoke", "Zucchini"), byExpiration.map { it.name })
+
+        val byCategory = sortPantryItems(listOf(itemA, itemB), PantrySortOrder.CATEGORY)
+        assertEquals(listOf("Artichoke", "Zucchini"), byCategory.map { it.name })
+    }
+
     private fun sampleItems() =
         listOf(
             PantryItem(id = 1, name = "Rice", storageLocation = "PANTRY"),
