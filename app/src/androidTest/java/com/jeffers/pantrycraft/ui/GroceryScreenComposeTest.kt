@@ -33,6 +33,12 @@ class GroceryScreenComposeTest {
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
+        val km = context.getSystemService(Context.KEYGUARD_SERVICE) as? android.app.KeyguardManager
+        org.junit.Assume.assumeTrue(
+            "Screen is locked; skipping Compose UI test",
+            km?.isKeyguardLocked == false,
+        )
+
         runBlocking {
             val dao = AppDatabase.getDatabase(context).groceryDao()
             dao.deleteByNamePrefix("Organic Honey Honey")

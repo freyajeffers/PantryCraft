@@ -7,7 +7,12 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeffers.pantrycraft.MainActivity
+import android.app.KeyguardManager
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import org.junit.Assume
 import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,6 +21,16 @@ import org.junit.runner.RunWith
 class PantryUiComposeTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<MainActivity>()
+
+    @Before
+    fun setUp() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val km = context.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+        Assume.assumeTrue(
+            "Screen is locked; skipping Compose UI test",
+            km?.isKeyguardLocked == false,
+        )
+    }
 
     @After
     fun tearDown() {

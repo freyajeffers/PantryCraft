@@ -16,18 +16,33 @@ import java.io.IOException
 @RunWith(AndroidJUnit4::class)
 class ModelRouterIntegrationTest {
     private lateinit var context: Context
+    private var originalProvider: AiProvider = AiProvider.OFFLINE_MLKIT
+    private var originalModel: String = ""
+    private var originalEndpoint: String = ""
+    private var originalApiKey: String? = null
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        originalProvider = ByokPreferences.selectedProvider(context)
+        originalModel = ByokPreferences.selectedModel(context)
+        originalEndpoint = ByokPreferences.selectedEndpoint(context)
+        originalApiKey = ByokPreferences.loadApiKey(context)
+
         ByokPreferences.clearApiKey(context)
         ByokPreferences.saveConfiguration(context, AiProvider.OFFLINE_MLKIT, "", "")
     }
 
     @After
     fun tearDown() {
-        ByokPreferences.clearApiKey(context)
-        ByokPreferences.saveConfiguration(context, AiProvider.OFFLINE_MLKIT, "", "")
+        if (originalApiKey != null) {
+            val keyChars = originalApiKey!!.toCharArray()
+            ByokPreferences.saveApiKey(context, keyChars)
+            keyChars.fill('\u0000')
+        } else {
+            ByokPreferences.clearApiKey(context)
+        }
+        ByokPreferences.saveConfiguration(context, originalProvider, originalModel, originalEndpoint)
     }
 
     @Test
