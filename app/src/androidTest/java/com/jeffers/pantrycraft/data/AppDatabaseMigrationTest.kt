@@ -35,6 +35,7 @@ class AppDatabaseMigrationTest {
         context.deleteDatabase("migration-test")
         context.deleteDatabase("migration-test-2-3")
         context.deleteDatabase("migration-test-1-3")
+        context.deleteDatabase("migration-test-unique")
     }
 
 
@@ -132,6 +133,37 @@ class AppDatabaseMigrationTest {
             assertTrue(cursor.moveToFirst())
             assertEquals("Baby Spinach", cursor.getString(cursor.getColumnIndexOrThrow("name")))
         }
+        db.close()
+    }
+
+    @Test
+    fun migrate1To2_enforcesUniqueBarcodeIndex() {
+        helper.createDatabase("migration-test-unique", 1).apply {
+            execSQL(
+                "INSERT INTO pantry_items (id, name, quantity, unit, threshold, barcode, lastUpdated) " +
+                    "VALUES (10, 'Coffee', 1.0, 'BAG', 0.0, 'barcode-unique-test', 1000)",
+            )
+            close()
+        }
+
+        val db =
+            helper.runMigrationsAndValidate(
+                "migration-test-unique",
+                2,
+                true,
+                AppDatabase.MIGRATION_1_2,
+            )
+
+        var constraintTriggered = false
+        try {
+            db.execSQL(
+                "INSERT INTO pantry_items (name, quantity, threshold, barcode, lastUpdated, storageLocation, category) " +
+                    "VALUES ('Duplicate Coffee', 2.0, 0.0, 'barcode-unique-test', 2000, 'PANTRY', 'OTHER')",
+            )
+        } catch (_: android.database.sqlite.SQLiteConstraintException) {
+            constraintTriggered = true
+        }
+        assertTrue("Unique barcode index must prevent duplicate barcode insertions", constraintTriggered)
         db.close()
     }
 }

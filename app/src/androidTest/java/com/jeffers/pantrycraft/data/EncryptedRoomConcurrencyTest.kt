@@ -67,4 +67,29 @@ class EncryptedRoomConcurrencyTest {
         val savedItems = repository.observePantryItems().first().filter { it.name.startsWith(marker) }
         assertEquals(concurrentOperations, savedItems.size)
     }
+
+    @Test
+    fun concurrentDecrementOperationsSafelyUpdateSingleItem() = runBlocking(Dispatchers.IO) {
+        val itemName = "$marker-decrement-target"
+        val itemId = repository.insertPantry(
+            PantryItem(
+                name = itemName,
+                quantity = 100f,
+                storageLocation = "PANTRY",
+            ),
+        )
+        val inserted = repository.observePantryItems().first().single { it.id == itemId }
+
+        val decrementCount = 10
+        val decrementDelta = 5f
+        val tasks = (1..decrementCount).map {
+            async {
+                repository.decrementQuantity(inserted, decrementDelta)
+            }
+        }
+        tasks.awaitAll()
+
+        val finalItem = repository.observePantryItems().first().single { it.id == itemId }
+        assertEquals(50f, finalItem.quantity)
+    }
 }

@@ -65,6 +65,19 @@ class AssetBarcodeDatabaseTest {
         }
     }
 
+    @Test
+    fun catalogDownloadServiceSkipsDownloadWhenFileAlreadyExistsAndChecksumMatches() = kotlinx.coroutines.runBlocking {
+        setupTestFoodFactsDatabase(targetDbFile)
+        val sha256 = CatalogDownloadVerifier.sha256(targetDbFile)
+        val service = CatalogDownloadService(context)
+        val returnedFile = service.downloadIfNeeded(
+            url = "https://invalid.example.test/foodfacts.db",
+            expectedSha256 = sha256,
+        )
+        assertEquals(targetDbFile.absolutePath, returnedFile.absolutePath)
+        assertTrue(returnedFile.isFile)
+    }
+
     private fun setupTestFoodFactsDatabase(file: File) {
         val db = SQLiteDatabase.openOrCreateDatabase(file, null)
         db.execSQL(
