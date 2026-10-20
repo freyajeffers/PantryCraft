@@ -9,6 +9,7 @@ import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.GroceryItem
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.Repository
+import com.jeffers.pantrycraft.data.markOpened
 import com.jeffers.pantrycraft.data.observeGroceryItems
 import com.jeffers.pantrycraft.data.observePantryItems
 import kotlinx.coroutines.delay
@@ -265,5 +266,81 @@ class ViewModelIntegrationTest {
             delay(RETRY_DELAY_MILLIS)
         }
         assertTrue(cleared)
+    }
+
+    @Test
+    fun pantryViewModelEmitsErrorOnInvalidInsert() = runBlocking {
+        val pantryVm = PantryViewModel(repository)
+        val invalidItem = PantryItem(name = "   ")
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            pantryVm.add(invalidItem)
+        }
+
+        val errorMessage = pantryVm.operationErrors.first()
+        assertEquals("Unable to add pantry item", errorMessage)
+    }
+
+    @Test
+    fun pantryViewModelIncrementAndMarkOpened() = runBlocking {
+        val pantryVm = PantryViewModel(repository)
+        val itemName = "${prefix}sour-cream"
+        val item = PantryItem(
+            name = itemName,
+            quantity = 1f,
+            category = "DAIRY",
+            storageLocation = "FRIDGE",
+            isOpened = false,
+        )
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            pantryVm.add(item)
+        }
+
+        var inserted: PantryItem? = null
+        for (attempt in 1..RETRY_ATTEMPTS) {
+            val current = repository.observePantryItems().first().firstOrNull { it.name == itemName }
+            if (current != null) {
+                inserted = current
+                break
+            }
+            delay(RETRY_DELAY_MILLIS)
+        }
+        assertNotNull(inserted)
+
+        // Increment quantity
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            pantryVm.update(inserted!!.copy(quantity = inserted!!.quantity + 1f))
+        }
+
+        var incremented: PantryItem? = null
+        for (attempt in 1..RETRY_ATTEMPTS) {
+            val current = repository.observePantryItems().first().firstOrNull { it.id == inserted!!.id }
+            if (current != null && current.quantity == 2f) {
+                incremented = current
+                break
+            }
+            delay(RETRY_DELAY_MILLIS)
+        }
+        assertNotNull(incremented)
+        assertEquals(2f, incremented!!.quantity)
+
+        // Mark as opened
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            pantryVm.update(incremented!!.markOpened())
+        }
+
+        var opened: PantryItem? = null
+        for (attempt in 1..RETRY_ATTEMPTS) {
+            val current = repository.observePantryItems().first().firstOrNull { it.id == inserted!!.id }
+            if (current != null && current.isOpened) {
+                opened = current
+                break
+            }
+            delay(RETRY_DELAY_MILLIS)
+        }
+        assertNotNull(opened)
+        assertTrue(opened!!.isOpened)
+        assertNotNull(opened!!.openedTimestamp)
     }
 }
