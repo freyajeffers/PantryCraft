@@ -83,6 +83,54 @@ class OfflineBarcodeResolverTest {
         resolver.close()
     }
 
+    @Test
+    fun associateBarcodeDefaultsEmptyCategoryAndUnitAndCoercesNegativeShelfLife() = runBlocking {
+        val dao = FakeDao()
+        val resolver = OfflineBarcodeResolver(dao)
+
+        val match = resolver.associateBarcode(
+            barcode = "  123456789012  ",
+            name = "  Organic Apples  ",
+            category = "   ",
+            defaultUnit = "   ",
+            estimatedShelfLifeDays = -5,
+        )
+
+        assertEquals("123456789012", match.barcode)
+        assertEquals("Organic Apples", match.name)
+        assertEquals("OTHER", match.category)
+        assertEquals("COUNT", match.unit)
+        assertEquals(0, match.estimatedShelfLifeDays)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rememberRejectsInvalidBarcodeFormat() = runBlocking {
+        val resolver = OfflineBarcodeResolver(FakeDao())
+        resolver.remember(CustomBarcodeItem(barcode = "short", name = "Test"))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun resolveBarcodeRejectsFifteenDigitBarcode() = runBlocking {
+        val resolver = OfflineBarcodeResolver(FakeDao())
+        resolver.resolveBarcode("123456789012345")
+        Unit
+    }
+
+    @Test
+    fun reloadCatalogInvokesProvider() {
+        var providerCalls = 0
+        val resolver = OfflineBarcodeResolver(
+            customBarcodeDao = FakeDao(),
+            assetBarcodeDatabaseProvider = {
+                providerCalls++
+                null
+            },
+        )
+
+        resolver.reloadCatalog()
+        assertEquals(1, providerCalls)
+    }
+
     private class FakeDao(
         private var item: CustomBarcodeItem? = null,
     ) : CustomBarcodeDao {

@@ -80,4 +80,30 @@ class SnapshotVisionServiceTest {
 
         assertTrue(closed)
     }
+
+    @Test
+    fun snapshotFrameDirectCloseZerosMemory() {
+        val frameBytes = byteArrayOf(1, 2, 3, 4, 5, 6, 7, 8)
+        val frame = SnapshotFrame(frameBytes)
+        frame.close()
+        assertTrue("SnapshotFrame.close() must scrub internal byte buffer", frameBytes.all { it == 0.toByte() })
+    }
+
+    @Test
+    fun closeDoesNotThrowWhenModelIsNotAutoCloseable() {
+        val nonCloseableModel = LocalVisionModel { _, _ -> "{}" }
+        val service = SnapshotVisionService(nonCloseableModel)
+        service.close()
+    }
+
+    @Test
+    fun analyzeReturnsEmptyListWhenNoItemsDetected() = runBlocking {
+        val model = LocalVisionModel { _, _ -> """{"detected_items": []}""" }
+        val service = SnapshotVisionService(model)
+        val frameBytes = byteArrayOf(11, 22, 33)
+        val items = service.analyze(SnapshotFrame(frameBytes))
+
+        assertTrue(items.isEmpty())
+        assertTrue("Frame memory must be zeroed even when no items detected", frameBytes.all { it == 0.toByte() })
+    }
 }

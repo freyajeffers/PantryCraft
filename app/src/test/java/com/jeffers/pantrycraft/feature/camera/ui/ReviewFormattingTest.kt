@@ -27,4 +27,14 @@ class ReviewFormattingTest {
         assertEquals("1.0 MB", formatFileSize(1024L * 1024L))
         assertEquals("45.2 MB", formatFileSize((45.2 * 1024.0 * 1024.0).toLong()))
     }
+
+    @Test
+    fun toShelfLifeLabelFormatsDaysAndZeroAsNone() {
+        assertEquals("None", 0.toShelfLifeLabel())
+        assertEquals("1 days", 1.toShelfLifeLabel())
+        assertEquals("3 days", 3.toShelfLifeLabel())
+        assertEquals("7 days", 7.toShelfLifeLabel())
+        assertEquals("14 days", 14.toShelfLifeLabel())
+        assertEquals("90 days", 90.toShelfLifeLabel())
+    }
 }
