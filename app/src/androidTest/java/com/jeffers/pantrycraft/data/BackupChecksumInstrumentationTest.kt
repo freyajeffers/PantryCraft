@@ -5,7 +5,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,7 +28,6 @@ class BackupChecksumInstrumentationTest {
         saveLastDbChecksum(context, originalChecksum)
     }
 
-
     @Test
     fun lastChecksumDefaultsToNull() {
         assertNull(lastDbChecksum(context))
@@ -41,5 +42,15 @@ class BackupChecksumInstrumentationTest {
 
         saveLastDbChecksum(context, null)
         assertNull(lastDbChecksum(context))
+    }
+
+    @Test
+    fun dbChecksumReturnsValidHexDigestForActiveEncryptedDatabase() {
+        val database = AppDatabase.getDatabase(context)
+        assertNotNull(database)
+        val checksum = dbChecksum(context)
+        assertNotNull(checksum)
+        assertEquals(64, checksum?.length)
+        assertTrue(checksum!!.all { it in "0123456789abcdef" })
     }
 }
