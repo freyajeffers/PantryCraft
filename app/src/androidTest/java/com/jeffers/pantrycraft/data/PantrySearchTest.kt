@@ -70,6 +70,42 @@ class PantrySearchTest {
         }
     }
 
+    @Test
+    fun searchIgnoresSoftDeletedItemsEvenWhenMatched() = runBlocking {
+        database.pantryDao().insert(
+            PantryItem(
+                name = "Active Almonds",
+                category = "SNACKS",
+                isDeleted = false,
+            ),
+        )
+        database.pantryDao().insert(
+            PantryItem(
+                name = "Deleted Almonds",
+                category = "SNACKS",
+                isDeleted = true,
+            ),
+        )
+
+        val results = findFlow("almonds").first()
+        assertEquals(1, results.size)
+        assertEquals("Active Almonds", results.single().name)
+    }
+
+    @Test
+    fun searchPrefixWithWildcardMatchesItemPrefix() = runBlocking {
+        database.pantryDao().insert(
+            PantryItem(
+                name = "Cardamom Pods",
+                category = "SPICES",
+            ),
+        )
+
+        val results = findFlow("card*").first()
+        assertEquals(1, results.size)
+        assertEquals("Cardamom Pods", results.single().name)
+    }
+
     private suspend fun findSingle(term: String) = findFlow(term).first().single()
 
     private fun findFlow(term: String) = database.pantryDao().search(searchQuery(term))

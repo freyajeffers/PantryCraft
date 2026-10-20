@@ -129,4 +129,56 @@ class DatabaseBackupManagerTest {
         }
         assertTrue(rejected)
     }
+
+    @Test
+    fun restoreRejectsInvalidFileExtension() {
+        var rejected = false
+        try {
+            DatabaseBackupManager.restoreEncryptedBackup(
+                context,
+                "backup.db",
+                "pin".toCharArray(),
+            )
+        } catch (_: Exception) {
+            rejected = true
+        }
+        assertTrue(rejected)
+    }
+
+    @Test
+    fun restoreRejectsNonExistentBackupFile() {
+        var rejected = false
+        try {
+            DatabaseBackupManager.restoreEncryptedBackup(
+                context,
+                "does_not_exist_9999.pcbk",
+                "pin".toCharArray(),
+            )
+        } catch (_: Exception) {
+            rejected = true
+        }
+        assertTrue(rejected)
+    }
+
+    @Test
+    fun restoreRejectsCorruptedMagicHeader() {
+        val backupDir = File(context.filesDir, "backups").apply { mkdirs() }
+        val corruptFile = File(backupDir, "corrupted_magic_test.pcbk")
+        try {
+            corruptFile.writeBytes("CORRUPTED_HEADER_DATA_NOT_MAGIC".toByteArray())
+            var rejected = false
+            try {
+                DatabaseBackupManager.restoreEncryptedBackup(
+                    context,
+                    corruptFile.name,
+                    "pin".toCharArray(),
+                )
+            } catch (_: Exception) {
+                rejected = true
+            }
+            assertTrue(rejected)
+        } finally {
+            corruptFile.delete()
+        }
+    }
 }

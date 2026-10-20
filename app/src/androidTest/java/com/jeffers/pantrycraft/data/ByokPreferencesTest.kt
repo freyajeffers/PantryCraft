@@ -17,16 +17,23 @@ import org.junit.runner.RunWith
 class ByokPreferencesTest {
     private lateinit var context: Context
     private var originalApiKey: String? = null
+    private lateinit var originalProvider: AiProvider
+    private lateinit var originalModel: String
+    private lateinit var originalEndpoint: String
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
         originalApiKey = ByokPreferences.loadApiKey(context)
+        originalProvider = ByokPreferences.selectedProvider(context)
+        originalModel = ByokPreferences.selectedModel(context)
+        originalEndpoint = ByokPreferences.selectedEndpoint(context)
         ByokPreferences.clearApiKey(context)
     }
 
     @After
     fun tearDown() {
+        ByokPreferences.saveConfiguration(context, originalProvider, originalModel, originalEndpoint)
         if (originalApiKey != null) {
             val keyChars = originalApiKey!!.toCharArray()
             ByokPreferences.saveApiKey(context, keyChars)

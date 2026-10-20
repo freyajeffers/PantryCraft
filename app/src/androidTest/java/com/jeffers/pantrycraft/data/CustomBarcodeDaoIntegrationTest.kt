@@ -86,4 +86,36 @@ class CustomBarcodeDaoIntegrationTest {
         assertEquals("SPICES", result.category)
         assertEquals(90, result.estimatedShelfLifeDays)
     }
+
+    @Test
+    fun deleteItemRemovesRecordFromCache() = runBlocking {
+        val item = CustomBarcodeItem(
+            barcode = barcode,
+            name = "Item To Delete",
+        )
+        customBarcodeDao.upsert(item)
+        assertNotNull(customBarcodeDao.findByBarcode(barcode))
+
+        customBarcodeDao.delete(item)
+        assertNull(customBarcodeDao.findByBarcode(barcode))
+    }
+
+    @Test
+    fun deleteByBarcodePrefixRemovesMatchingRecordsOnly() = runBlocking {
+        val pfx = "pfx-${System.nanoTime()}-"
+        val itemA = CustomBarcodeItem(barcode = "${pfx}001", name = "Prefix Item A")
+        val itemB = CustomBarcodeItem(barcode = "${pfx}002", name = "Prefix Item B")
+        val itemC = CustomBarcodeItem(barcode = "other-${pfx}003", name = "Other Prefix Item")
+
+        customBarcodeDao.upsert(itemA)
+        customBarcodeDao.upsert(itemB)
+        customBarcodeDao.upsert(itemC)
+
+        val deletedCount = customBarcodeDao.deleteByBarcodePrefix(pfx)
+        assertEquals(2, deletedCount)
+
+        assertNull(customBarcodeDao.findByBarcode("${pfx}001"))
+        assertNull(customBarcodeDao.findByBarcode("${pfx}002"))
+        assertNotNull(customBarcodeDao.findByBarcode("other-${pfx}003"))
+    }
 }
