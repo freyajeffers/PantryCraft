@@ -65,4 +65,61 @@ class VisionOutputParserTest {
         assertEquals(1, result.size)
         assertTrue(result.single().name == "Valid")
     }
+
+    @Test
+    fun parsesExtendedFieldsAndNormalizesCasing() {
+        val json = """
+            {
+                "detected_items": [
+                    {
+                        "name": "Organic Honey",
+                        "category": "condiments",
+                        "storage_location": "pantry",
+                        "quantity": 1.5,
+                        "unit": "jar",
+                        "confidence": 0.88,
+                        "estimated_shelf_life_days": 365,
+                        "is_aromatic_or_seasoning": true,
+                        "is_opened": true,
+                        "threshold": 0.5,
+                        "barcode": "123456789012",
+                        "custom_unit_name": "mason jar",
+                        "condition_notes": "Unopened seal intact"
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        val item = VisionOutputParser().parse(json).single()
+        assertEquals("Organic Honey", item.name)
+        assertEquals("CONDIMENTS", item.category)
+        assertEquals("PANTRY", item.storageLocation)
+        assertEquals(1.5f, item.quantity, 0.001f)
+        assertEquals("JAR", item.unit)
+        assertEquals(0.88f, item.confidence, 0.001f)
+        assertEquals(365, item.estimatedShelfLifeDays)
+        assertTrue(item.isAromaticOrSeasoning)
+        assertTrue(item.isOpened)
+        assertEquals(0.5f, item.threshold, 0.001f)
+        assertEquals("123456789012", item.barcode)
+        assertEquals("mason jar", item.customUnitName)
+        assertEquals("Unopened seal intact", item.conditionNotes)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun throwsIllegalArgumentExceptionWhenNoJsonPresent() {
+        VisionOutputParser().parse("No json object here at all")
+    }
+
+    @Test
+    fun clampsNegativeQuantitiesAndThresholds() {
+        val json = """
+            {"detected_items":[{"name":"Flour","quantity":-3.0,"threshold":-1.0,"confidence":-0.5}]}
+        """.trimIndent()
+
+        val item = VisionOutputParser().parse(json).single()
+        assertEquals(0f, item.quantity, 0.001f)
+        assertEquals(0f, item.threshold, 0.001f)
+        assertEquals(0f, item.confidence, 0.001f)
+    }
 }
