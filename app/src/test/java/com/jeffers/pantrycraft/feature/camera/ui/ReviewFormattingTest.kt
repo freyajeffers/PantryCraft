@@ -12,6 +12,8 @@ class ReviewFormattingTest {
         assertEquals("0", formatQuantity(0.0f))
         assertEquals("100.125", formatQuantity(100.125f))
         assertEquals("3.75", formatQuantity(3.750f))
+        assertEquals("0.05", formatQuantity(0.050f))
+        assertEquals("-1", formatQuantity(-1.0f))
     }
 
     @Test
@@ -21,6 +23,7 @@ class ReviewFormattingTest {
         assertEquals("1023 B", formatFileSize(1023L))
         assertEquals("1.0 KB", formatFileSize(1024L))
         assertEquals("1.5 KB", formatFileSize(1536L))
+        assertEquals("1024.0 KB", formatFileSize(1024L * 1024L - 1L))
         assertEquals("1.0 MB", formatFileSize(1024L * 1024L))
         assertEquals("45.2 MB", formatFileSize((45.2 * 1024.0 * 1024.0).toLong()))
     }
