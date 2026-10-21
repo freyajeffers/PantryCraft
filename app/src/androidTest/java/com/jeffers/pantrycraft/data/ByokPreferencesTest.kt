@@ -90,4 +90,38 @@ class ByokPreferencesTest {
         assertEquals(testModel, ByokPreferences.selectedModel(context))
         assertEquals(testEndpoint, ByokPreferences.selectedEndpoint(context))
     }
+
+    @Test
+    fun saveConfigurationBlankModelAndEndpointDefaultsToProviderDefaults() {
+        val testProvider = AiProvider.ANTHROPIC
+        ByokPreferences.saveConfiguration(context, testProvider, "   ", "   ")
+
+        assertEquals(testProvider, ByokPreferences.selectedProvider(context))
+        assertEquals(testProvider.defaultModel, ByokPreferences.selectedModel(context))
+        assertEquals(testProvider.defaultEndpoint, ByokPreferences.selectedEndpoint(context))
+    }
+
+    @Test
+    fun loadApiKeyReturnsNullWhenCorrupted() {
+        ByokPreferences.saveApiKey(context, "test-api-key-for-corruption".toCharArray())
+        val prefs = context.getSharedPreferences("byok_ai_preferences", Context.MODE_PRIVATE)
+        prefs.edit().putString("api_key_ciphertext", "VGhpcyBJcyBDb3JydXB0ZWREYXRh").apply()
+
+        assertNull(ByokPreferences.loadApiKey(context))
+    }
+
+    @Test
+    fun loadApiKeyReturnsNullWhenIvOrCiphertextMissing() {
+        ByokPreferences.saveApiKey(context, "valid-key".toCharArray())
+        val prefs = context.getSharedPreferences("byok_ai_preferences", Context.MODE_PRIVATE)
+
+        // Missing IV
+        prefs.edit().remove("api_key_iv").apply()
+        assertNull(ByokPreferences.loadApiKey(context))
+
+        // Restore IV, remove ciphertext
+        ByokPreferences.saveApiKey(context, "valid-key".toCharArray())
+        prefs.edit().remove("api_key_ciphertext").apply()
+        assertNull(ByokPreferences.loadApiKey(context))
+    }
 }
