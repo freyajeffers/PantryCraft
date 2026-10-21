@@ -118,4 +118,25 @@ class GroceryDaoIntegrationTest {
         assertEquals(500f, pantryItem.quantity)
         assertEquals("ML", pantryItem.unit)
     }
+
+    @Test
+    fun groceryDaoDirectDeleteAndPrefixDelete() = runBlocking {
+        val db = AppDatabase.getDatabase(context)
+        val dao = db.groceryDao()
+
+        val item1 = GroceryItem(name = "$marker-Direct1", quantity = 1f)
+        val item2 = GroceryItem(name = "$marker-Direct2", quantity = 2f)
+        val id1 = dao.insert(item1)
+        val id2 = dao.insert(item2)
+
+        dao.delete(item1.copy(id = id1))
+        val afterDeleteOne = dao.observeAllGroceryItems().first().filter { it.name.startsWith(marker) }
+        assertEquals(1, afterDeleteOne.size)
+        assertEquals(id2, afterDeleteOne.first().id)
+
+        val deletedCount = dao.deleteByNamePrefix(marker)
+        assertEquals(1, deletedCount)
+        val afterPrefixDelete = dao.observeAllGroceryItems().first().filter { it.name.startsWith(marker) }
+        assertTrue(afterPrefixDelete.isEmpty())
+    }
 }
