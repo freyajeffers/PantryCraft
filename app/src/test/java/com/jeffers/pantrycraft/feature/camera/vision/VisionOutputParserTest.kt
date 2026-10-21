@@ -122,4 +122,54 @@ class VisionOutputParserTest {
         assertEquals(0f, item.threshold, 0.001f)
         assertEquals(0f, item.confidence, 0.001f)
     }
+
+    @Test
+    fun parsesAlternateBoundingBoxObjectKeyNames() {
+        val json = """
+            {"detected_items":[{"name":"Pasta","bounding_box":{"ymin":0.1,"xmin":0.2,"ymax":0.8,"xmax":0.9}}]}
+        """.trimIndent()
+
+        val item = VisionOutputParser().parse(json).single()
+        assertEquals(0.1f, item.boundingBox.ymin, 0.001f)
+        assertEquals(0.2f, item.boundingBox.xmin, 0.001f)
+        assertEquals(0.8f, item.boundingBox.ymax, 0.001f)
+        assertEquals(0.9f, item.boundingBox.xmax, 0.001f)
+    }
+
+    @Test
+    fun handlesMalformedBoundingBoxGracefully() {
+        // Less than 4 values -> falls back to default 0,0,1,1
+        val jsonShortArray = """
+            {"detected_items":[{"name":"Tea","bounding_box":[0.1, 0.2]}]}
+        """.trimIndent()
+        val itemShort = VisionOutputParser().parse(jsonShortArray).single()
+        assertEquals(0f, itemShort.boundingBox.ymin, 0.001f)
+        assertEquals(1f, itemShort.boundingBox.ymax, 0.001f)
+
+        // Non-numeric/NaN in array -> falls back to default 0,0,1,1
+        val jsonNan = """
+            {"detected_items":[{"name":"Coffee","bounding_box":["nan", 0.2, 0.8, 0.9]}]}
+        """.trimIndent()
+        val itemNan = VisionOutputParser().parse(jsonNan).single()
+        assertEquals(0f, itemNan.boundingBox.ymin, 0.001f)
+        assertEquals(1f, itemNan.boundingBox.ymax, 0.001f)
+    }
+
+    @Test
+    fun stripsControlCharactersAndAutoClosesUnclosedJson() {
+        // Contains control character \u0007 (BEL) and missing final closing brace '}'
+        val raw = "```json\n{\"detected_items\":[{\"name\":\"Paprika\u0007\"}]"
+        val items = VisionOutputParser().parse(raw)
+        assertEquals(1, items.size)
+        assertEquals("Paprika", items.single().name)
+    }
+
+    @Test
+    fun clampsNegativeEstimatedShelfLifeDaysToZero() {
+        val json = """
+            {"detected_items":[{"name":"Bread","estimated_shelf_life_days":-10}]}
+        """.trimIndent()
+        val item = VisionOutputParser().parse(json).single()
+        assertEquals(0, item.estimatedShelfLifeDays)
+    }
 }

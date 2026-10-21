@@ -201,4 +201,36 @@ class ParsedVisionItemMappingTest {
         assertTrue(updated.isOpened)
         assertEquals(now, updated.openedTimestamp)
     }
+
+    @Test
+    fun toUpdatedPantryItemWithUnopenedStatusClearsOpenedTimestampAndPreservesDeletedFlag() {
+        val now = 2_000_000L
+        val existing = PantryItem(
+            id = 55L,
+            name = "Marinara",
+            category = "CANNED",
+            isOpened = true,
+            openedTimestamp = 1_000_000L,
+            isDeleted = true,
+        )
+
+        val visionItem = ParsedVisionItem(
+            name = "Marinara",
+            category = "CANNED",
+            storageLocation = "PANTRY",
+            quantity = 2f,
+            unit = "CAN",
+            confidence = 0.95f,
+            estimatedShelfLifeDays = 60,
+            isAromaticOrSeasoning = false,
+            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+            conditionNotes = null,
+            isOpened = false,
+        )
+
+        val updated = visionItem.toUpdatedPantryItem(existing, now)
+        assertEquals(false, updated.isOpened)
+        org.junit.Assert.assertNull(updated.openedTimestamp)
+        assertEquals(true, updated.isDeleted)
+    }
 }
