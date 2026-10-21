@@ -269,6 +269,49 @@ class ViewModelIntegrationTest {
     }
 
     @Test
+    fun groceryViewModelRestockCheckedTransfersItemsToPantryAndEmitsCount() = runBlocking {
+        val groceryVm = GroceryViewModel(repository)
+        val restockName = "${prefix}restock-vanilla"
+        val groceryItem = GroceryItem(
+            name = restockName,
+            quantity = 2f,
+            unit = "BOTTLE",
+            checked = true,
+        )
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            groceryVm.add(groceryItem)
+        }
+
+        // Wait until item is in grocery list
+        for (attempt in 1..RETRY_ATTEMPTS) {
+            val items = repository.observeGroceryItems().first().filter { it.name == restockName }
+            if (items.isNotEmpty()) break
+            delay(RETRY_DELAY_MILLIS)
+        }
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            groceryVm.restockChecked()
+        }
+
+        // Verify item is transferred to pantry and removed from grocery
+        var restockedToPantry = false
+        for (attempt in 1..RETRY_ATTEMPTS) {
+            val pantryItems = repository.observePantryItems().first().filter { it.name == restockName }
+            val groceryItems = repository.observeGroceryItems().first().filter { it.name == restockName }
+            if (pantryItems.isNotEmpty() && groceryItems.isEmpty()) {
+                val pantry = pantryItems.first()
+                if (pantry.quantity == 2f && pantry.unit == "BOTTLE") {
+                    restockedToPantry = true
+                    break
+                }
+            }
+            delay(RETRY_DELAY_MILLIS)
+        }
+        assertTrue("Checked item must be restocked to pantry and removed from grocery", restockedToPantry)
+    }
+
+    @Test
     fun pantryViewModelEmitsErrorOnInvalidInsert() = runBlocking {
         val pantryVm = PantryViewModel(repository)
         val invalidItem = PantryItem(name = "   ")
