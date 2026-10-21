@@ -18,30 +18,31 @@ internal data class PantryScreenScaffoldState(
     val scope: CoroutineScope,
 )
 
+internal fun buildPantryScaffoldProps(state: PantryScreenScaffoldState): PantryScaffoldProps =
+    PantryScaffoldProps(
+        selectedSortOrder = state.selectedSortOrder,
+        onSortSelected = state.viewModel::selectSortOrder,
+        onAddClick = { state.onOpenEditor(null) },
+        items = state.items,
+        selectedLocation = state.selectedLocation,
+        searchQuery = state.searchQuery,
+        onSearchQueryChange = state.viewModel::setSearchQuery,
+        onLocationSelected = state.viewModel::selectLocation,
+        onDecrement = { state.viewModel.decrement(it, 1f) },
+        onIncrement = { state.viewModel.update(it.copy(quantity = it.quantity + 1f)) },
+        onUse = state.onUseItem,
+        onEdit = state.onOpenEditor,
+        onMarkOpened = { state.viewModel.update(it.markOpened()) },
+        onAddToGrocery = {
+            state.viewModel.addGroceryItem(it.name, 1f, it.unit, fromPantryId = it.id)
+        },
+        onDelete = state.viewModel::delete,
+        onRestore = state.viewModel::restore,
+        snackbarHostState = state.snackbarHostState,
+        scope = state.scope,
+    )
+
 @Composable
 internal fun PantryScreenScaffold(state: PantryScreenScaffoldState) {
-    PantryScaffoldContent(
-        PantryScaffoldProps(
-            selectedSortOrder = state.selectedSortOrder,
-            onSortSelected = state.viewModel::selectSortOrder,
-            onAddClick = { state.onOpenEditor(null) },
-            items = state.items,
-            selectedLocation = state.selectedLocation,
-            searchQuery = state.searchQuery,
-            onSearchQueryChange = state.viewModel::setSearchQuery,
-            onLocationSelected = state.viewModel::selectLocation,
-            onDecrement = { state.viewModel.decrement(it, 1f) },
-            onIncrement = { state.viewModel.update(it.copy(quantity = it.quantity + 1f)) },
-            onUse = state.onUseItem,
-            onEdit = state.onOpenEditor,
-            onMarkOpened = { state.viewModel.update(it.markOpened()) },
-            onAddToGrocery = {
-                state.viewModel.addGroceryItem(it.name, 1f, it.unit, fromPantryId = it.id)
-            },
-            onDelete = state.viewModel::delete,
-            onRestore = state.viewModel::restore,
-            snackbarHostState = state.snackbarHostState,
-            scope = state.scope,
-        ),
-    )
+    PantryScaffoldContent(buildPantryScaffoldProps(state))
 }

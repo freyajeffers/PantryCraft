@@ -177,4 +177,21 @@ class RepositoryGroceryIntegrationTest {
         assertEquals("${prefix}black pepper", items.first().name)
         assertEquals(false, items.first().checked)
     }
+
+    @Test
+    fun deleteGroceryRemovesSingleItem() = runBlocking {
+        val item = GroceryItem(
+            name = "${prefix}olive oil",
+            quantity = 1f,
+            unit = "BOTTLE",
+            checked = false,
+        )
+        repository.insertGrocery(item)
+
+        val inserted = repository.observeGroceryItems().first().first { it.name == "${prefix}olive oil" }
+        repository.deleteGrocery(inserted)
+
+        val remaining = repository.observeGroceryItems().first().filter { it.name == "${prefix}olive oil" }
+        assertTrue("Deleted grocery item must be removed from repository", remaining.isEmpty())
+    }
 }

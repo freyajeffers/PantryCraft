@@ -129,6 +129,61 @@ class PantryViewModelTest {
 
         val byCategory = sortPantryItems(listOf(itemA, itemB), PantrySortOrder.CATEGORY)
         assertEquals(listOf("Artichoke", "Zucchini"), byCategory.map { it.name })
+
+        val byStorageZone = sortPantryItems(listOf(
+            PantryItem(id = 1, name = "Zucchini", storageLocation = "FRIDGE"),
+            PantryItem(id = 2, name = "Artichoke", storageLocation = "FRIDGE"),
+        ), PantrySortOrder.STORAGE_LOCATION)
+        assertEquals(listOf("Artichoke", "Zucchini"), byStorageZone.map { it.name })
+    }
+
+    @Test
+    fun filterPantryItems_exactCutoffBoundaryCondition() {
+        val now = 1_000_000_000L
+        val fiveDaysMillis = 5L * 24L * 60L * 60L * 1000L
+        val exactlyAtCutoff = PantryItem(id = 1, name = "Milk", expirationTimestamp = now + fiveDaysMillis)
+        val pastCutoff = PantryItem(id = 2, name = "Canned Soup", expirationTimestamp = now + fiveDaysMillis + 1L)
+
+        val filtered = filterPantryItems(
+            listOf(exactlyAtCutoff, pastCutoff),
+            PantryLocationFilter.EXPIRING_SOON,
+            now = now,
+        )
+
+        assertEquals(1, filtered.size)
+        assertEquals("Milk", filtered.first().name)
+    }
+
+    @Test
+    fun filterPantryItems_caseInsensitiveLocationMatch() {
+        val item = PantryItem(id = 1, name = "Butter", storageLocation = "fridge")
+        val filtered = filterPantryItems(listOf(item), PantryLocationFilter.FRIDGE)
+
+        assertEquals(1, filtered.size)
+        assertEquals("Butter", filtered.first().name)
+    }
+
+    @Test
+    fun pantryEnumsHaveExpectedLabelsAndLocations() {
+        assertEquals("All", PantryLocationFilter.ALL.label)
+        assertEquals("Pantry", PantryLocationFilter.PANTRY.label)
+        assertEquals("Fridge", PantryLocationFilter.FRIDGE.label)
+        assertEquals("Freezer", PantryLocationFilter.FREEZER.label)
+        assertEquals("Counter", PantryLocationFilter.COUNTER.label)
+        assertEquals("Expiring soon", PantryLocationFilter.EXPIRING_SOON.label)
+
+        assertEquals(null, PantryLocationFilter.ALL.storageLocation)
+        assertEquals("PANTRY", PantryLocationFilter.PANTRY.storageLocation)
+        assertEquals("FRIDGE", PantryLocationFilter.FRIDGE.storageLocation)
+        assertEquals("FREEZER", PantryLocationFilter.FREEZER.storageLocation)
+        assertEquals("COUNTER", PantryLocationFilter.COUNTER.storageLocation)
+        assertEquals(null, PantryLocationFilter.EXPIRING_SOON.storageLocation)
+
+        assertEquals("Name (A-Z)", PantrySortOrder.NAME_ASC.label)
+        assertEquals("Expiring soonest", PantrySortOrder.EXPIRATION_SOONEST.label)
+        assertEquals("Recently updated", PantrySortOrder.RECENTLY_UPDATED.label)
+        assertEquals("Category", PantrySortOrder.CATEGORY.label)
+        assertEquals("Storage zone", PantrySortOrder.STORAGE_LOCATION.label)
     }
 
     private fun sampleItems() =
