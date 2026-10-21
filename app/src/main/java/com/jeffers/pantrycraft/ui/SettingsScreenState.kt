@@ -39,7 +39,7 @@ internal data class SettingsDialogActions(
     val requestResetDatabase: () -> Unit,
 )
 
-private class SettingsDialogStateHolder(private val context: Context) {
+internal class SettingsDialogStateHolder(private val context: Context) {
     var showPinDialog by mutableStateOf(false)
     var pinDialogAction: (CharArray) -> Unit = {}
     var pinText by mutableStateOf("")

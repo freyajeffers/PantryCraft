@@ -1,0 +1,187 @@
+package com.jeffers.pantrycraft.ui
+
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.jeffers.pantrycraft.data.AutomaticBackupPreferences
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+
+@RunWith(AndroidJUnit4::class)
+class SettingsBackupStateTest {
+    private val context: Context = ApplicationProvider.getApplicationContext()
+    private var originalEnabled: Boolean = false
+    private var originalInterval: Long = 1440L
+    private var originalPin: CharArray? = null
+
+    @Before
+    fun setUp() {
+        originalEnabled = AutomaticBackupPreferences.isEnabled(context)
+        originalInterval = AutomaticBackupPreferences.intervalMinutes(context)
+        originalPin = AutomaticBackupPreferences.loadPin(context)
+    }
+
+    @After
+    fun tearDown() {
+        AutomaticBackupPreferences.setSchedule(context, originalEnabled, originalInterval)
+        if (originalPin != null) {
+            AutomaticBackupPreferences.savePin(context, originalPin!!)
+        } else {
+            clearPinPreferences()
+        }
+    }
+
+    private fun clearPinPreferences() {
+        context
+            .getSharedPreferences("backup_preferences", Context.MODE_PRIVATE)
+            .edit()
+            .remove("automatic_backup_pin_ciphertext")
+            .remove("automatic_backup_pin_iv")
+            .apply()
+    }
+
+    @Test
+    fun buildAutoBackupPropsPassesThroughArguments() {
+        val args = AutoBackupScheduleArgs(
+            enabled = true,
+            intervalMinutes = 720L,
+            databaseHasUserData = true,
+            onScheduleChange = { _, _ -> },
+            onRequirePin = {},
+            onPerformBackup = {},
+        )
+
+        val props = buildAutoBackupProps(context, args)
+
+        assertTrue(props.enabled)
+        assertEquals(720L, props.intervalMinutes)
+        assertTrue(props.databaseHasUserData)
+    }
+
+    @Test
+    fun onDisableDisablesScheduleAndScheduler() {
+        AutomaticBackupPreferences.setSchedule(context, enabled = true, intervalMinutes = 1440L)
+        var scheduleChangeCalled = false
+        var updatedEnabled = true
+        var updatedInterval = 0L
+
+        val args = AutoBackupScheduleArgs(
+            enabled = true,
+            intervalMinutes = 1440L,
+            databaseHasUserData = true,
+            onScheduleChange = { enabled, minutes ->
+                scheduleChangeCalled = true
+                updatedEnabled = enabled
+                updatedInterval = minutes
+            },
+            onRequirePin = {},
+            onPerformBackup = {},
+        )
+
+        val props = buildAutoBackupProps(context, args)
+        props.onDisable()
+
+        assertTrue("onScheduleChange must be called", scheduleChangeCalled)
+        assertFalse(updatedEnabled)
+        assertEquals(1440L, updatedInterval)
+        assertFalse(AutomaticBackupPreferences.isEnabled(context))
+    }
+
+    @Test
+    fun onEnableRequestedSavesPinAndEnablesSchedule() {
+        clearPinPreferences()
+        AutomaticBackupPreferences.setSchedule(context, enabled = false, intervalMinutes = 1440L)
+
+        var scheduleChangeCalled = false
+        var updatedEnabled = false
+        var updatedInterval = 0L
+
+        val args = AutoBackupScheduleArgs(
+            enabled = false,
+            intervalMinutes = 1440L,
+            databaseHasUserData = true,
+            onScheduleChange = { enabled, minutes ->
+                scheduleChangeCalled = true
+                updatedEnabled = enabled
+                updatedInterval = minutes
+            },
+            onRequirePin = { callback ->
+                val testPin = "7890".toCharArray()
+                callback(testPin)
+            },
+            onPerformBackup = {},
+        )
+
+        val props = buildAutoBackupProps(context, args)
+        props.onEnableRequested()
+
+        assertTrue("onScheduleChange must be called", scheduleChangeCalled)
+        assertTrue(updatedEnabled)
+        assertEquals(1440L, updatedInterval)
+        assertTrue(AutomaticBackupPreferences.isEnabled(context))
+
+        val loadedPin = AutomaticBackupPreferences.loadPin(context)
+        assertEquals("7890", loadedPin?.concatToString())
+        loadedPin?.fill('\u0000')
+    }
+
+    @Test
+    fun onIntervalSelectedUpdatesScheduleAndInterval() {
+        var scheduleChangeCalled = false
+        var updatedEnabled = false
+        var updatedInterval = 0L
+
+        val args = AutoBackupScheduleArgs(
+            enabled = false,
+            intervalMinutes = 1440L,
+            databaseHasUserData = true,
+            onScheduleChange = { enabled, minutes ->
+                scheduleChangeCalled = true
+                updatedEnabled = enabled
+                updatedInterval = minutes
+            },
+            onRequirePin = {},
+            onPerformBackup = {},
+        )
+
+        val props = buildAutoBackupProps(context, args)
+        props.onIntervalSelected(360L)
+
+        assertTrue("onScheduleChange must be called", scheduleChangeCalled)
+        assertTrue(updatedEnabled)
+        assertEquals(360L, updatedInterval)
+        assertEquals(360L, AutomaticBackupPreferences.intervalMinutes(context))
+        assertTrue(AutomaticBackupPreferences.isEnabled(context))
+    }
+
+    @Test
+    fun onBackupNowDelegatesToRequirePinAndPerformBackup() {
+        var requirePinInvoked = false
+        var backupPinSupplied: String? = null
+
+        val args = AutoBackupScheduleArgs(
+            enabled = true,
+            intervalMinutes = 1440L,
+            databaseHasUserData = true,
+            onScheduleChange = { _, _ -> },
+            onRequirePin = { action ->
+                requirePinInvoked = true
+                action("4321".toCharArray())
+            },
+            onPerformBackup = { pinChars ->
+                backupPinSupplied = pinChars.concatToString()
+            },
+        )
+
+        val props = buildAutoBackupProps(context, args)
+        props.onBackupNow()
+
+        assertTrue(requirePinInvoked)
+        assertEquals("4321", backupPinSupplied)
+    }
+}

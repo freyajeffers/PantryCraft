@@ -37,7 +37,7 @@ private data class BackupLauncherCallbacks(
     val onRequireRestore: (suspend () -> Unit) -> Unit,
 )
 
-private data class AutoBackupScheduleArgs(
+internal data class AutoBackupScheduleArgs(
     val enabled: Boolean,
     val intervalMinutes: Long,
     val databaseHasUserData: Boolean,
@@ -192,7 +192,7 @@ private fun rememberBackupLaunchers(
     )
 }
 
-private fun buildAutoBackupProps(
+internal fun buildAutoBackupProps(
     context: Context,
     args: AutoBackupScheduleArgs,
 ): AutomaticBackupProps =
