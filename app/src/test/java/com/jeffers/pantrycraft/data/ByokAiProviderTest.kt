@@ -44,4 +44,21 @@ class ByokAiProviderTest {
         assertTrue(AiProvider.ANTHROPIC.defaultModel.isNotBlank())
         assertTrue(AiProvider.OLLAMA.defaultModel.isNotBlank())
     }
+
+    @Test
+    fun allProvidersDefineNonEmptyIdAndLabel() {
+        for (provider in AiProvider.entries) {
+            assertTrue(provider.id.isNotBlank())
+            assertTrue(provider.label.isNotBlank())
+        }
+    }
+
+    @Test
+    fun providerDisplayLabelsAreAccurate() {
+        assertEquals("On-Device Offline (ML Kit / Local)", AiProvider.OFFLINE_MLKIT.label)
+        assertEquals("Google Gemini (BYOKey)", AiProvider.GEMINI.label)
+        assertEquals("OpenAI / OpenRouter (BYOKey)", AiProvider.OPENAI.label)
+        assertEquals("Anthropic Claude (BYOKey)", AiProvider.ANTHROPIC.label)
+        assertEquals("Self-Hosted Ollama (Local LAN)", AiProvider.OLLAMA.label)
+    }
 }
