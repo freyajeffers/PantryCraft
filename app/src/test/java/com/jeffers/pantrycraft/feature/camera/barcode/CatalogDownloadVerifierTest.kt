@@ -51,4 +51,33 @@ class CatalogDownloadVerifierTest {
         val exception = CatalogDownloadException("Catalog download timed out")
         assertEquals("Catalog download timed out", exception.message)
     }
+
+    @Test
+    fun sha256ProducesHexLowercaseChars() {
+        val file = Files.createTempFile("hextest", ".db").toFile()
+        try {
+            file.writeBytes("Digest test payload".toByteArray())
+            val digest = CatalogDownloadVerifier.sha256(file)
+            assertEquals(64, digest.length)
+            org.junit.Assert.assertTrue(digest.all { it in "0123456789abcdef" })
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
+    fun sha256DifferentContentsProduceDistinctDigests() {
+        val fileA = Files.createTempFile("fileA", ".db").toFile()
+        val fileB = Files.createTempFile("fileB", ".db").toFile()
+        try {
+            fileA.writeBytes("Payload A".toByteArray())
+            fileB.writeBytes("Payload B".toByteArray())
+            val digestA = CatalogDownloadVerifier.sha256(fileA)
+            val digestB = CatalogDownloadVerifier.sha256(fileB)
+            org.junit.Assert.assertNotEquals(digestA, digestB)
+        } finally {
+            fileA.delete()
+            fileB.delete()
+        }
+    }
 }
