@@ -149,6 +149,57 @@ class BatchReviewSheetStateTest {
         assertEquals("111222333", updatedItem.barcode)
     }
 
+    @Test
+    fun loadSingleItemAutomaticallySetsAromaticForSpicesAndCondiments() {
+        val spiceItem = createItem("Cumin Seeds", 1f).copy(category = "SPICES", isAromaticOrSeasoning = false)
+        val state = BatchReviewSheetState(listOf(spiceItem))
+
+        state.loadSingleItem(spiceItem)
+        assertTrue(state.editIsAromatic)
+
+        val condimentItem = createItem("Soy Sauce", 1f).copy(category = "CONDIMENTS", isAromaticOrSeasoning = false)
+        state.loadSingleItem(condimentItem)
+        assertTrue(state.editIsAromatic)
+    }
+
+    @Test
+    fun applyEditsToNullsCustomUnitNameWhenUnitIsNotCustom() {
+        val state = BatchReviewSheetState(listOf(createItem("Flour", 1f)))
+        state.loadForEditing(0)
+
+        state.editUnit = "KG"
+        state.editCustomUnitName = "Bag"
+
+        val updated = state.applyEditsTo(state.reviewItems[0].item)
+        assertEquals("KG", updated.unit)
+        assertNull(updated.customUnitName)
+    }
+
+    @Test
+    fun applyEditsToHandlesInvalidOrNegativeThreshold() {
+        val state = BatchReviewSheetState(listOf(createItem("Sugar", 2f)))
+        state.loadForEditing(0)
+
+        state.editThresholdText = "-10"
+        val clampedNegative = state.applyEditsTo(state.reviewItems[0].item)
+        assertEquals(0f, clampedNegative.threshold)
+
+        state.editThresholdText = "not_a_number"
+        val nonNumeric = state.applyEditsTo(state.reviewItems[0].item)
+        assertEquals(0f, nonNumeric.threshold)
+    }
+
+    @Test
+    fun updateItemDirectlyModifiesIndexedReviewItem() {
+        val state = BatchReviewSheetState(listOf(createItem("Apple", 1f), createItem("Orange", 2f)))
+
+        state.updateItem(1) { it.copy(name = "Blood Orange", quantity = 5f) }
+
+        assertEquals("Blood Orange", state.reviewItems[1].item.name)
+        assertEquals(5f, state.reviewItems[1].item.quantity)
+        assertEquals("Apple", state.reviewItems[0].item.name)
+    }
+
     private fun createItem(
         name: String,
         quantity: Float,
