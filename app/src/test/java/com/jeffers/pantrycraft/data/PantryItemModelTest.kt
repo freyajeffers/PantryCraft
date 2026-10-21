@@ -93,4 +93,43 @@ class PantryItemModelTest {
         assertFalse(item.isDeleted)
         assertFalse(item.isOpened)
     }
+
+    @Test
+    fun groceryItemDefaultsAndCopySemantics() {
+        val item = GroceryItem(name = "Brown Sugar")
+        assertEquals("Brown Sugar", item.name)
+        assertEquals(1f, item.quantity)
+        assertEquals(null, item.unit)
+        assertFalse(item.checked)
+        assertEquals(null, item.fromPantryId)
+        assertTrue(item.createdAt > 0L)
+
+        val updated = item.copy(quantity = 2.5f, checked = true, unit = "KG", fromPantryId = 101L)
+        assertEquals(2.5f, updated.quantity)
+        assertTrue(updated.checked)
+        assertEquals("KG", updated.unit)
+        assertEquals(101L, updated.fromPantryId)
+    }
+
+    @Test
+    fun markOpenedWithSpicesCalculatesNinetyDayShelfLife() {
+        val spice = PantryItem(
+            name = "Paprika",
+            category = "SPICES",
+            quantity = 1f,
+        )
+        val opened = spice.markOpened(now)
+        assertEquals(now + 90 * millisPerDay, opened.expirationTimestamp)
+    }
+
+    @Test
+    fun markOpenedWithFrozenCalculatesThirtyDayShelfLife() {
+        val frozenItem = PantryItem(
+            name = "Frozen Berries",
+            category = "FROZEN",
+            quantity = 1f,
+        )
+        val opened = frozenItem.markOpened(now)
+        assertEquals(now + 30 * millisPerDay, opened.expirationTimestamp)
+    }
 }

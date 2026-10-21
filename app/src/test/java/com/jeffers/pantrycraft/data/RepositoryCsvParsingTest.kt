@@ -42,4 +42,16 @@ class RepositoryCsvParsingTest {
         assertNull(optionalCsvValue(cols, 3, available = true))
         assertNull(optionalCsvValue(cols, 0, available = false))
     }
+
+    @Test
+    fun parseCsvLineHandlesEmptyInputAndConsecutiveCommas() {
+        assertEquals(listOf(""), parseCsvLine(""))
+        assertEquals(listOf("", "", "", ""), parseCsvLine(",,,"))
+    }
+
+    @Test
+    fun parseCsvLineHandlesSingleQuotedValueAndUnclosedQuote() {
+        assertEquals(listOf("Honey"), parseCsvLine("\"Honey\""))
+        assertEquals(listOf("Raw Honey, unfiltered"), parseCsvLine("\"Raw Honey, unfiltered"))
+    }
 }
