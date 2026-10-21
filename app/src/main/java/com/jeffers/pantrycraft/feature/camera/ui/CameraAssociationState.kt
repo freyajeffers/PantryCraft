@@ -22,6 +22,49 @@ internal data class CameraAssociationState(
     val onDismiss: () -> Unit,
 )
 
+internal data class AssociatedBarcodeArgs(
+    val name: String,
+    val category: String,
+    val unit: String,
+    val storageLocation: String,
+    val shelfLifeDays: Int,
+    val currentTimeMillis: Long = System.currentTimeMillis(),
+)
+
+internal suspend fun saveAssociatedBarcode(
+    state: CameraAssociationState,
+    args: AssociatedBarcodeArgs,
+) {
+    state.resolver.associateBarcode(
+        barcode = state.barcode,
+        name = args.name,
+        category = args.category,
+        defaultUnit = args.unit,
+        estimatedShelfLifeDays = args.shelfLifeDays,
+    )
+    val expiration =
+        if (args.shelfLifeDays > 0) {
+            args.currentTimeMillis + args.shelfLifeDays * MILLIS_PER_DAY
+        } else {
+            null
+        }
+    state.repository.insertPantry(
+        PantryItem(
+            name = args.name,
+            barcode = state.barcode,
+            quantity = 1f,
+            unit = args.unit,
+            category = args.category,
+            storageLocation = args.storageLocation,
+            expirationTimestamp = expiration,
+            isAromaticOrSeasoning = PantryTaxonomy.isAromaticOrSeasoningCategory(args.category),
+        ),
+    )
+    state.onStatus("Saved and remembered ${args.name}")
+    state.onDismiss()
+    state.view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+}
+
 @Composable
 internal fun CameraAssociationDialog(state: CameraAssociationState) {
     AssociateBarcodeDialog(
@@ -29,34 +72,17 @@ internal fun CameraAssociationDialog(state: CameraAssociationState) {
         onDismiss = state.onDismiss,
         onSave = { name, category, unit, storageLocation, shelfLifeDays ->
             state.scope.launch {
-                state.resolver.associateBarcode(
-                    barcode = state.barcode,
-                    name = name,
-                    category = category,
-                    defaultUnit = unit,
-                    estimatedShelfLifeDays = shelfLifeDays,
+                saveAssociatedBarcode(
+                    state = state,
+                    args =
+                        AssociatedBarcodeArgs(
+                            name = name,
+                            category = category,
+                            unit = unit,
+                            storageLocation = storageLocation,
+                            shelfLifeDays = shelfLifeDays,
+                        ),
                 )
-                val expiration =
-                    if (shelfLifeDays > 0) {
-                        System.currentTimeMillis() + shelfLifeDays * MILLIS_PER_DAY
-                    } else {
-                        null
-                    }
-                state.repository.insertPantry(
-                    PantryItem(
-                        name = name,
-                        barcode = state.barcode,
-                        quantity = 1f,
-                        unit = unit,
-                        category = category,
-                        storageLocation = storageLocation,
-                        expirationTimestamp = expiration,
-                        isAromaticOrSeasoning = PantryTaxonomy.isAromaticOrSeasoningCategory(category),
-                    ),
-                )
-                state.onStatus("Saved and remembered $name")
-                state.onDismiss()
-                state.view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
             }
         },
     )
