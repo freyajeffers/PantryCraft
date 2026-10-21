@@ -20,6 +20,18 @@ internal data class CameraBatchReviewState(
     val onStatus: (String) -> Unit,
 )
 
+internal suspend fun confirmBatchReviewItems(
+    state: CameraBatchReviewState,
+    confirmedItems: List<ParsedVisionItem>,
+) {
+    runCatching { state.repository.insertPantryBatch(confirmedItems.map { it.toPantryItem() }) }
+        .onSuccess {
+            state.onDismiss()
+            state.onStatus("Added ${confirmedItems.size} items to your pantry")
+            state.view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        }.onFailure { state.onStatus("Could not add items: ${it.message}") }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CameraBatchReview(state: CameraBatchReviewState) {
@@ -28,12 +40,7 @@ internal fun CameraBatchReview(state: CameraBatchReviewState) {
             items = state.items,
             onConfirm = { confirmedItems ->
                 state.scope.launch {
-                    runCatching { state.repository.insertPantryBatch(confirmedItems.map { it.toPantryItem() }) }
-                        .onSuccess {
-                            state.onDismiss()
-                            state.onStatus("Added ${confirmedItems.size} items to your pantry")
-                            state.view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                        }.onFailure { state.onStatus("Could not add items: ${it.message}") }
+                    confirmBatchReviewItems(state, confirmedItems)
                 }
             },
             onDismiss = state.onDismiss,

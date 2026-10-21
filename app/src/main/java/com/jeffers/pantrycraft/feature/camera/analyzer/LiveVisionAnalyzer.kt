@@ -109,21 +109,6 @@ class LiveVisionAnalyzer(
         objectDetector.close()
     }
 
-    private fun Rect.toNormalized(
-        width: Int,
-        height: Int,
-        label: String? = null,
-        confidence: Float? = null,
-    ): NormalizedVisionBox =
-        NormalizedVisionBox(
-            ymin = (top.toFloat() / height).coerceIn(0f, 1f),
-            xmin = (left.toFloat() / width).coerceIn(0f, 1f),
-            ymax = (bottom.toFloat() / height).coerceIn(0f, 1f),
-            xmax = (right.toFloat() / width).coerceIn(0f, 1f),
-            label = label,
-            confidence = confidence,
-        )
-
     companion object {
         private const val FRAME_INTERVAL_MS = 66L // ~15 FPS throttle
         private const val RIGHT_ANGLE_DEGREES = 180
@@ -131,6 +116,21 @@ class LiveVisionAnalyzer(
         const val CONFIDENCE_THRESHOLD = 0.70f
     }
 }
+
+internal fun Rect.toNormalized(
+    width: Int,
+    height: Int,
+    label: String? = null,
+    confidence: Float? = null,
+): NormalizedVisionBox =
+    NormalizedVisionBox(
+        ymin = (top.toFloat() / height).coerceIn(0f, 1f),
+        xmin = (left.toFloat() / width).coerceIn(0f, 1f),
+        ymax = (bottom.toFloat() / height).coerceIn(0f, 1f),
+        xmax = (right.toFloat() / width).coerceIn(0f, 1f),
+        label = label,
+        confidence = confidence,
+    )
 
 class FrameTimingStats {
     var sampleCount: Int = 0
