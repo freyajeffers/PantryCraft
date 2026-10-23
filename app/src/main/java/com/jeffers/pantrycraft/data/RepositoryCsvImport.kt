@@ -17,31 +17,41 @@ private const val LEGACY_NOTES_COLUMN = 7
 
 suspend fun Repository.importPantryFromCsv(csvString: String): Int =
     db.withTransaction {
-        val lines = csvString.lines().filter { it.isNotBlank() }
-        if (lines.size <= 1) return@withTransaction 0
-        val dateFormat = java.text.SimpleDateFormat(DATE_PATTERN, java.util.Locale.US)
+        val items = parsePantryItemsFromCsv(csvString)
         var importedCount = 0
-        lines.drop(1).forEach { line ->
-            parsePantryCsvItem(parseCsvLine(line), dateFormat)?.let { item ->
-                insertPantry(item)
-                importedCount++
-            }
+        items.forEach { item ->
+            insertPantry(item)
+            importedCount++
         }
         importedCount
     }
 
+internal fun parsePantryItemsFromCsv(
+    csvString: String,
+    now: Long = System.currentTimeMillis(),
+): List<PantryItem> {
+    val lines = csvString.lines().filter { it.isNotBlank() }
+    if (lines.size <= 1) return emptyList()
+    val dateFormat = java.text.SimpleDateFormat(DATE_PATTERN, java.util.Locale.US)
+    return lines.drop(1).mapNotNull { line ->
+        parsePantryCsvItem(parseCsvLine(line), dateFormat, now)
+    }
+}
+
 private fun parsePantryCsvItem(
     cols: List<String>,
     dateFormat: java.text.SimpleDateFormat,
+    now: Long = System.currentTimeMillis(),
 ): PantryItem? {
     val name = cols.getOrNull(0)?.trim().orEmpty()
     if (name.isEmpty()) return null
 
     val extended = cols.size >= EXTENDED_CSV_COLUMN_COUNT
-    val category = parseCategory(cols)
-    val location = parseLocation(cols)
-    val quantity = parseQuantity(cols)
-    val unit = parseUnit(cols)
+    val category = cols.getOrNull(1)?.trim()?.uppercase()?.takeIf(String::isNotEmpty) ?: "OTHER"
+    val location =
+        cols.getOrNull(2)?.trim()?.uppercase()?.takeIf { it in PantryTaxonomy.storageLocations } ?: "PANTRY"
+    val quantity = cols.getOrNull(QUANTITY_COLUMN)?.trim()?.toFloatOrNull()?.coerceAtLeast(0f) ?: 1f
+    val unit = cols.getOrNull(UNIT_COLUMN)?.trim()?.uppercase()?.takeIf(String::isNotEmpty) ?: "COUNT"
     val customUnit = optionalCsvValue(cols, CUSTOM_UNIT_COLUMN, extended)
     val threshold = parseThreshold(cols, extended)
     val expiration = parseExpiration(cols, dateFormat, extended)
@@ -58,38 +68,10 @@ private fun parsePantryCsvItem(
         threshold = threshold,
         expirationTimestamp = expiration,
         isOpened = isOpened,
-        openedTimestamp = if (isOpened) System.currentTimeMillis() else null,
+        openedTimestamp = if (isOpened) now else null,
         notes = notes,
     )
 }
-
-private fun parseCategory(cols: List<String>): String =
-    cols
-        .getOrNull(1)
-        ?.trim()
-        ?.uppercase()
-        ?.takeIf(String::isNotEmpty) ?: "OTHER"
-
-private fun parseLocation(cols: List<String>): String =
-    cols
-        .getOrNull(2)
-        ?.trim()
-        ?.uppercase()
-        ?.takeIf { it in PantryTaxonomy.storageLocations } ?: "PANTRY"
-
-private fun parseQuantity(cols: List<String>): Float =
-    cols
-        .getOrNull(QUANTITY_COLUMN)
-        ?.trim()
-        ?.toFloatOrNull()
-        ?.coerceAtLeast(0f) ?: 1f
-
-private fun parseUnit(cols: List<String>): String =
-    cols
-        .getOrNull(UNIT_COLUMN)
-        ?.trim()
-        ?.uppercase()
-        ?.takeIf(String::isNotEmpty) ?: "COUNT"
 
 private fun parseThreshold(
     cols: List<String>,

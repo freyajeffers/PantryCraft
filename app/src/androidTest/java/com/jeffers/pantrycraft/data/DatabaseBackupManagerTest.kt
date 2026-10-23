@@ -198,4 +198,82 @@ class DatabaseBackupManagerTest {
         assertNotNull(matchingRecord?.createdAtLabel)
         assertTrue(listBackupFiles(context).contains(backupName))
     }
+
+    @Test
+    fun exportBackupAndRestoreFromUriRoundTripsDatabase() = runBlocking {
+        val database = AppDatabase.getDatabase(context)
+        val marker = "backup-uri-round-trip-${System.nanoTime()}"
+        database.pantryDao().insert(PantryItem(name = marker, quantity = 4f))
+
+        val pin = "uri-round-trip-pin".toCharArray()
+        val backupName = DatabaseBackupManager.createEncryptedBackup(context, pin)
+        createdBackupName = backupName
+
+        val exportFile = File(context.cacheDir, "exported_backup_${System.nanoTime()}.pcbk")
+        val exportUri = android.net.Uri.fromFile(exportFile)
+
+        try {
+            DatabaseBackupManager.exportBackup(context, backupName, exportUri)
+            assertTrue(exportFile.exists())
+            assertTrue(exportFile.length() > 0)
+
+            // Modify database to simulate loss
+            AppDatabase.getDatabase(context).pantryDao().deleteByNamePrefix("backup-uri-round-trip-")
+
+            // Restore from URI
+            DatabaseBackupManager.restoreEncryptedBackupFromUri(
+                context,
+                exportUri,
+                "uri-round-trip-pin".toCharArray(),
+            )
+
+            val restoredItem =
+                AppDatabase
+                    .getDatabase(context)
+                    .pantryDao()
+                    .observeAllPantryItems()
+                    .first()
+                    .firstOrNull { it.name == marker }
+
+            assertNotNull(restoredItem)
+            assertEquals(marker, restoredItem?.name)
+        } finally {
+            exportFile.delete()
+        }
+    }
+
+    @Test(expected = java.io.IOException::class)
+    fun exportBackupThrowsIOExceptionForNonExistentBackup() {
+        val nonExistentUri = android.net.Uri.fromFile(File(context.cacheDir, "nowhere.pcbk"))
+        DatabaseBackupManager.exportBackup(
+            context,
+            "does_not_exist_file.pcbk",
+            nonExistentUri,
+        )
+    }
+
+    @Test
+    fun restoreRejectsUnsupportedBackupVersion() {
+        val backupDir = File(context.filesDir, "backups").apply { mkdirs() }
+        val corruptVersionFile = File(backupDir, "unsupported_version_test.pcbk")
+        try {
+            // Write magic "PCBK" followed by version 99
+            val bytes = "PCBK".toByteArray(Charsets.UTF_8) + byteArrayOf(99)
+            corruptVersionFile.writeBytes(bytes)
+
+            var rejected = false
+            try {
+                DatabaseBackupManager.restoreEncryptedBackup(
+                    context,
+                    corruptVersionFile.name,
+                    "pin".toCharArray(),
+                )
+            } catch (_: Exception) {
+                rejected = true
+            }
+            assertTrue(rejected)
+        } finally {
+            corruptVersionFile.delete()
+        }
+    }
 }

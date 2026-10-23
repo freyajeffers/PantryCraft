@@ -4,13 +4,18 @@ import kotlinx.coroutines.flow.first
 import org.json.JSONArray
 import org.json.JSONObject
 
-internal suspend fun Repository.exportInventoryToJson(): String {
-    val pantry = observePantryItems().first()
-    val grocery = observeGroceryItems().first()
+internal suspend fun Repository.exportInventoryToJson(): String =
+    exportInventoryToJson(observePantryItems().first(), observeGroceryItems().first())
+
+internal fun exportInventoryToJson(
+    pantry: List<PantryItem>,
+    grocery: List<GroceryItem>,
+    now: Long = System.currentTimeMillis(),
+): String {
     val json =
         JSONObject().apply {
             put("version", 1)
-            put("exportedAt", System.currentTimeMillis())
+            put("exportedAt", now)
             put("pantry", pantry.map(::pantryExportObject).toJsonArray())
             put("grocery", grocery.map(::groceryExportObject).toJsonArray())
         }
@@ -44,12 +49,15 @@ private fun groceryExportObject(item: GroceryItem) =
 
 private fun List<JSONObject>.toJsonArray() = JSONArray().also { array -> forEach(array::put) }
 
-internal suspend fun Repository.exportPantryToCsv(): String {
+internal suspend fun Repository.exportPantryToCsv(): String =
+    exportPantryToCsv(observePantryItems().first())
+
+internal fun exportPantryToCsv(items: List<PantryItem>): String {
     val header = "name,category,storageLocation,quantity,unit,customUnitName,threshold,expirationDate,isOpened,notes"
     val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
     return buildString {
         appendLine(header)
-        observePantryItems().first().forEach { item ->
+        items.forEach { item ->
             appendLine(
                 listOf(
                     item.name,
