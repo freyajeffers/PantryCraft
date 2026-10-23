@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -180,5 +181,21 @@ class DatabaseBackupManagerTest {
         } finally {
             corruptFile.delete()
         }
+    }
+
+    @Test
+    fun backupRecordsIncludesNewlyCreatedBackup() {
+        val pin = "test-record-pin".toCharArray()
+        val backupName = DatabaseBackupManager.createEncryptedBackup(context, pin)
+        createdBackupName = backupName
+
+        val records = backupRecords(context)
+        val matchingRecord = records.firstOrNull { it.backupName == backupName }
+
+        assertNotNull(matchingRecord)
+        assertEquals(backupName, matchingRecord?.backupName)
+        assertTrue((matchingRecord?.createdAt ?: 0L) > 0L)
+        assertNotNull(matchingRecord?.createdAtLabel)
+        assertTrue(listBackupFiles(context).contains(backupName))
     }
 }

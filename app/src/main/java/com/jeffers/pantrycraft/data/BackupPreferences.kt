@@ -14,6 +14,17 @@ internal fun persistAutoBackupTreeUri(
         .apply()
 }
 
+internal fun persistBackupUri(
+    context: Context,
+    uri: Uri?,
+) {
+    context
+        .getSharedPreferences("backup_preferences", Context.MODE_PRIVATE)
+        .edit()
+        .putString("last_exported_uri", uri?.toString())
+        .apply()
+}
+
 internal fun persistedBackupUri(context: Context): Uri? =
     context
         .getSharedPreferences("backup_preferences", Context.MODE_PRIVATE)

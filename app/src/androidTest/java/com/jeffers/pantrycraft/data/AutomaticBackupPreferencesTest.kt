@@ -23,6 +23,7 @@ class AutomaticBackupPreferencesTest {
     private var originalInterval: Long = 1440L
     private var originalPin: CharArray? = null
     private var originalTreeUri: Uri? = null
+    private var originalExportedUri: Uri? = null
 
     @Before
     fun setUp() {
@@ -31,6 +32,7 @@ class AutomaticBackupPreferencesTest {
         originalInterval = AutomaticBackupPreferences.intervalMinutes(context)
         originalPin = AutomaticBackupPreferences.loadPin(context)
         originalTreeUri = persistedAutoBackupTreeUri(context)
+        originalExportedUri = persistedBackupUri(context)
     }
 
     @After
@@ -42,6 +44,7 @@ class AutomaticBackupPreferencesTest {
             clearPinPreferences()
         }
         persistAutoBackupTreeUri(context, originalTreeUri)
+        persistBackupUri(context, originalExportedUri)
     }
 
     private fun clearPinPreferences() {
@@ -126,5 +129,16 @@ class AutomaticBackupPreferencesTest {
 
         persistAutoBackupTreeUri(context, null)
         assertNull(persistedAutoBackupTreeUri(context))
+    }
+
+    @Test
+    fun backupUriRoundTripsAndClears() {
+        val testUri =
+            Uri.parse("content://com.android.externalstorage.documents/document/primary%3Abackup.pcbk")
+        persistBackupUri(context, testUri)
+        assertEquals(testUri, persistedBackupUri(context))
+
+        persistBackupUri(context, null)
+        assertNull(persistedBackupUri(context))
     }
 }

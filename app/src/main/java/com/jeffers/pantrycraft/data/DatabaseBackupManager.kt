@@ -46,7 +46,6 @@ private const val STREAM_BUFFER_BYTES = 16 * 1024
 private const val BYTE_MASK = 0xFF
 private const val BYTE_SHIFT = 8
 private const val PREFS_NAME = "backup_preferences"
-private const val LAST_EXPORTED_URI = "last_exported_uri"
 private const val BACKUP_RECORDS = "backup_records"
 
 object DatabaseBackupManager {
@@ -75,11 +74,7 @@ object DatabaseBackupManager {
             context.contentResolver.openOutputStream(destination)
                 ?: throw IOException("Unable to open selected backup location")
         source.inputStream().use { input -> output.use { input.copyTo(it) } }
-        val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        preferences
-            .edit()
-            .putString(LAST_EXPORTED_URI, destination.toString())
-            .apply()
+        persistBackupUri(context, destination)
         val record = backupRecords(context).firstOrNull { it.backupName == backupName }
         val baseRecord =
             record ?: run {
