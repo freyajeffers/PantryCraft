@@ -122,6 +122,18 @@ dependencies {
     // Optional - lifecycle and coroutines
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
 
+    constraints {
+        implementation('com.squareup.okhttp3:okhttp:4.12.0') {
+            because 'fixes CVEs in okhttp < 4.9.2'
+        }
+        implementation('com.squareup.okio:okio:3.9.1') {
+            because 'fixes CVEs in okio < 1.17.6'
+        }
+        implementation('com.google.guava:guava:33.4.0-android') {
+            because 'fixes CVEs in guava < 32.0.0'
+        }
+    }
+
     // Navigation and ViewModel compose
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2'
 
