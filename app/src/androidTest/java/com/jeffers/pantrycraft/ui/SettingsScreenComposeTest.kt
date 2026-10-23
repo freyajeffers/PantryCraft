@@ -84,7 +84,10 @@ class SettingsScreenComposeTest {
         composeTestRule.onNodeWithText("AI Vision & Meal Engine (BYOKey / Local)").performScrollTo().assertIsDisplayed()
 
         // 3. Switch to Anthropic Claude (BYOKey)
-        composeTestRule.onNode(hasText(AiProvider.ANTHROPIC.label, substring = true)).performScrollTo().performClick()
+        composeTestRule
+            .onNode(hasText(AiProvider.ANTHROPIC.label, substring = true))
+            .performScrollTo()
+            .performClick()
         composeTestRule.waitForIdle()
 
         // Verify Model Name and Endpoint URL text fields appear for BYOKey provider
@@ -92,7 +95,10 @@ class SettingsScreenComposeTest {
         composeTestRule.onNodeWithText("Endpoint URL").performScrollTo().assertIsDisplayed()
 
         // 4. Switch back to 100% Offline ML Kit
-        composeTestRule.onNode(hasText(AiProvider.OFFLINE_MLKIT.label, substring = true)).performScrollTo().performClick()
+        composeTestRule
+            .onNode(hasText(AiProvider.OFFLINE_MLKIT.label, substring = true))
+            .performScrollTo()
+            .performClick()
         composeTestRule.waitForIdle()
 
         // Verify custom model and endpoint fields are hidden under 100% offline mode

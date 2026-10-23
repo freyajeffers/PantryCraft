@@ -50,6 +50,19 @@ class ViewModelIntegrationTest {
         db.groceryDao().deleteByNamePrefix("vm-test-")
     }
 
+    private suspend fun <T> awaitCondition(
+        retries: Int = RETRY_ATTEMPTS,
+        delayMs: Long = RETRY_DELAY_MILLIS,
+        predicate: suspend () -> T?,
+    ): T? {
+        repeat(retries) {
+            val result = predicate()
+            if (result != null) return result
+            delay(delayMs)
+        }
+        return null
+    }
+
     private class UnregisteredViewModel : ViewModel()
 
     @Test
@@ -87,54 +100,54 @@ class ViewModelIntegrationTest {
             groceryVm.add(initialItem)
         }
 
-        var inserted: GroceryItem? = null
-        for (attempt in 1..RETRY_ATTEMPTS) {
-            val current = repository.observeGroceryItems().first().firstOrNull { it.name == itemName }
-            if (current != null) {
-                inserted = current
-                break
-            }
-            delay(RETRY_DELAY_MILLIS)
+        val inserted = awaitCondition {
+            repository.observeGroceryItems().first().firstOrNull { it.name == itemName }
         }
         assertNotNull(inserted)
-        assertEquals(2f, inserted!!.quantity)
+        val nonNullInserted = requireNotNull(inserted)
+        assertEquals(2f, nonNullInserted.quantity)
 
-        val updatedItem = inserted.copy(quantity = 5f, checked = true)
+        val updatedItem = nonNullInserted.copy(quantity = 5f, checked = true)
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             groceryVm.update(updatedItem)
         }
 
-        var updated: GroceryItem? = null
-        for (attempt in 1..RETRY_ATTEMPTS) {
-            val current = repository.observeGroceryItems().first().firstOrNull { it.id == inserted.id }
-            if (current != null && current.quantity == 5f && current.checked) {
-                updated = current
-                break
+        val updated = awaitCondition {
+            repository.observeGroceryItems().first().firstOrNull {
+                it.id == nonNullInserted.id && it.quantity == 5f && it.checked
             }
-            delay(RETRY_DELAY_MILLIS)
         }
         assertNotNull(updated)
-        assertEquals(5f, updated!!.quantity)
-        assertTrue(updated.checked)
+        val nonNullUpdated = requireNotNull(updated)
+        assertEquals(5f, nonNullUpdated.quantity)
+        assertTrue(nonNullUpdated.checked)
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            groceryVm.delete(updated)
+            groceryVm.delete(nonNullUpdated)
         }
 
-        var deleted = false
-        for (attempt in 1..RETRY_ATTEMPTS) {
-            val current = repository.observeGroceryItems().first().firstOrNull { it.id == inserted.id }
-            if (current == null) {
-                deleted = true
-                break
-            }
-            delay(RETRY_DELAY_MILLIS)
+        val deleted = awaitCondition {
+            val exists = repository.observeGroceryItems().first().any { it.id == nonNullInserted.id }
+            if (!exists) true else null
         }
-        assertTrue(deleted)
+        assertTrue(deleted == true)
     }
 
     @Test
-    fun pantryViewModelSelectionAndCrudLifecycle() = runBlocking {
+    fun pantryViewModelSelectionState() {
+        val pantryVm = PantryViewModel(repository)
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            pantryVm.selectLocation(PantryLocationFilter.FRIDGE)
+            pantryVm.selectSortOrder(PantrySortOrder.EXPIRATION_SOONEST)
+            pantryVm.setSearchQuery("yogurt")
+        }
+        assertEquals(PantryLocationFilter.FRIDGE, pantryVm.selectedLocation.value)
+        assertEquals(PantrySortOrder.EXPIRATION_SOONEST, pantryVm.selectedSortOrder.value)
+        assertEquals("yogurt", pantryVm.searchQuery.value)
+    }
+
+    @Test
+    fun pantryViewModelCrudLifecycle() = runBlocking {
         val pantryVm = PantryViewModel(repository)
         val itemName = "${prefix}greek-yogurt"
         val pantryItem = PantryItem(
@@ -145,93 +158,59 @@ class ViewModelIntegrationTest {
         )
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            pantryVm.selectLocation(PantryLocationFilter.FRIDGE)
-            pantryVm.selectSortOrder(PantrySortOrder.EXPIRATION_SOONEST)
-            pantryVm.setSearchQuery("yogurt")
-        }
-        assertEquals(PantryLocationFilter.FRIDGE, pantryVm.selectedLocation.value)
-        assertEquals(PantrySortOrder.EXPIRATION_SOONEST, pantryVm.selectedSortOrder.value)
-        assertEquals("yogurt", pantryVm.searchQuery.value)
-
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
             pantryVm.add(pantryItem)
         }
 
-        var inserted: PantryItem? = null
-        for (attempt in 1..RETRY_ATTEMPTS) {
-            val current = repository.observePantryItems().first().firstOrNull { it.name == itemName }
-            if (current != null) {
-                inserted = current
-                break
-            }
-            delay(RETRY_DELAY_MILLIS)
+        val inserted = awaitCondition {
+            repository.observePantryItems().first().firstOrNull { it.name == itemName }
         }
         assertNotNull(inserted)
-        assertEquals("DAIRY", inserted!!.category)
+        val nonNullInserted = requireNotNull(inserted)
+        assertEquals("DAIRY", nonNullInserted.category)
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            pantryVm.decrement(inserted, 1f)
+            pantryVm.decrement(nonNullInserted, 1f)
         }
 
-        var decremented: PantryItem? = null
-        for (attempt in 1..RETRY_ATTEMPTS) {
-            val current = repository.observePantryItems().first().firstOrNull { it.id == inserted.id }
-            if (current != null && current.quantity == 2f) {
-                decremented = current
-                break
+        val decremented = awaitCondition {
+            repository.observePantryItems().first().firstOrNull {
+                it.id == nonNullInserted.id && it.quantity == 2f
             }
-            delay(RETRY_DELAY_MILLIS)
         }
         assertNotNull(decremented)
-        assertEquals(2f, decremented!!.quantity)
+        val nonNullDecremented = requireNotNull(decremented)
+        assertEquals(2f, nonNullDecremented.quantity)
 
         val groceryName = "${prefix}grocery-reorder"
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            pantryVm.addGroceryItem(name = groceryName, quantity = 1f, unit = "TUB", fromPantryId = inserted.id)
+            pantryVm.addGroceryItem(name = groceryName, quantity = 1f, unit = "TUB", fromPantryId = nonNullInserted.id)
         }
 
-        var groceryAdded: GroceryItem? = null
-        for (attempt in 1..RETRY_ATTEMPTS) {
-            val current = repository.observeGroceryItems().first().firstOrNull { it.name == groceryName }
-            if (current != null) {
-                groceryAdded = current
-                break
-            }
-            delay(RETRY_DELAY_MILLIS)
+        val groceryAdded = awaitCondition {
+            repository.observeGroceryItems().first().firstOrNull { it.name == groceryName }
         }
         assertNotNull(groceryAdded)
-        assertEquals(inserted.id, groceryAdded!!.fromPantryId)
+        assertEquals(nonNullInserted.id, groceryAdded?.fromPantryId)
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            pantryVm.delete(decremented)
+            pantryVm.delete(nonNullDecremented)
         }
 
-        var softDeleted = false
-        for (attempt in 1..RETRY_ATTEMPTS) {
-            val current = repository.observePantryItems().first().firstOrNull { it.id == inserted.id }
-            if (current == null) {
-                softDeleted = true
-                break
-            }
-            delay(RETRY_DELAY_MILLIS)
+        val softDeleted = awaitCondition {
+            val exists = repository.observePantryItems().first().any { it.id == nonNullInserted.id }
+            if (!exists) true else null
         }
-        assertTrue(softDeleted)
+        assertTrue(softDeleted == true)
 
         // Test restoring the soft-deleted item
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            pantryVm.restore(decremented)
+            pantryVm.restore(nonNullDecremented)
         }
 
-        var restored = false
-        for (attempt in 1..RETRY_ATTEMPTS) {
-            val current = repository.observePantryItems().first().firstOrNull { it.id == inserted.id }
-            if (current != null) {
-                restored = true
-                break
-            }
-            delay(RETRY_DELAY_MILLIS)
+        val restored = awaitCondition {
+            repository.observePantryItems().first().firstOrNull { it.id == nonNullInserted.id }
         }
-        assertTrue(restored)
+        assertNotNull(restored)
     }
 
     @Test
@@ -245,27 +224,20 @@ class ViewModelIntegrationTest {
             groceryVm.add(GroceryItem(name = uncheckedName, quantity = 2f, checked = false))
         }
 
-        // Wait until both items are observed
-        for (attempt in 1..RETRY_ATTEMPTS) {
+        awaitCondition {
             val items = repository.observeGroceryItems().first().filter { it.name.startsWith(prefix) }
-            if (items.size == 2) break
-            delay(RETRY_DELAY_MILLIS)
+            if (items.size == 2) true else null
         }
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             groceryVm.clearChecked()
         }
 
-        var cleared = false
-        for (attempt in 1..RETRY_ATTEMPTS) {
+        val cleared = awaitCondition {
             val items = repository.observeGroceryItems().first().filter { it.name.startsWith(prefix) }
-            if (items.size == 1 && items.first().name == uncheckedName) {
-                cleared = true
-                break
-            }
-            delay(RETRY_DELAY_MILLIS)
+            if (items.size == 1 && items.first().name == uncheckedName) true else null
         }
-        assertTrue(cleared)
+        assertTrue(cleared == true)
     }
 
     @Test
@@ -283,32 +255,26 @@ class ViewModelIntegrationTest {
             groceryVm.add(groceryItem)
         }
 
-        // Wait until item is in grocery list
-        for (attempt in 1..RETRY_ATTEMPTS) {
+        awaitCondition {
             val items = repository.observeGroceryItems().first().filter { it.name == restockName }
-            if (items.isNotEmpty()) break
-            delay(RETRY_DELAY_MILLIS)
+            if (items.isNotEmpty()) true else null
         }
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             groceryVm.restockChecked()
         }
 
-        // Verify item is transferred to pantry and removed from grocery
-        var restockedToPantry = false
-        for (attempt in 1..RETRY_ATTEMPTS) {
+        val restockedToPantry = awaitCondition {
             val pantryItems = repository.observePantryItems().first().filter { it.name == restockName }
             val groceryItems = repository.observeGroceryItems().first().filter { it.name == restockName }
             if (pantryItems.isNotEmpty() && groceryItems.isEmpty()) {
                 val pantry = pantryItems.first()
-                if (pantry.quantity == 2f && pantry.unit == "BOTTLE") {
-                    restockedToPantry = true
-                    break
-                }
+                if (pantry.quantity == 2f && pantry.unit == "BOTTLE") true else null
+            } else {
+                null
             }
-            delay(RETRY_DELAY_MILLIS)
         }
-        assertTrue("Checked item must be restocked to pantry and removed from grocery", restockedToPantry)
+        assertTrue("Checked item must be restocked to pantry and removed from grocery", restockedToPantry == true)
     }
 
     @Test
@@ -340,50 +306,39 @@ class ViewModelIntegrationTest {
             pantryVm.add(item)
         }
 
-        var inserted: PantryItem? = null
-        for (attempt in 1..RETRY_ATTEMPTS) {
-            val current = repository.observePantryItems().first().firstOrNull { it.name == itemName }
-            if (current != null) {
-                inserted = current
-                break
-            }
-            delay(RETRY_DELAY_MILLIS)
+        val inserted = awaitCondition {
+            repository.observePantryItems().first().firstOrNull { it.name == itemName }
         }
         assertNotNull(inserted)
+        val nonNullInserted = requireNotNull(inserted)
 
         // Increment quantity
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            pantryVm.update(inserted!!.copy(quantity = inserted!!.quantity + 1f))
+            pantryVm.update(nonNullInserted.copy(quantity = nonNullInserted.quantity + 1f))
         }
 
-        var incremented: PantryItem? = null
-        for (attempt in 1..RETRY_ATTEMPTS) {
-            val current = repository.observePantryItems().first().firstOrNull { it.id == inserted!!.id }
-            if (current != null && current.quantity == 2f) {
-                incremented = current
-                break
+        val incremented = awaitCondition {
+            repository.observePantryItems().first().firstOrNull {
+                it.id == nonNullInserted.id && it.quantity == 2f
             }
-            delay(RETRY_DELAY_MILLIS)
         }
         assertNotNull(incremented)
-        assertEquals(2f, incremented!!.quantity)
+        val nonNullIncremented = requireNotNull(incremented)
+        assertEquals(2f, nonNullIncremented.quantity)
 
         // Mark as opened
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            pantryVm.update(incremented!!.markOpened())
+            pantryVm.update(nonNullIncremented.markOpened())
         }
 
-        var opened: PantryItem? = null
-        for (attempt in 1..RETRY_ATTEMPTS) {
-            val current = repository.observePantryItems().first().firstOrNull { it.id == inserted!!.id }
-            if (current != null && current.isOpened) {
-                opened = current
-                break
+        val opened = awaitCondition {
+            repository.observePantryItems().first().firstOrNull {
+                it.id == nonNullInserted.id && it.isOpened
             }
-            delay(RETRY_DELAY_MILLIS)
         }
         assertNotNull(opened)
-        assertTrue(opened!!.isOpened)
-        assertNotNull(opened!!.openedTimestamp)
+        val nonNullOpened = requireNotNull(opened)
+        assertTrue(nonNullOpened.isOpened)
+        assertNotNull(nonNullOpened.openedTimestamp)
     }
 }

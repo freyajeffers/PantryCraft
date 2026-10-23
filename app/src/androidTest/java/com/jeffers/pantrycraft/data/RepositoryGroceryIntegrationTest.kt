@@ -130,7 +130,8 @@ class RepositoryGroceryIntegrationTest {
         assertEquals(1, restockedCount)
 
         // 3. Verify newly created pantry item
-        val createdPantry = repository.observePantryItems().first().firstOrNull { it.name == "${prefix}organic vanilla" }
+        val createdPantry =
+            repository.observePantryItems().first().firstOrNull { it.name == "${prefix}organic vanilla" }
         assertNotNull(createdPantry)
         assertEquals(1f, createdPantry!!.quantity)
         assertEquals("BOTTLE", createdPantry.unit)

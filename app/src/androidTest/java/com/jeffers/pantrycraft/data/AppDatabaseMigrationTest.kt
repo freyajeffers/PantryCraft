@@ -75,9 +75,7 @@ class AppDatabaseMigrationTest {
 
     @Test
     fun migrate2To3_createsCustomBarcodeCacheTable() {
-        helper.createDatabase("migration-test-2-3", 2).apply {
-            close()
-        }
+        helper.createDatabase("migration-test-2-3", 2).close()
 
         val db =
             helper.runMigrationsAndValidate(
@@ -157,7 +155,8 @@ class AppDatabaseMigrationTest {
         var constraintTriggered = false
         try {
             db.execSQL(
-                "INSERT INTO pantry_items (name, quantity, threshold, barcode, lastUpdated, storageLocation, category) " +
+                "INSERT INTO pantry_items " +
+                    "(name, quantity, threshold, barcode, lastUpdated, storageLocation, category) " +
                     "VALUES ('Duplicate Coffee', 2.0, 0.0, 'barcode-unique-test', 2000, 'PANTRY', 'OTHER')",
             )
         } catch (_: android.database.sqlite.SQLiteConstraintException) {
