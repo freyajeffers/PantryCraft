@@ -50,13 +50,15 @@ class SettingsScreenComposeTest {
     fun tearDown() {
         composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.DESTROYED)
 
-        ByokPreferences.saveConfiguration(context, originalProvider, originalModel, originalEndpoint)
-        if (originalApiKey != null) {
-            val keyChars = originalApiKey!!.toCharArray()
-            ByokPreferences.saveApiKey(context, keyChars)
-            keyChars.fill('\u0000')
-        } else {
-            ByokPreferences.clearApiKey(context)
+        if (::originalProvider.isInitialized && ::originalModel.isInitialized && ::originalEndpoint.isInitialized) {
+            ByokPreferences.saveConfiguration(context, originalProvider, originalModel, originalEndpoint)
+            if (originalApiKey != null) {
+                val keyChars = originalApiKey!!.toCharArray()
+                ByokPreferences.saveApiKey(context, keyChars)
+                keyChars.fill('\u0000')
+            } else {
+                ByokPreferences.clearApiKey(context)
+            }
         }
     }
 

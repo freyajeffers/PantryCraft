@@ -6,7 +6,8 @@ import androidx.room.withTransaction
 class Repository private constructor(
     internal val db: AppDatabase,
     internal val appContext: Context,
-) {
+    groceryRepo: GroceryRepository = DefaultGroceryRepository(db, appContext),
+) : GroceryRepository by groceryRepo {
     internal val pantryDao = db.pantryDao()
     internal val groceryDao = db.groceryDao()
 
@@ -75,12 +76,6 @@ class Repository private constructor(
     suspend fun deletePantry(item: PantryItem) = pantryDao.softDelete(item.id)
 
     suspend fun restorePantry(item: PantryItem) = pantryDao.restore(item.id)
-
-    fun reclaimTemporaryMedia(): Int {
-        val scratch = appContext.cacheDir.resolve("vision_scratch")
-        if (!scratch.isDirectory) return 0
-        return scratch.listFiles().orEmpty().count { it.deleteRecursively() }
-    }
 
     private fun validate(item: PantryItem): PantryItem {
         require(item.name.isNotBlank()) { "Pantry item name must not be blank" }

@@ -88,6 +88,10 @@ android {
         androidTest.assets.srcDirs += files("$projectDir/schemas")
     }
 
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+
     packagingOptions {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
@@ -139,6 +143,7 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.json:json:20250517'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3'
     androidTestImplementation 'androidx.room:room-testing:2.8.5'
     androidTestImplementation 'net.zetetic:sqlcipher-android:4.19.1'
     androidTestImplementation 'androidx.work:work-testing:2.9.0'

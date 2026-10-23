@@ -7,7 +7,6 @@ import com.jeffers.pantrycraft.data.GroceryItem
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.PantryTaxonomy
 import com.jeffers.pantrycraft.data.Repository
-import com.jeffers.pantrycraft.data.insertGrocery
 import com.jeffers.pantrycraft.data.observePantryItems
 import com.jeffers.pantrycraft.data.searchPantryItems
 import kotlinx.coroutines.CancellationException

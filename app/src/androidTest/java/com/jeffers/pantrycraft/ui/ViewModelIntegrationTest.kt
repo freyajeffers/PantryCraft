@@ -10,7 +10,6 @@ import com.jeffers.pantrycraft.data.GroceryItem
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.markOpened
-import com.jeffers.pantrycraft.data.observeGroceryItems
 import com.jeffers.pantrycraft.data.observePantryItems
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first

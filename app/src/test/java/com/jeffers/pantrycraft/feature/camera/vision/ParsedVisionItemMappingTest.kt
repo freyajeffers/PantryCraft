@@ -233,4 +233,48 @@ class ParsedVisionItemMappingTest {
         org.junit.Assert.assertNull(updated.openedTimestamp)
         assertEquals(true, updated.isDeleted)
     }
+
+    @Test
+    fun mapsVisionItemWithOpenedStatusPreservesEarlierUnopenedExpiration() {
+        val now = 1_000_000L
+        val item = ParsedVisionItem(
+            name = "Fresh Cream",
+            category = "DAIRY",
+            storageLocation = "FRIDGE",
+            quantity = 1f,
+            unit = "BOTTLE",
+            confidence = 0.95f,
+            estimatedShelfLifeDays = 2, // 2 days is shorter than DAIRY opened default of 7 days
+            isAromaticOrSeasoning = false,
+            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+            conditionNotes = null,
+            isOpened = true,
+        )
+
+        val pantryItem = item.toPantryItem(now)
+
+        assertTrue(pantryItem.isOpened)
+        assertEquals(now, pantryItem.openedTimestamp)
+        // Should retain earlier expiration (2 days), not extended to 7 days
+        assertEquals(now + 2 * 86_400_000L, pantryItem.expirationTimestamp)
+    }
+
+    @Test
+    fun negativeShelfLifeDaysDoesNotCreateAnExpirationDate() {
+        val item = ParsedVisionItem(
+            name = "Old Yeast",
+            category = "BAKING",
+            storageLocation = "PANTRY",
+            quantity = 1f,
+            unit = "PACKET",
+            confidence = 0.9f,
+            estimatedShelfLifeDays = -3,
+            isAromaticOrSeasoning = false,
+            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+            conditionNotes = null,
+        )
+
+        val pantryItem = item.toPantryItem(1_000L)
+        org.junit.Assert.assertNull(pantryItem.expirationTimestamp)
+    }
 }

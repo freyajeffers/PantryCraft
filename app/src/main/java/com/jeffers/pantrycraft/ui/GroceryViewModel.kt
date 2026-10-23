@@ -4,13 +4,8 @@ import android.database.sqlite.SQLiteFullException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jeffers.pantrycraft.data.GroceryItem
+import com.jeffers.pantrycraft.data.GroceryRepository
 import com.jeffers.pantrycraft.data.Repository
-import com.jeffers.pantrycraft.data.clearCheckedGrocery
-import com.jeffers.pantrycraft.data.deleteGrocery
-import com.jeffers.pantrycraft.data.insertGrocery
-import com.jeffers.pantrycraft.data.observeGroceryItems
-import com.jeffers.pantrycraft.data.restockCheckedGroceryToPantry
-import com.jeffers.pantrycraft.data.updateGrocery
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -22,8 +17,9 @@ import kotlinx.coroutines.launch
 private const val STATE_TIMEOUT_MILLIS = 5_000L
 
 class GroceryViewModel(
-    private val repo: Repository,
+    private val repo: GroceryRepository,
 ) : ViewModel() {
+    constructor(repo: Repository) : this(repo as GroceryRepository)
     val items: StateFlow<List<GroceryItem>> =
         repo.observeGroceryItems().stateIn(
             scope = viewModelScope,

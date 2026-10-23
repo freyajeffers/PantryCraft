@@ -116,4 +116,89 @@ class BatchReviewEditorStateTest {
         assertEquals("BUNCH", nonCustomUpdated.unit)
         assertNull(nonCustomUpdated.customUnitName)
     }
+
+    @Test
+    fun applyToHandlesNonNumericAndInvalidThresholdText() {
+        val baseItem = ParsedVisionItem(
+            name = "Flour",
+            category = "BAKING",
+            storageLocation = "PANTRY",
+            quantity = 5f,
+            unit = "BAG",
+            confidence = 1f,
+            estimatedShelfLifeDays = 180,
+            isAromaticOrSeasoning = false,
+            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+            conditionNotes = null,
+        )
+
+        val editor = BatchReviewEditorState()
+        editor.loadFrom(baseItem)
+
+        editor.thresholdText = "not-a-number"
+        val invalidUpdated = editor.applyTo(baseItem)
+        assertEquals(0f, invalidUpdated.threshold, 0.001f)
+
+        editor.thresholdText = ""
+        val emptyUpdated = editor.applyTo(baseItem)
+        assertEquals(0f, emptyUpdated.threshold, 0.001f)
+
+        editor.thresholdText = "2.75"
+        val validUpdated = editor.applyTo(baseItem)
+        assertEquals(2.75f, validUpdated.threshold, 0.001f)
+    }
+
+    @Test
+    fun applyToWithCustomUnitAndBlankCustomUnitNameSetsNull() {
+        val baseItem = ParsedVisionItem(
+            name = "Thyme",
+            category = "SPICES",
+            storageLocation = "PANTRY",
+            quantity = 1f,
+            unit = "CUSTOM",
+            confidence = 1f,
+            estimatedShelfLifeDays = 7,
+            isAromaticOrSeasoning = true,
+            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+            conditionNotes = null,
+        )
+
+        val editor = BatchReviewEditorState()
+        editor.loadFrom(baseItem)
+        editor.unit = "CUSTOM"
+        editor.customUnitName = "   "
+
+        val updated = editor.applyTo(baseItem)
+        assertEquals("CUSTOM", updated.unit)
+        assertNull(updated.customUnitName)
+    }
+
+    @Test
+    fun applyToPreservesOrUpdatesBarcode() {
+        val baseItem = ParsedVisionItem(
+            name = "Olive Oil",
+            category = "OILS",
+            storageLocation = "PANTRY",
+            quantity = 1f,
+            unit = "BOTTLE",
+            confidence = 1f,
+            estimatedShelfLifeDays = 365,
+            isAromaticOrSeasoning = false,
+            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+            conditionNotes = null,
+            barcode = "111222333444",
+        )
+
+        val editor = BatchReviewEditorState()
+        editor.loadFrom(baseItem)
+        assertEquals("111222333444", editor.barcode)
+
+        editor.barcode = "999888777666"
+        val updated = editor.applyTo(baseItem)
+        assertEquals("999888777666", updated.barcode)
+
+        editor.barcode = null
+        val cleared = editor.applyTo(baseItem)
+        assertNull(cleared.barcode)
+    }
 }
