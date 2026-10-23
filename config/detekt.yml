@@ -2,3 +2,10 @@ naming:
   FunctionNaming:
     ignoreAnnotated:
       - Composable
+
+coroutines:
+  InjectDispatcher:
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+
