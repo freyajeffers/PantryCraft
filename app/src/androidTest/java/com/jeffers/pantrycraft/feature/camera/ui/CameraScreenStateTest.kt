@@ -5,6 +5,7 @@ import androidx.camera.view.PreviewView
 import androidx.compose.ui.geometry.Offset
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.offlineBarcodeResolver
 import com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats
@@ -42,62 +43,64 @@ class CameraScreenStateTest {
 
     @Test
     fun cameraScreenStateInitializesWithDefaultsAndMutatesCleanly() {
-        val repository = Repository.getInstance(context)
-        val resolver = repository.offlineBarcodeResolver()
-        val snapshotService = SnapshotVisionService(LocalVisionModel { _, _ -> "{}" })
-        val frameTimingStats = FrameTimingStats()
-        val previewView = PreviewView(context)
-        val scope = CoroutineScope(Dispatchers.Main.immediate)
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            val repository = Repository.getInstance(context)
+            val resolver = repository.offlineBarcodeResolver()
+            val snapshotService = SnapshotVisionService(LocalVisionModel { _, _ -> "{}" })
+            val frameTimingStats = FrameTimingStats()
+            val previewView = PreviewView(context)
+            val scope = CoroutineScope(Dispatchers.Main.immediate)
 
-        val deps = CameraDeps(
-            context = context,
-            repository = repository,
-            analysisExecutor = executor,
-            scope = scope,
-            previewView = previewView,
-            barcodeResolver = resolver,
-            snapshotVisionService = snapshotService,
-            frameTimingStats = frameTimingStats,
-        )
+            val deps = CameraDeps(
+                context = context,
+                repository = repository,
+                analysisExecutor = executor,
+                scope = scope,
+                previewView = previewView,
+                barcodeResolver = resolver,
+                snapshotVisionService = snapshotService,
+                frameTimingStats = frameTimingStats,
+            )
 
-        val state = CameraScreenState(deps)
+            val state = CameraScreenState(deps)
 
-        // Verify defaults
-        assertNull(state.snapshotStatus)
-        assertNull(state.barcodeMatch)
-        assertNull(state.unresolvedBarcode)
-        assertNull(state.associateDialogBarcode)
-        assertTrue(state.parsedItems.isEmpty())
-        assertNull(state.latestResult)
-        assertNull(state.latestFrameTime)
-        assertFalse(state.isTorchOn)
-        assertNull(state.focusPoint)
-        assertEquals(0f, state.zoomRatio)
+            // Verify defaults
+            assertNull(state.snapshotStatus)
+            assertNull(state.barcodeMatch)
+            assertNull(state.unresolvedBarcode)
+            assertNull(state.associateDialogBarcode)
+            assertTrue(state.parsedItems.isEmpty())
+            assertNull(state.latestResult)
+            assertNull(state.latestFrameTime)
+            assertFalse(state.isTorchOn)
+            assertNull(state.focusPoint)
+            assertEquals(0f, state.zoomRatio)
 
-        // Verify mutations
-        state.snapshotStatus = "Scanning complete"
-        assertEquals("Scanning complete", state.snapshotStatus)
+            // Verify mutations
+            state.snapshotStatus = "Scanning complete"
+            assertEquals("Scanning complete", state.snapshotStatus)
 
-        state.isTorchOn = true
-        assertTrue(state.isTorchOn)
+            state.isTorchOn = true
+            assertTrue(state.isTorchOn)
 
-        state.zoomRatio = 0.75f
-        assertEquals(0.75f, state.zoomRatio)
+            state.zoomRatio = 0.75f
+            assertEquals(0.75f, state.zoomRatio)
 
-        state.focusPoint = Offset(100f, 200f)
-        assertEquals(Offset(100f, 200f), state.focusPoint)
+            state.focusPoint = Offset(100f, 200f)
+            assertEquals(Offset(100f, 200f), state.focusPoint)
 
-        val match = BarcodeMatch(
-            barcode = "12345678",
-            name = "Test Item",
-            category = "PANTRY_STAPLE",
-            unit = "COUNT",
-            estimatedShelfLifeDays = 30,
-        )
-        state.barcodeMatch = match
-        assertEquals("Test Item", state.barcodeMatch?.name)
+            val match = BarcodeMatch(
+                barcode = "12345678",
+                name = "Test Item",
+                category = "PANTRY_STAPLE",
+                unit = "COUNT",
+                estimatedShelfLifeDays = 30,
+            )
+            state.barcodeMatch = match
+            assertEquals("Test Item", state.barcodeMatch?.name)
 
-        resolver.close()
-        snapshotService.close()
+            resolver.close()
+            snapshotService.close()
+        }
     }
 }
