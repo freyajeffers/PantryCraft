@@ -12,6 +12,7 @@ import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult
+import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
 import com.jeffers.pantrycraft.feature.camera.barcode.OfflineBarcodeResolver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -26,9 +27,38 @@ data class CameraAnalyzerState(
     val frameTimingStats: FrameTimingStats,
     val onResult: (LiveVisionResult) -> Unit,
     val onFrameTime: (Long) -> Unit,
-    val onBarcodeResolved: (com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch) -> Unit,
+    val onBarcodeResolved: (BarcodeMatch) -> Unit,
     val onBarcodeUnresolved: (String) -> Unit,
 )
+
+internal suspend fun dispatchBarcodeResolution(
+    barcode: String,
+    barcodeResolver: OfflineBarcodeResolver,
+    onBarcodeResolved: (BarcodeMatch) -> Unit,
+    onBarcodeUnresolved: (String) -> Unit,
+    onHapticFeedback: () -> Unit = {},
+) {
+    val match = runCatching { barcodeResolver.resolveBarcode(barcode) }.getOrNull()
+    if (match != null) {
+        onBarcodeResolved(match)
+        onHapticFeedback()
+    } else {
+        onBarcodeUnresolved(barcode)
+    }
+}
+
+internal suspend fun processLiveBarcodeResult(
+    state: CameraAnalyzerState,
+    barcode: String,
+) {
+    dispatchBarcodeResolution(
+        barcode = barcode,
+        barcodeResolver = state.barcodeResolver,
+        onBarcodeResolved = state.onBarcodeResolved,
+        onBarcodeUnresolved = state.onBarcodeUnresolved,
+        onHapticFeedback = { triggerBarcodeHapticTick(state.context, state.view) },
+    )
+}
 
 @Composable
 internal fun rememberCameraAnalyzer(state: CameraAnalyzerState): LiveVisionAnalyzer =
@@ -58,13 +88,7 @@ internal fun rememberCameraAnalyzer(state: CameraAnalyzerState): LiveVisionAnaly
                 state.onResult(result)
                 result.barcodes.firstOrNull()?.let { barcode ->
                     state.scope.launch {
-                        val match = runCatching { state.barcodeResolver.resolveBarcode(barcode) }.getOrNull()
-                        if (match != null) {
-                            state.onBarcodeResolved(match)
-                            triggerBarcodeHapticTick(state.context, state.view)
-                        } else {
-                            state.onBarcodeUnresolved(barcode)
-                        }
+                        processLiveBarcodeResult(state, barcode)
                     }
                 }
             },

@@ -1,5 +1,6 @@
 package com.jeffers.pantrycraft.feature.camera.ui
 
+import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
 import com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
 import org.junit.Assert.assertEquals
@@ -198,6 +199,95 @@ class BatchReviewSheetStateTest {
         assertEquals("Blood Orange", state.reviewItems[1].item.name)
         assertEquals(5f, state.reviewItems[1].item.quantity)
         assertEquals("Apple", state.reviewItems[0].item.name)
+    }
+
+    @Test
+    fun applyScannedBarcode_nullMatch_updatesBarcodeAndDismissesScannerWithoutOverridingFields() {
+        val state = BatchReviewSheetState(listOf(createItem("Custom Item", 1f)))
+        state.loadForEditing(0)
+        state.showEmbeddedBarcodeScanner = true
+        state.editName = "Custom Item"
+        state.editCategory = "PRODUCE"
+
+        applyScannedBarcodeToState(state, "012345678901", null)
+
+        assertEquals("012345678901", state.editBarcode)
+        assertFalse(state.showEmbeddedBarcodeScanner)
+        assertEquals("Custom Item", state.editName)
+        assertEquals("PRODUCE", state.editCategory)
+    }
+
+    @Test
+    fun applyScannedBarcode_matchWithBlankName_populatesNameAndMetadata() {
+        val state = BatchReviewSheetState(listOf(createItem("", 1f)))
+        state.loadForEditing(0)
+        state.showEmbeddedBarcodeScanner = true
+        state.editName = ""
+
+        val match = BarcodeMatch(
+            barcode = "011110038364",
+            name = "Great Value Milk",
+            category = "DAIRY",
+            unit = "BOTTLE",
+            estimatedShelfLifeDays = 14,
+        )
+
+        applyScannedBarcodeToState(state, "011110038364", match)
+
+        assertEquals("011110038364", state.editBarcode)
+        assertEquals("Great Value Milk", state.editName)
+        assertEquals("DAIRY", state.editCategory)
+        assertEquals("BOTTLE", state.editUnit)
+        assertEquals(14, state.editShelfLifeDays)
+        assertFalse(state.editIsAromatic)
+        assertFalse(state.showEmbeddedBarcodeScanner)
+    }
+
+    @Test
+    fun applyScannedBarcode_matchWithExistingName_preservesCustomNameWhileUpdatingMetadata() {
+        val state = BatchReviewSheetState(listOf(createItem("My Organic Mayo", 1f)))
+        state.loadForEditing(0)
+        state.showEmbeddedBarcodeScanner = true
+        state.editName = "My Organic Mayo"
+
+        val match = BarcodeMatch(
+            barcode = "048000000000",
+            name = "Commercial Mayonnaise",
+            category = "CONDIMENTS",
+            unit = "JAR",
+            estimatedShelfLifeDays = 60,
+        )
+
+        applyScannedBarcodeToState(state, "048000000000", match)
+
+        assertEquals("048000000000", state.editBarcode)
+        assertEquals("My Organic Mayo", state.editName)
+        assertEquals("CONDIMENTS", state.editCategory)
+        assertEquals("JAR", state.editUnit)
+        assertEquals(60, state.editShelfLifeDays)
+        assertTrue(state.editIsAromatic)
+        assertFalse(state.showEmbeddedBarcodeScanner)
+    }
+
+    @Test
+    fun applyScannedBarcode_matchWithAromaticCategory_enablesAromaticSeasoningFlag() {
+        val state = BatchReviewSheetState(listOf(createItem("", 1f)))
+        state.loadForEditing(0)
+        state.editIsAromatic = false
+
+        val match = BarcodeMatch(
+            barcode = "052000000000",
+            name = "Ground Black Pepper",
+            category = "SPICES",
+            unit = "COUNT",
+            estimatedShelfLifeDays = 365,
+        )
+
+        applyScannedBarcodeToState(state, "052000000000", match)
+
+        assertTrue(state.editIsAromatic)
+        assertEquals("Ground Black Pepper", state.editName)
+        assertEquals("SPICES", state.editCategory)
     }
 
     private fun createItem(
