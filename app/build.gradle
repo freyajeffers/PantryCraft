@@ -142,7 +142,7 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2'
 
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.json:json:20250517'
+    testImplementation 'org.json:json:20260814'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3'
     androidTestImplementation 'androidx.room:room-testing:2.8.5'
     androidTestImplementation 'net.zetetic:sqlcipher-android:4.19.1'
