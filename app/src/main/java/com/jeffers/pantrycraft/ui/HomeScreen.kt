@@ -29,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.observeLowStock
-import com.jeffers.pantrycraft.data.observePantryItems
 
 private const val MILLIS_PER_DAY = 86_400_000L
 private const val EXPIRING_DAYS = 5L

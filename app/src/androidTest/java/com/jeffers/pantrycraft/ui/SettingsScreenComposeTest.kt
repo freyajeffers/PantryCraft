@@ -44,6 +44,14 @@ class SettingsScreenComposeTest {
         originalModel = ByokPreferences.selectedModel(context)
         originalEndpoint = ByokPreferences.selectedEndpoint(context)
         originalApiKey = ByokPreferences.loadApiKey(context)
+
+        ByokPreferences.saveConfiguration(
+            context,
+            AiProvider.OFFLINE_MLKIT,
+            AiProvider.OFFLINE_MLKIT.defaultModel,
+            AiProvider.OFFLINE_MLKIT.defaultEndpoint,
+        )
+        ByokPreferences.clearApiKey(context)
     }
 
     @After
@@ -78,17 +86,17 @@ class SettingsScreenComposeTest {
 
         // Scroll down to Data Sovereignty and AI Settings
         composeTestRule.onNodeWithText("Data Sovereignty & Portability").performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithText("Export JSON").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Export CSV").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Import JSON").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Import CSV").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Export JSON").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Export CSV").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Import JSON").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Import CSV").performScrollTo().assertIsDisplayed()
 
         composeTestRule.onNodeWithText("AI Vision & Meal Engine (BYOKey / Local)").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Save AI Settings").performScrollTo()
 
-        // 3. Switch to Anthropic Claude (BYOKey)
+        // 3. Switch to Google Gemini (BYOKey)
         composeTestRule
-            .onNode(hasText(AiProvider.ANTHROPIC.label, substring = true))
-            .performScrollTo()
+            .onNode(hasText(AiProvider.GEMINI.label, substring = true))
             .performClick()
         composeTestRule.waitForIdle()
 
@@ -97,9 +105,9 @@ class SettingsScreenComposeTest {
         composeTestRule.onNodeWithText("Endpoint URL").performScrollTo().assertIsDisplayed()
 
         // 4. Switch back to 100% Offline ML Kit
+        composeTestRule.onNodeWithText("Save AI Settings").performScrollTo()
         composeTestRule
             .onNode(hasText(AiProvider.OFFLINE_MLKIT.label, substring = true))
-            .performScrollTo()
             .performClick()
         composeTestRule.waitForIdle()
 

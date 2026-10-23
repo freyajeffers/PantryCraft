@@ -172,4 +172,37 @@ class VisionOutputParserTest {
         val item = VisionOutputParser().parse(json).single()
         assertEquals(0, item.estimatedShelfLifeDays)
     }
+
+    @Test
+    fun parsesItemsKeyFallbackAndEmptyJson() {
+        val fallbackJson = """
+            {"items":[{"name":"Almonds","quantity":2}]}
+        """.trimIndent()
+        val fallbackResult = VisionOutputParser().parse(fallbackJson)
+        assertEquals(1, fallbackResult.size)
+        assertEquals("Almonds", fallbackResult.single().name)
+
+        val emptyJson = "{}"
+        val emptyResult = VisionOutputParser().parse(emptyJson)
+        assertTrue(emptyResult.isEmpty())
+    }
+
+    @Test
+    fun handlesEscapedQuotesAndBackslashesInUnclosedJson() {
+        // Unclosed json with escaped quotes and backslashes in value
+        val raw = "{\"detected_items\":[{\"name\":\"Special \\\"Herb\\\" \\\\ Blend\"}"
+        val items = VisionOutputParser().parse(raw)
+        assertEquals(1, items.size)
+        assertEquals("Special \"Herb\" \\ Blend", items.single().name)
+    }
+
+    @Test
+    fun skipsNonObjectEntriesInDetectedItems() {
+        val json = """
+            {"detected_items":["invalid-string-entry", null, {"name":"Walnuts"}]}
+        """.trimIndent()
+        val items = VisionOutputParser().parse(json)
+        assertEquals(1, items.size)
+        assertEquals("Walnuts", items.single().name)
+    }
 }

@@ -277,4 +277,63 @@ class ParsedVisionItemMappingTest {
         val pantryItem = item.toPantryItem(1_000L)
         org.junit.Assert.assertNull(pantryItem.expirationTimestamp)
     }
+
+    @Test
+    fun defaultTimestampParametersUseCurrentTime() {
+        val before = System.currentTimeMillis()
+        val item = ParsedVisionItem(
+            name = "Apples",
+            category = "PRODUCE",
+            storageLocation = "PANTRY",
+            quantity = 3f,
+            unit = "COUNT",
+            confidence = 0.9f,
+            estimatedShelfLifeDays = 7,
+            isAromaticOrSeasoning = false,
+            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+            conditionNotes = null,
+        )
+
+        val pantryItem = item.toPantryItem()
+        val after = System.currentTimeMillis()
+        assertTrue(pantryItem.createdAt in before..after)
+
+        val visionItem = pantryItem.toParsedVisionItem()
+        assertEquals("Apples", visionItem.name)
+
+        val existing = PantryItem(name = "Apples", category = "PRODUCE")
+        val updated = item.toUpdatedPantryItem(existing)
+        assertTrue(updated.lastUpdated in before..System.currentTimeMillis())
+    }
+
+    @Test
+    fun toUpdatedPantryItemDefaultsOpenedTimestampWhenExistingOpenedTimestampNull() {
+        val now = 5_000_000L
+        val existing = PantryItem(
+            id = 77L,
+            name = "Olive Oil",
+            category = "OILS",
+            isOpened = true,
+            openedTimestamp = null,
+        )
+
+        val visionItem = ParsedVisionItem(
+            name = "Olive Oil",
+            category = "OILS",
+            storageLocation = "PANTRY",
+            quantity = 1f,
+            unit = "BOTTLE",
+            confidence = 0.9f,
+            estimatedShelfLifeDays = 180,
+            isAromaticOrSeasoning = false,
+            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+            conditionNotes = null,
+            isOpened = true,
+        )
+
+        val updated = visionItem.toUpdatedPantryItem(existing, now)
+        assertTrue(updated.isOpened)
+        // Since existing.openedTimestamp is null, it falls back to now
+        assertEquals(now, updated.openedTimestamp)
+    }
 }

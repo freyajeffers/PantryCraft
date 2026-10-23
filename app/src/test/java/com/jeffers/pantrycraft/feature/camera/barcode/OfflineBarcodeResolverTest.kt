@@ -117,10 +117,15 @@ class OfflineBarcodeResolverTest {
     }
 
     @Test
-    fun reloadCatalogInvokesProvider() {
+    fun reloadCatalogInvokesProviderAndClosesPrevious() {
         var providerCalls = 0
+        var closedCalls = 0
+        val fakeDb = FakeBarcodeDatabase(
+            onClose = { closedCalls++ },
+        )
         val resolver = OfflineBarcodeResolver(
             customBarcodeDao = FakeDao(),
+            assetBarcodeDatabase = fakeDb,
             assetBarcodeDatabaseProvider = {
                 providerCalls++
                 null
@@ -129,6 +134,94 @@ class OfflineBarcodeResolverTest {
 
         resolver.reloadCatalog()
         assertEquals(1, providerCalls)
+        assertEquals(1, closedCalls)
+    }
+
+    @Test
+    fun resolvesFromAssetDatabaseWithBrandFormatting() = runBlocking {
+        val fakeDb = FakeBarcodeDatabase(
+            matches = mapOf(
+                "111122223333" to EmbeddedBarcodeMatch(
+                    barcode = "111122223333",
+                    name = "Olive Oil",
+                    brand = "Bertolli",
+                    category = "OILS",
+                    shelfLifeDays = 365,
+                ),
+                "444455556666" to EmbeddedBarcodeMatch(
+                    barcode = "444455556666",
+                    name = "Bertolli Pasta Sauce",
+                    brand = "Bertolli",
+                    category = "SAUCES",
+                    shelfLifeDays = 180,
+                ),
+                "777788889999" to EmbeddedBarcodeMatch(
+                    barcode = "777788889999",
+                    name = "Sea Salt",
+                    brand = "",
+                    category = "SPICES",
+                    shelfLifeDays = 720,
+                ),
+            ),
+        )
+
+        val resolver = OfflineBarcodeResolver(
+            customBarcodeDao = FakeDao(),
+            assetBarcodeDatabase = fakeDb,
+        )
+
+        val match1 = resolver.resolveBarcode("111122223333")
+        assertEquals("Bertolli Olive Oil", match1?.name)
+        assertEquals("OILS", match1?.category)
+        assertEquals("COUNT", match1?.unit)
+        assertEquals(365, match1?.estimatedShelfLifeDays)
+
+        val match2 = resolver.resolveBarcode("444455556666")
+        assertEquals("Bertolli Pasta Sauce", match2?.name)
+
+        val match3 = resolver.resolveBarcode("777788889999")
+        assertEquals("Sea Salt", match3?.name)
+    }
+
+    @Test
+    fun lazyProviderInitializesAssetDatabaseAndCloses() = runBlocking {
+        var providerCalls = 0
+        var closedCalls = 0
+        val fakeDb = FakeBarcodeDatabase(
+            matches = mapOf(
+                "12345678" to EmbeddedBarcodeMatch(
+                    barcode = "12345678",
+                    name = "Apples",
+                    brand = "",
+                    category = "PRODUCE",
+                    shelfLifeDays = 14,
+                ),
+            ),
+            onClose = { closedCalls++ },
+        )
+
+        val resolver = OfflineBarcodeResolver(
+            customBarcodeDao = FakeDao(),
+            assetBarcodeDatabaseProvider = {
+                providerCalls++
+                fakeDb
+            },
+        )
+
+        val match = resolver.resolveBarcode("12345678")
+        assertEquals("Apples", match?.name)
+        assertEquals(1, providerCalls)
+
+        resolver.close()
+        assertEquals(1, closedCalls)
+    }
+
+    private class FakeBarcodeDatabase(
+        private val matches: Map<String, EmbeddedBarcodeMatch> = emptyMap(),
+        private val onClose: () -> Unit = {},
+    ) : BarcodeCatalogDatabase {
+        override fun findByBarcode(barcode: String): EmbeddedBarcodeMatch? = matches[barcode]
+        override fun close() = onClose()
     }
 
     private class FakeDao(

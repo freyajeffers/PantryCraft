@@ -5,6 +5,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -85,6 +86,9 @@ class GroceryScreenComposeTest {
         composeTestRule.waitForIdle()
 
         // 4. Verify item is displayed in list
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule.onAllNodesWithText(testItemName).fetchSemanticsNodes().isNotEmpty()
+        }
         composeTestRule.onNodeWithText(testItemName).assertIsDisplayed()
 
         // 5. Toggle checkbox to mark as checked
@@ -92,6 +96,9 @@ class GroceryScreenComposeTest {
         composeTestRule.waitForIdle()
 
         // 6. Top bar should now show clear checked items action
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule.onAllNodes(hasContentDescription("Clear checked items")).fetchSemanticsNodes().isNotEmpty()
+        }
         composeTestRule
             .onNodeWithContentDescription("Clear checked items")
             .assertIsDisplayed()
@@ -99,6 +106,9 @@ class GroceryScreenComposeTest {
         composeTestRule.waitForIdle()
 
         // 7. Verify item is removed
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule.onAllNodesWithText(testItemName).fetchSemanticsNodes().isEmpty()
+        }
         composeTestRule.onNodeWithText(testItemName).assertDoesNotExist()
     }
 }

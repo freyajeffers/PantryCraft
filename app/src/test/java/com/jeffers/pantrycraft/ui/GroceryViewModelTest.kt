@@ -48,6 +48,20 @@ class GroceryViewModelTest {
     }
 
     @Test
+    fun items_observesRepositoryGroceryFlow() = runTest {
+        val observed = mutableListOf<List<GroceryItem>>()
+        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.items.collect { observed.add(it) }
+        }
+
+        fakeRepo.itemsFlow.value = listOf(sampleItem)
+        advanceUntilIdle()
+
+        assertEquals(listOf(sampleItem), observed.last())
+        collectJob.cancel()
+    }
+
+    @Test
     fun add_successfulInsertDoesNotEmitErrors() = runTest {
         val emittedErrors = mutableListOf<String>()
         val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {

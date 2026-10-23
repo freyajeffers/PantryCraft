@@ -57,7 +57,7 @@ class HomeScreenComposeTest {
         // 3. Click "Add Item" button under Quick Ingestion -> Navigates to Pantry
         composeTestRule.onNodeWithText("Add Item").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("Pantry Inventory").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Add pantry item").assertIsDisplayed()
 
         // 4. Navigate back to Dashboard
         composeTestRule.onNodeWithContentDescription("Dashboard").performClick()
@@ -66,6 +66,6 @@ class HomeScreenComposeTest {
         // 5. Click "View List" under Grocery Checklist -> Navigates to Grocery
         composeTestRule.onNodeWithText("View List").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("Grocery List").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Grocery list").assertIsDisplayed()
     }
 }

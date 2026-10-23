@@ -5,10 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jeffers.pantrycraft.data.GroceryItem
 import com.jeffers.pantrycraft.data.PantryItem
+import com.jeffers.pantrycraft.data.PantryRepository
 import com.jeffers.pantrycraft.data.PantryTaxonomy
 import com.jeffers.pantrycraft.data.Repository
-import com.jeffers.pantrycraft.data.observePantryItems
-import com.jeffers.pantrycraft.data.searchPantryItems
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -34,8 +33,9 @@ private const val PANTRY_LOCATION_INDEX_COUNTER = 3
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class PantryViewModel(
-    private val repo: Repository,
+    private val repo: PantryRepository,
 ) : ViewModel() {
+    constructor(repo: Repository) : this(repo as PantryRepository)
     val items: StateFlow<List<PantryItem>> =
         repo.observePantryItems().stateIn(
             scope = viewModelScope,

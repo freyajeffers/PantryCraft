@@ -15,8 +15,8 @@ data class BarcodeMatch(
 
 class OfflineBarcodeResolver(
     private val customBarcodeDao: CustomBarcodeDao,
-    private var assetBarcodeDatabase: AssetBarcodeDatabase? = null,
-    private val assetBarcodeDatabaseProvider: () -> AssetBarcodeDatabase? = { null },
+    private var assetBarcodeDatabase: BarcodeCatalogDatabase? = null,
+    private val assetBarcodeDatabaseProvider: () -> BarcodeCatalogDatabase? = { null },
 ) : AutoCloseable {
     private var lastScannedBarcode: String? = null
     private var lastScannedAt = 0L
@@ -69,7 +69,7 @@ class OfflineBarcodeResolver(
     }
 
     @Synchronized
-    private fun activeAssetDatabase(): AssetBarcodeDatabase? {
+    private fun activeAssetDatabase(): BarcodeCatalogDatabase? {
         if (assetBarcodeDatabase == null) {
             assetBarcodeDatabase = runCatching { assetBarcodeDatabaseProvider() }.getOrNull()
         }

@@ -4,9 +4,13 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import java.io.File
 
+interface BarcodeCatalogDatabase : AutoCloseable {
+    fun findByBarcode(barcode: String): EmbeddedBarcodeMatch?
+}
+
 class AssetBarcodeDatabase(
     context: Context,
-) : AutoCloseable {
+) : BarcodeCatalogDatabase {
     private val database: SQLiteDatabase
 
     init {
@@ -26,7 +30,7 @@ class AssetBarcodeDatabase(
         database = SQLiteDatabase.openDatabase(target.path, null, SQLiteDatabase.OPEN_READONLY)
     }
 
-    fun findByBarcode(barcode: String): EmbeddedBarcodeMatch? =
+    override fun findByBarcode(barcode: String): EmbeddedBarcodeMatch? =
         database
             .query(
                 "products",

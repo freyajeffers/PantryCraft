@@ -31,7 +31,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.listBackupFiles
-import com.jeffers.pantrycraft.data.observePantryItems
 import com.jeffers.pantrycraft.data.persistedBackupUri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

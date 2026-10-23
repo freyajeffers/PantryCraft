@@ -6,7 +6,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.Repository
-import com.jeffers.pantrycraft.data.observePantryItems
 import com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
 import kotlinx.coroutines.CoroutineScope
