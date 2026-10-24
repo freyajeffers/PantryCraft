@@ -33,6 +33,41 @@ class ViewModelSecondaryConstructorTest {
 
     @Test
     fun secondaryConstructorsInstantiateCleanlyWithRepository() {
+        val repo = createStubRepository()
+
+        val pantryVm = PantryViewModel(repo)
+        assertNotNull(pantryVm)
+
+        val groceryVm = GroceryViewModel(repo)
+        assertNotNull(groceryVm)
+    }
+
+    @Test
+    fun viewModelFactoriesInstantiateViewModelsAndRejectUnknownClass() {
+        val repo = createStubRepository()
+
+        val pantryFactory = PantryViewModelFactory(repo)
+        val pantryVm = pantryFactory.create(PantryViewModel::class.java)
+        assertNotNull(pantryVm)
+
+        val groceryFactory = GroceryViewModelFactory(repo)
+        val groceryVm = groceryFactory.create(GroceryViewModel::class.java)
+        assertNotNull(groceryVm)
+
+        val unkPantry = org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            pantryFactory.create(UnregisteredViewModel::class.java)
+        }
+        assertEquals("Unknown ViewModel class", unkPantry.message)
+
+        val unkGrocery = org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            groceryFactory.create(UnregisteredViewModel::class.java)
+        }
+        assertEquals("Unknown ViewModel class", unkGrocery.message)
+    }
+
+    private class UnregisteredViewModel : androidx.lifecycle.ViewModel()
+
+    private fun createStubRepository(): Repository {
         val unsafeClass = Class.forName("sun.misc.Unsafe")
         val theUnsafeField = unsafeClass.getDeclaredField("theUnsafe").apply {
             isAccessible = true
@@ -49,12 +84,7 @@ class ViewModelSecondaryConstructorTest {
                 field.set(repo, fakeRepo)
             }
         }
-
-        val pantryVm = PantryViewModel(repo)
-        assertNotNull(pantryVm)
-
-        val groceryVm = GroceryViewModel(repo)
-        assertNotNull(groceryVm)
+        return repo
     }
 
     @Test
