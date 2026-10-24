@@ -68,6 +68,45 @@ class ExpirationAlertWorkerIntegrationTest {
     }
 
     @Test
+    fun doWorkFormatsSummaryWithMoreThanFourExpiringItems() = runBlocking {
+        ExpirationAlertWorker.setEnabled(context, true)
+        val repository = Repository.getInstance(context)
+        val now = System.currentTimeMillis()
+        (1..5).forEach { i ->
+            repository.insertPantry(
+                PantryItem(
+                    name = "${testPrefix}item$i",
+                    quantity = 1f,
+                    storageLocation = "FRIDGE",
+                    category = "DAIRY",
+                    expirationTimestamp = now + (i * 1000L),
+                ),
+            )
+        }
+
+        val worker = TestListenableWorkerBuilder<ExpirationAlertWorker>(context).build()
+        val result = worker.doWork()
+
+        assertTrue(result is ListenableWorker.Result.Success)
+    }
+
+    @Test
+    fun expirationAlertSchedulerEnqueuesWorkWhenEnabled() {
+        ExpirationAlertWorker.setEnabled(context, false)
+        ExpirationAlertScheduler.scheduleIfEnabled(context)
+        val initialWork = WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWork("pantrycraft_expiration_alerts").get()
+        assertTrue(initialWork.isEmpty() || initialWork.all { it.state == WorkInfo.State.CANCELLED })
+
+        ExpirationAlertWorker.setEnabled(context, true)
+        ExpirationAlertScheduler.scheduleIfEnabled(context)
+        val enqueuedWork = WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWork("pantrycraft_expiration_alerts").get()
+        assertFalse(enqueuedWork.isEmpty())
+        assertEquals(WorkInfo.State.ENQUEUED, enqueuedWork.first().state)
+    }
+
+    @Test
     fun initialDelayIsWithinTwentyFourHours() {
         val delay = ExpirationAlertWorker.calculateInitialDelayToNineAmMillis()
         assertTrue(delay >= 0L)

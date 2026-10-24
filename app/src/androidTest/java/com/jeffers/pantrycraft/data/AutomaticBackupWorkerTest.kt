@@ -108,4 +108,20 @@ class AutomaticBackupWorkerTest {
                 cancelledWork.first().state == WorkInfo.State.FAILED,
         )
     }
+
+    @Test
+    fun schedulerScheduleIfEnabledEnqueuesWorkOnlyWhenEnabled() {
+        AutomaticBackupPreferences.setSchedule(context, enabled = false, intervalMinutes = 60L)
+        AutomaticBackupScheduler.scheduleIfEnabled(context)
+        val initialWork = WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWork("pantrycraft_automatic_backup").get()
+        assertTrue(initialWork.isEmpty() || initialWork.all { it.state == WorkInfo.State.CANCELLED })
+
+        AutomaticBackupPreferences.setSchedule(context, enabled = true, intervalMinutes = 60L)
+        AutomaticBackupScheduler.scheduleIfEnabled(context)
+        val enqueuedWork = WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWork("pantrycraft_automatic_backup").get()
+        assertFalse(enqueuedWork.isEmpty())
+        assertEquals(WorkInfo.State.ENQUEUED, enqueuedWork.first().state)
+    }
 }
