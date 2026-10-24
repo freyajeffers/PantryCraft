@@ -117,4 +117,43 @@ class RepositoryExportTest {
         assertEquals(1, lines.size)
         assertTrue(lines[0].startsWith("name,category,storageLocation"))
     }
+
+    @Test
+    fun exportInventoryToJsonAndCsvWithNullFieldsUsesFallbacks() {
+        val pantry = listOf(
+            PantryItem(
+                name = "Apple",
+                unit = null,
+                customUnitName = null,
+                barcode = null,
+                expirationTimestamp = null,
+                openedTimestamp = null,
+                notes = null,
+            ),
+        )
+        val grocery = listOf(
+            GroceryItem(
+                name = "Bread",
+                unit = null,
+            ),
+        )
+
+        val json = exportInventoryToJson(pantry, grocery)
+        val root = JSONObject(json)
+        val p = root.getJSONArray("pantry").getJSONObject(0)
+        assertEquals("COUNT", p.getString("unit"))
+        assertTrue(p.isNull("customUnitName"))
+        assertEquals("", p.getString("barcode"))
+        assertTrue(p.isNull("expirationTimestamp"))
+        assertTrue(p.isNull("openedTimestamp"))
+        assertEquals("", p.getString("notes"))
+
+        val g = root.getJSONArray("grocery").getJSONObject(0)
+        assertEquals("COUNT", g.getString("unit"))
+
+        val csv = exportPantryToCsv(pantry)
+        val lines = csv.lines().filter { it.isNotBlank() }
+        assertEquals(2, lines.size)
+        assertTrue(lines[1].contains("\"COUNT\""))
+    }
 }

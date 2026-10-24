@@ -95,6 +95,7 @@ class RepositoryJsonParserTest {
                 "exportedAt": 1700000000000,
                 "pantry": [
                     { "name": "Apples", "quantity": 4.0, "category": "PRODUCE" },
+                    "not-a-json-object",
                     { "quantity": 10.0 },
                     { "name": "Black Pepper", "isAromaticOrSeasoning": true, "category": "SPICES" }
                 ]

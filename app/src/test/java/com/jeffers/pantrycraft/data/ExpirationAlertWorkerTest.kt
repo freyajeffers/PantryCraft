@@ -37,6 +37,13 @@ class ExpirationAlertWorkerTest {
         assertTrue(ExpirationAlertWorker.ALERT_WINDOW_MILLIS > 0L)
     }
 
+    @Test
+    fun calculateInitialDelayDefaultParameterUsesSystemTime() {
+        val delay = ExpirationAlertWorker.calculateInitialDelayToNineAmMillis()
+        assertTrue(delay >= 0L)
+        assertTrue(delay <= 24L * 60L * 60L * 1000L)
+    }
+
     private fun calendarAt(
         year: Int,
         month: Int,

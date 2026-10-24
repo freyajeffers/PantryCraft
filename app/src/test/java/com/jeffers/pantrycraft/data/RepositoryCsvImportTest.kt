@@ -88,4 +88,33 @@ class RepositoryCsvImportTest {
         assertEquals(false, item.isOpened)
         assertNull(item.notes)
     }
+
+    @Test
+    fun minimalCsvRowsWithMissingColumnsUseFallbacks() {
+        val csv = """
+            name
+            "Solo Item"
+            "Legacy Minimal",,,,,,
+        """.trimIndent()
+
+        val items = parsePantryItemsFromCsv(csv)
+        assertEquals(2, items.size)
+
+        val item1 = items[0]
+        assertEquals("Solo Item", item1.name)
+        assertEquals("OTHER", item1.category)
+        assertEquals("PANTRY", item1.storageLocation)
+        assertEquals(1f, item1.quantity, 0.001f)
+        assertEquals("COUNT", item1.unit)
+        assertEquals(0f, item1.threshold, 0.001f)
+        assertNull(item1.expirationTimestamp)
+        assertEquals(false, item1.isOpened)
+        assertNull(item1.notes)
+
+        val item2 = items[1]
+        assertEquals("Legacy Minimal", item2.name)
+        assertEquals("OTHER", item2.category)
+        assertEquals("PANTRY", item2.storageLocation)
+        assertEquals(1f, item2.quantity, 0.001f)
+    }
 }
