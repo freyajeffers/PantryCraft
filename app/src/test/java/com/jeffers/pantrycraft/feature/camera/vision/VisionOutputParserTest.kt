@@ -153,6 +153,13 @@ class VisionOutputParserTest {
         val itemNan = VisionOutputParser().parse(jsonNan).single()
         assertEquals(0f, itemNan.boundingBox.ymin, 0.001f)
         assertEquals(1f, itemNan.boundingBox.ymax, 0.001f)
+
+        val jsonObjNan = """
+            {"detected_items":[{"name":"Tea","bounding_box":{"y_min":1e999,"x_min":0.1,"y_max":0.9,"x_max":0.8}}]}
+        """.trimIndent()
+        val itemObjNan = VisionOutputParser().parse(jsonObjNan).single()
+        assertEquals(0f, itemObjNan.boundingBox.ymin, 0.001f)
+        assertEquals(1f, itemObjNan.boundingBox.ymax, 0.001f)
     }
 
     @Test

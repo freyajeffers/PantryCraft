@@ -77,6 +77,30 @@ class GroceryViewModelTest {
     }
 
     @Test
+    fun update_successfulUpdateCallsRepository() = runTest {
+        viewModel.update(sampleItem)
+        advanceUntilIdle()
+
+        assertEquals(listOf(sampleItem), fakeRepo.updatedItems)
+    }
+
+    @Test
+    fun delete_successfulDeleteCallsRepository() = runTest {
+        viewModel.delete(sampleItem)
+        advanceUntilIdle()
+
+        assertEquals(listOf(sampleItem), fakeRepo.deletedItems)
+    }
+
+    @Test
+    fun clearChecked_successfulClearCallsRepository() = runTest {
+        viewModel.clearChecked()
+        advanceUntilIdle()
+
+        assertTrue(fakeRepo.clearCheckedCalled)
+    }
+
+    @Test
     fun add_emitsExpectedErrorMessageOnFailure() = runTest {
         val emittedErrors = mutableListOf<String>()
         val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {

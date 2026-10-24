@@ -72,6 +72,21 @@ class CameraAnalyzerStateTest {
         assertEquals(0, hapticTicks)
     }
 
+    @Test
+    fun dispatchBarcodeResolution_withDefaultHapticCallbackDoesNotThrow() = runBlocking {
+        val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
+        var resolvedMatch: BarcodeMatch? = null
+
+        dispatchBarcodeResolution(
+            barcode = "012000001056",
+            barcodeResolver = resolver,
+            onBarcodeResolved = { resolvedMatch = it },
+            onBarcodeUnresolved = {},
+        )
+
+        assertNotNull(resolvedMatch)
+    }
+
     private class FakeCustomBarcodeDao : CustomBarcodeDao {
         override suspend fun findByBarcode(barcode: String): CustomBarcodeItem? = null
         override suspend fun upsert(item: CustomBarcodeItem) {

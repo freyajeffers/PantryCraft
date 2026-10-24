@@ -132,4 +132,19 @@ class PantryItemModelTest {
         val opened = frozenItem.markOpened(now)
         assertEquals(now + 30 * millisPerDay, opened.expirationTimestamp)
     }
+
+    @Test
+    fun markOpenedWithDefaultTimestampUsesCurrentTime() {
+        val before = System.currentTimeMillis()
+        val item = PantryItem(
+            name = "Default Milk",
+            category = "DAIRY",
+            quantity = 1f,
+        )
+        val opened = item.markOpened()
+        val after = System.currentTimeMillis()
+
+        assertTrue(opened.isOpened)
+        assertTrue(opened.openedTimestamp!! in before..after)
+    }
 }

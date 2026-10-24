@@ -148,6 +148,18 @@ class BatchReviewSheetStateTest {
         assertFalse(updatedItem.isOpened)
         assertEquals(2.5f, updatedItem.threshold)
         assertEquals("111222333", updatedItem.barcode)
+
+        state.editUnit = "   "
+        state.editCustomUnitName = "   "
+        val fallbackItem = state.applyEditsTo(originalItem)
+        assertEquals("COUNT", fallbackItem.unit)
+        assertNull(fallbackItem.customUnitName)
+
+        state.editUnit = "CUSTOM"
+        state.editCustomUnitName = "   "
+        val customEmptyItem = state.applyEditsTo(originalItem)
+        assertEquals("CUSTOM", customEmptyItem.unit)
+        assertNull(customEmptyItem.customUnitName)
     }
 
     @Test

@@ -115,11 +115,16 @@ class PantryViewModelTest {
     }
 
     @Test
-    fun viewModel_update_emitsErrorOnFailure() = runTest {
+    fun viewModel_update_successAndFailure() = runTest {
         val errors = mutableListOf<String>()
         val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.operationErrors.collect { errors.add(it) }
         }
+
+        viewModel.update(sampleItem)
+        advanceUntilIdle()
+        assertEquals(listOf(sampleItem), fakeRepo.updatedPantry)
+        assertTrue(errors.isEmpty())
 
         fakeRepo.updateException = RuntimeException("Update failed")
         viewModel.update(sampleItem)
@@ -150,11 +155,20 @@ class PantryViewModelTest {
     }
 
     @Test
-    fun viewModel_deleteAndRestore_emitsErrorOnFailure() = runTest {
+    fun viewModel_deleteAndRestore_successAndFailure() = runTest {
         val errors = mutableListOf<String>()
         val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.operationErrors.collect { errors.add(it) }
         }
+
+        viewModel.delete(sampleItem)
+        advanceUntilIdle()
+        assertEquals(listOf(sampleItem), fakeRepo.deletedPantry)
+
+        viewModel.restore(sampleItem)
+        advanceUntilIdle()
+        assertEquals(listOf(sampleItem), fakeRepo.restoredPantry)
+        assertTrue(errors.isEmpty())
 
         fakeRepo.deleteException = RuntimeException("Delete failed")
         viewModel.delete(sampleItem)
@@ -443,6 +457,12 @@ class PantryViewModelTest {
 
         assertEquals(1, filtered.size)
         assertEquals("Milk", filtered.first().name)
+
+        val defaultNowFiltered = filterPantryItems(
+            listOf(PantryItem(id = 10, name = "Immediate", expirationTimestamp = System.currentTimeMillis() + 1000L)),
+            PantryLocationFilter.EXPIRING_SOON,
+        )
+        assertEquals(1, defaultNowFiltered.size)
     }
 
     @Test

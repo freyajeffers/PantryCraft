@@ -216,6 +216,71 @@ class OfflineBarcodeResolverTest {
         assertEquals(1, closedCalls)
     }
 
+    @Test
+    fun reloadCatalogAndCloseHandleExceptionsGracefully() {
+        val crashingDb = object : BarcodeCatalogDatabase {
+            override fun findByBarcode(barcode: String) = null
+            override fun close() {
+                error("Close failed")
+            }
+        }
+        val resolver = OfflineBarcodeResolver(
+            customBarcodeDao = FakeDao(),
+            assetBarcodeDatabase = crashingDb,
+            assetBarcodeDatabaseProvider = {
+                error("Provider failed")
+            },
+        )
+
+        resolver.reloadCatalog()
+        resolver.close()
+
+        val resolverWithoutDb = OfflineBarcodeResolver(
+            customBarcodeDao = FakeDao(),
+            assetBarcodeDatabaseProvider = { null },
+        )
+        resolverWithoutDb.reloadCatalog()
+        resolverWithoutDb.close()
+    }
+
+    @Test
+    fun activeDatabaseHandlesProviderExceptionWhenResolving() = runBlocking {
+        val resolver = OfflineBarcodeResolver(
+            customBarcodeDao = FakeDao(),
+            assetBarcodeDatabaseProvider = {
+                error("Lazy load failed")
+            },
+        )
+
+        assertNull(resolver.resolveBarcode("12345678"))
+    }
+
+    @Test
+    fun associateBarcodeWithDefaultsUsesStandardTaxonomyDefaults() = runBlocking {
+        val resolver = OfflineBarcodeResolver(FakeDao())
+        val match = resolver.associateBarcode("12345678", "Whole Milk")
+
+        assertEquals("Whole Milk", match.name)
+        assertEquals("OTHER", match.category)
+        assertEquals("COUNT", match.unit)
+        assertEquals(0, match.estimatedShelfLifeDays)
+    }
+
+    @Test
+    fun closeHandlesCrashingDatabaseGracefully() {
+        val crashingDb = object : BarcodeCatalogDatabase {
+            override fun findByBarcode(barcode: String) = null
+            override fun close() {
+                error("Close failed")
+            }
+        }
+        val resolver = OfflineBarcodeResolver(
+            customBarcodeDao = FakeDao(),
+            assetBarcodeDatabase = crashingDb,
+        )
+        resolver.close()
+    }
+
     private class FakeBarcodeDatabase(
         private val matches: Map<String, EmbeddedBarcodeMatch> = emptyMap(),
         private val onClose: () -> Unit = {},

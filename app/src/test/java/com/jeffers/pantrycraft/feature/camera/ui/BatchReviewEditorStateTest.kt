@@ -80,6 +80,10 @@ class BatchReviewEditorStateTest {
         assertEquals(0f, updated.threshold, 0.001f)
         assertEquals(5, updated.estimatedShelfLifeDays)
         assertFalse(updated.isOpened)
+
+        editor.notes = "  Freshly picked  "
+        val withNotes = editor.applyTo(baseItem)
+        assertEquals("Freshly picked", withNotes.conditionNotes)
     }
 
     @Test

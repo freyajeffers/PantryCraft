@@ -106,4 +106,11 @@ class SnapshotVisionServiceTest {
         assertTrue(items.isEmpty())
         assertTrue("Frame memory must be zeroed even when no items detected", frameBytes.all { it == 0.toByte() })
     }
+
+    @Test
+    fun promptConstantContainsExpectedInstructions() {
+        val prompt = SnapshotVisionService.PROMPT
+        assertTrue(prompt.contains("detected_items"))
+        assertTrue(prompt.contains("bounding_box"))
+    }
 }

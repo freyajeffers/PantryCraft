@@ -301,6 +301,13 @@ class ParsedVisionItemMappingTest {
         val visionItem = pantryItem.toParsedVisionItem()
         assertEquals("Apples", visionItem.name)
 
+        val expired = pantryItem.copy(expirationTimestamp = before - 86_400_000L)
+        val expiredVision = expired.toParsedVisionItem(before)
+        assertEquals(0, expiredVision.estimatedShelfLifeDays)
+
+        val nullExpVision = pantryItem.copy(expirationTimestamp = null).toParsedVisionItem(before)
+        assertEquals(0, nullExpVision.estimatedShelfLifeDays)
+
         val existing = PantryItem(name = "Apples", category = "PRODUCE")
         val updated = item.toUpdatedPantryItem(existing)
         assertTrue(updated.lastUpdated in before..System.currentTimeMillis())
