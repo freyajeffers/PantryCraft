@@ -185,4 +185,11 @@ class RepositoryTest {
         assertEquals(1, repository.reclaimTemporaryMedia())
         assertEquals(0, repository.reclaimTemporaryMedia())
     }
+
+    @Test
+    fun repositoryOfflineBarcodeResolverInitialization() {
+        val resolver = repository.offlineBarcodeResolver()
+        assertNotNull(resolver)
+        resolver.close()
+    }
 }
