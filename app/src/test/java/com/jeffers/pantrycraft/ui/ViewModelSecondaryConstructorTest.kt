@@ -49,10 +49,20 @@ class ViewModelSecondaryConstructorTest {
         val pantryFactory = PantryViewModelFactory(repo)
         val pantryVm = pantryFactory.create(PantryViewModel::class.java)
         assertNotNull(pantryVm)
+        val pantryVmExtras = pantryFactory.create(
+            PantryViewModel::class.java,
+            androidx.lifecycle.viewmodel.CreationExtras.Empty,
+        )
+        assertNotNull(pantryVmExtras)
 
         val groceryFactory = GroceryViewModelFactory(repo)
         val groceryVm = groceryFactory.create(GroceryViewModel::class.java)
         assertNotNull(groceryVm)
+        val groceryVmExtras = groceryFactory.create(
+            GroceryViewModel::class.java,
+            androidx.lifecycle.viewmodel.CreationExtras.Empty,
+        )
+        assertNotNull(groceryVmExtras)
 
         val unkPantry = org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
             pantryFactory.create(UnregisteredViewModel::class.java)

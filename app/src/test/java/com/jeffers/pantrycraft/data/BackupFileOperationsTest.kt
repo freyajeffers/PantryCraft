@@ -105,4 +105,17 @@ class BackupFileOperationsTest {
             replaceDatabaseFile(temp = tempRestored, dbFile = targetDir)
         }
     }
+
+    @Test
+    fun replaceDatabaseFileThrowsWhenWritingToFullDevice() {
+        val tempRestored = tempFolder.newFile("temp_full.db")
+        tempRestored.writeText("data-to-write-to-full-device")
+        val devFull = File("/dev/full")
+
+        if (devFull.exists()) {
+            assertThrows(IOException::class.java) {
+                replaceDatabaseFile(temp = tempRestored, dbFile = devFull)
+            }
+        }
+    }
 }

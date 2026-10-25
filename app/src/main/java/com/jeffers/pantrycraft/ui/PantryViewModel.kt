@@ -173,10 +173,11 @@ fun filterPantryItems(
                 item.expirationTimestamp?.let { it <= cutoff } == true
             }
         }
-        else -> {
-            val location = requireNotNull(filter.storageLocation)
-            items.filter { it.storageLocation.equals(location, ignoreCase = true) }
-        }
+        PantryLocationFilter.PANTRY,
+        PantryLocationFilter.FRIDGE,
+        PantryLocationFilter.FREEZER,
+        PantryLocationFilter.COUNTER ->
+            items.filter { it.storageLocation.equals(filter.storageLocation, ignoreCase = true) }
     }
 
 fun sortPantryItems(

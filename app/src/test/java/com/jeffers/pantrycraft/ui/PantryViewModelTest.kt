@@ -52,6 +52,7 @@ class PantryViewModelTest {
 
     @Test
     fun viewModel_initialStateDefaults() {
+        org.junit.Assert.assertNotNull(viewModel.items)
         assertEquals(PantryLocationFilter.ALL, viewModel.selectedLocation.value)
         assertEquals(PantrySortOrder.NAME_ASC, viewModel.selectedSortOrder.value)
         assertEquals("", viewModel.searchQuery.value)

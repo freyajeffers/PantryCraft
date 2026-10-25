@@ -103,10 +103,20 @@ class OfflineBarcodeResolverTest {
         assertEquals(0, match.estimatedShelfLifeDays)
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun rememberRejectsInvalidBarcodeFormat() = runBlocking {
-        val resolver = OfflineBarcodeResolver(FakeDao())
-        resolver.remember(CustomBarcodeItem(barcode = "short", name = "Test"))
+    @Test
+    fun rememberValidatesAndPersistsBarcodeItem() = runBlocking {
+        val dao = FakeDao()
+        val resolver = OfflineBarcodeResolver(dao)
+        val validItem = CustomBarcodeItem(barcode = "123456789012", name = "Test Item")
+        resolver.remember(validItem)
+        assertEquals(validItem, dao.findByBarcode("123456789012"))
+
+        try {
+            resolver.remember(CustomBarcodeItem(barcode = "short", name = "Test"))
+            org.junit.Assert.fail("Expected IllegalArgumentException")
+        } catch (_: IllegalArgumentException) {
+            // Expected for invalid barcode
+        }
     }
 
     @Test(expected = IllegalArgumentException::class)
