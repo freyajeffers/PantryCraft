@@ -46,4 +46,41 @@ class LiveVisionResultTest {
         assertEquals(1920, sized.imageWidth)
         assertEquals(1080, sized.imageHeight)
     }
+
+    @Test
+    fun frameTimingStatsRecordsDurationsAndKeepsMax() {
+        val stats = FrameTimingStats()
+        assertEquals(0, stats.sampleCount)
+        assertEquals(0L, stats.maxDurationMillis)
+
+        stats.record(15L)
+        stats.record(48L)
+        stats.record(25L)
+
+        assertEquals(3, stats.sampleCount)
+        assertEquals(48L, stats.maxDurationMillis)
+    }
+
+    @Test
+    fun rectToNormalizedClampsAndCalculatesRatios() {
+        val rect = android.graphics.Rect().apply {
+            left = 100
+            top = 200
+            right = 400
+            bottom = 800
+        }
+        val normalized = rect.toNormalized(
+            width = 1000,
+            height = 1000,
+            label = "Apple",
+            confidence = 0.95f,
+        )
+
+        assertEquals(0.2f, normalized.ymin, 0.001f)
+        assertEquals(0.1f, normalized.xmin, 0.001f)
+        assertEquals(0.8f, normalized.ymax, 0.001f)
+        assertEquals(0.4f, normalized.xmax, 0.001f)
+        assertEquals("Apple", normalized.label)
+        assertEquals(0.95f, normalized.confidence ?: 0f, 0.001f)
+    }
 }
