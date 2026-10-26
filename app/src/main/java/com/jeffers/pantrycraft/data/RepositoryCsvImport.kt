@@ -41,7 +41,7 @@ internal fun parsePantryItemsFromCsv(
 private fun parsePantryCsvItem(
     cols: List<String>,
     dateFormat: java.text.SimpleDateFormat,
-    now: Long = System.currentTimeMillis(),
+    now: Long,
 ): PantryItem? {
     val name = cols.getOrNull(0)?.trim().orEmpty()
     if (name.isEmpty()) return null

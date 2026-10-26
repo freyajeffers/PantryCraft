@@ -72,6 +72,17 @@ class ExpirationAlertWorkerTest {
         assertFalse(ExpirationAlertWorker.isEnabled(context))
     }
 
+    @Test
+    fun expirationAlertSchedulerDelegatesScheduleIfEnabled() {
+        val prefsMap = mutableMapOf<String, Any?>("enabled" to false)
+        val context = object : ContextWrapper(null) {
+            override fun getSharedPreferences(name: String, mode: Int): SharedPreferences =
+                createMockPrefs(prefsMap)
+        }
+        ExpirationAlertScheduler.scheduleIfEnabled(context)
+        assertFalse(ExpirationAlertWorker.isEnabled(context))
+    }
+
     private fun createMockPrefs(prefsMap: MutableMap<String, Any?>): SharedPreferences =
         object : SharedPreferences {
             override fun getAll(): Map<String, *> = prefsMap

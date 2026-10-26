@@ -68,7 +68,7 @@ class RepositoryCsvImportTest {
     fun invalidValuesFallBackToSafeDefaults() {
         val csv = """
             name,category,storageLocation,quantity,unit,customUnitName,threshold,expirationDate,isOpened,notes
-            "Test Item",UNKNOWN_CAT,INVALID_LOC,-5.0,,   ,-2.0,invalid-date,not-a-bool,
+            "Test Item",UNKNOWN_CAT,INVALID_LOC,-5.0,,   ,non_number,invalid-date,not-a-bool,
             "   ",DAIRY,FRIDGE,1,COUNT,,0,,,
         """.trimIndent()
 
@@ -87,6 +87,18 @@ class RepositoryCsvImportTest {
         assertNull(item.expirationTimestamp)
         assertEquals(false, item.isOpened)
         assertNull(item.notes)
+    }
+
+    @Test
+    fun legacyFormatWithInvalidDateFallsBackToNull() {
+        val csv = """
+            name,category,storageLocation,quantity,unit,expirationDate,isOpened,notes
+            "Legacy Unparseable",GRAINS,PANTRY,1,KG,not-a-date,false,""
+        """.trimIndent()
+
+        val items = parsePantryItemsFromCsv(csv)
+        assertEquals(1, items.size)
+        assertNull(items.single().expirationTimestamp)
     }
 
     @Test
