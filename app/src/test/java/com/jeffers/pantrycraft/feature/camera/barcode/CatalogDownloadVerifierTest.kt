@@ -80,4 +80,17 @@ class CatalogDownloadVerifierTest {
             fileB.delete()
         }
     }
+
+    @Test
+    fun sha256ThrowsWhenFileReadingFails() {
+        val unreadableFile = java.io.File("/proc/self/mem")
+        if (unreadableFile.exists()) {
+            try {
+                CatalogDownloadVerifier.sha256(unreadableFile)
+                org.junit.Assert.fail("Expected IOException")
+            } catch (_: java.io.IOException) {
+                // Expected when read fails inside use block
+            }
+        }
+    }
 }

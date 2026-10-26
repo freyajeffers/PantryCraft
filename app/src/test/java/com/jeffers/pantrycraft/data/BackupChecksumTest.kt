@@ -71,6 +71,11 @@ class BackupChecksumTest {
             override fun isFile() = true
         }
         assertNull(fileChecksum(failingFile))
+
+        val unreadableFile = File("/proc/self/mem")
+        if (unreadableFile.exists()) {
+            assertNull(fileChecksum(unreadableFile))
+        }
     }
 
     @Test
