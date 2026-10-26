@@ -115,6 +115,9 @@ class OfflineBarcodeResolverTest {
         launch(Dispatchers.Default) {
             resolver.remember(validItem)
         }.join()
+        kotlinx.coroutines.withContext(Dispatchers.IO) {
+            resolver.remember(validItem)
+        }
 
         try {
             resolver.remember(CustomBarcodeItem(barcode = "short", name = "Test"))
