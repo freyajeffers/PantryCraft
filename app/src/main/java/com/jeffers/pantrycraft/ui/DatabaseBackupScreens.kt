@@ -125,7 +125,7 @@ private fun RecoveryResetDialog(
     )
 }
 
-private data class RecoveryContentState(
+internal data class RecoveryContentState(
     val backups: List<String>,
     val selectedBackup: String?,
     val pin: String,

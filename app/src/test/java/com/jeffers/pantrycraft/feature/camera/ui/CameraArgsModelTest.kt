@@ -208,6 +208,89 @@ class CameraArgsModelTest {
         assertNotNull(overlayArgs1.toString())
     }
 
+    @Test
+    fun cameraRuntimeContract() {
+        val analyzer = createStub<LiveVisionAnalyzer>()
+        val manager = createStub<CameraManager>()
+        val runtime = CameraRuntime(analyzer, manager)
+        assertEquals(analyzer, runtime.analyzer)
+        assertEquals(manager, runtime.cameraManager)
+    }
+
+    @Test
+    fun cameraStatusHudStateContract() {
+        var torchToggled = false
+        val state = CameraStatusHudState(
+            latestResult = null,
+            latestFrameTime = 25L,
+            barcodeMatch = null,
+            snapshotStatus = "Analyzing",
+            isTorchOn = true,
+            onToggleTorch = { torchToggled = true },
+        )
+
+        assertEquals(25L, state.latestFrameTime)
+        assertEquals("Analyzing", state.snapshotStatus)
+        assertEquals(true, state.isTorchOn)
+        org.junit.Assert.assertNull(state.latestResult)
+        org.junit.Assert.assertNull(state.barcodeMatch)
+
+        state.onToggleTorch()
+        org.junit.Assert.assertTrue(torchToggled)
+
+        val copied = state.copy(isTorchOn = false)
+        assertEquals(false, copied.isTorchOn)
+        assertNotEquals(state, copied)
+        assertEquals(state.hashCode(), state.copy().hashCode())
+        org.junit.Assert.assertTrue(state.toString().contains("CameraStatusHudState"))
+    }
+
+    @Test
+    fun cameraQuickAddActionsContract() {
+        var dismissed = false
+        var statusMsg = ""
+        var confirmed = false
+        var reviewedItem: com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem? = null
+
+        val actions = CameraQuickAddActions(
+            repository = createStub<Repository>(),
+            scope = CoroutineScope(Dispatchers.Unconfined),
+            onDismiss = { dismissed = true },
+            onReview = { reviewedItem = it },
+            onStatus = { statusMsg = it },
+            onConfirm = { confirmed = true },
+        )
+
+        assertNotNull(actions.repository)
+        assertNotNull(actions.scope)
+
+        actions.onDismiss()
+        actions.onStatus("Ready")
+        actions.onConfirm()
+
+        val parsed = com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem(
+            name = "Milk",
+            category = "DAIRY",
+            storageLocation = "FRIDGE",
+            quantity = 1f,
+            unit = "BOTTLE",
+            confidence = 0.95f,
+            estimatedShelfLifeDays = 7,
+            isAromaticOrSeasoning = false,
+            boundingBox = com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox(0f, 0f, 1f, 1f),
+            conditionNotes = null,
+        )
+        actions.onReview(parsed)
+
+        org.junit.Assert.assertTrue(dismissed)
+        org.junit.Assert.assertTrue(confirmed)
+        assertEquals("Ready", statusMsg)
+        assertEquals(parsed, reviewedItem)
+        assertEquals(actions, actions.copy())
+        assertEquals(actions.hashCode(), actions.copy().hashCode())
+        org.junit.Assert.assertTrue(actions.toString().contains("CameraQuickAddActions"))
+    }
+
     private fun verifyBoxGetters(b: CameraScreenBoxArgs) {
         assertEquals(Offset(10f, 20f), b.focusPoint)
         assertEquals(false, b.isTorchOn)

@@ -116,7 +116,7 @@ private fun AiProviderSelector(
     }
 }
 
-private data class AiCustomFieldsProps(
+internal data class AiCustomFieldsProps(
     val provider: AiProvider,
     val modelName: String,
     val onModelNameChange: (String) -> Unit,

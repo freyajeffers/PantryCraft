@@ -264,4 +264,40 @@ class UiPropsModelTest {
         assertTrue(errorDismissed)
         assertEquals(2.5f, confirmedUse)
     }
+
+    @Test
+    fun pantryItemRowActionsDataClassModel() {
+        var dec = false
+        var inc = false
+        var use = false
+        var edit = false
+        var mark = false
+        var addG = false
+        var del = false
+
+        val actions = PantryItemRowActions(
+            onDecrement = { dec = true },
+            onIncrement = { inc = true },
+            onUse = { use = true },
+            onEdit = { edit = true },
+            onMarkOpened = { mark = true },
+            onAddToGrocery = { addG = true },
+            onDelete = { del = true },
+        )
+
+        actions.onDecrement()
+        actions.onIncrement()
+        actions.onUse()
+        actions.onEdit()
+        actions.onMarkOpened()
+        actions.onAddToGrocery()
+        actions.onDelete()
+
+        assertTrue(dec && inc && use && edit && mark && addG && del)
+
+        val copied = actions.copy()
+        assertEquals(actions, copied)
+        assertEquals(actions.hashCode(), copied.hashCode())
+        assertTrue(actions.toString().contains("PantryItemRowActions"))
+    }
 }

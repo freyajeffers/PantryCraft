@@ -38,7 +38,7 @@ internal fun parsePantryItemsFromCsv(
     }
 }
 
-private fun parsePantryCsvItem(
+internal fun parsePantryCsvItem(
     cols: List<String>,
     dateFormat: java.text.SimpleDateFormat,
     now: Long,
@@ -73,19 +73,15 @@ private fun parsePantryCsvItem(
     )
 }
 
-private fun parseThreshold(
+internal fun parseThreshold(
     cols: List<String>,
     extended: Boolean,
-): Float =
-    if (extended) {
-        cols
-            .getOrNull(THRESHOLD_COLUMN)
-            ?.trim()
-            ?.toFloatOrNull()
-            ?.coerceAtLeast(0f) ?: 0f
-    } else {
-        0f
-    }
+): Float = if (extended) {
+    val raw = cols.getOrNull(THRESHOLD_COLUMN)?.trim()
+    raw?.toFloatOrNull()?.coerceAtLeast(0f) ?: 0f
+} else {
+    0f
+}
 
 private fun parseExpiration(
     cols: List<String>,

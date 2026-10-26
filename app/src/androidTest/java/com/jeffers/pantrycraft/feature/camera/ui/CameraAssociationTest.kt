@@ -1,7 +1,14 @@
 package com.jeffers.pantrycraft.feature.camera.ui
 
+import android.app.KeyguardManager
 import android.content.Context
 import android.view.View
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeffers.pantrycraft.data.AppDatabase
@@ -16,12 +23,17 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assume
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CameraAssociationTest {
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
     private val context: Context = ApplicationProvider.getApplicationContext()
     private lateinit var repository: Repository
     private lateinit var resolver: OfflineBarcodeResolver
@@ -31,6 +43,8 @@ class CameraAssociationTest {
 
     @Before
     fun setUp() {
+        val km = context.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+        Assume.assumeTrue("Screen is locked; skipping Compose test", km?.isKeyguardLocked == false)
         repository = Repository.getInstance(context)
         val db = AppDatabase.getDatabase(context)
         resolver = OfflineBarcodeResolver(db.customBarcodeDao())
@@ -39,6 +53,7 @@ class CameraAssociationTest {
 
     @After
     fun tearDown() {
+        composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.DESTROYED)
         runBlocking { cleanupTestData() }
     }
 
@@ -139,5 +154,29 @@ class CameraAssociationTest {
         assertEquals(1f, inserted.quantity)
         assertEquals(false, inserted.isAromaticOrSeasoning)
         assertNull("Shelf life <= 0 must result in null expirationTimestamp", inserted.expirationTimestamp)
+    }
+
+    @Test
+    fun cameraAssociationDialogRendersAndDismisses() {
+        var dismissed = false
+        val state = CameraAssociationState(
+            barcode = testBarcode1,
+            resolver = resolver,
+            repository = repository,
+            scope = CoroutineScope(Dispatchers.Main.immediate),
+            view = View(context),
+            onStatus = { /* no-op */ },
+            onDismiss = { dismissed = true },
+        )
+
+        composeTestRule.setContent {
+            CameraAssociationDialog(state)
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Name Scanned Barcode").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+        composeTestRule.waitForIdle()
+        assertTrue("Dismiss callback must be triggered by Cancel button", dismissed)
     }
 }

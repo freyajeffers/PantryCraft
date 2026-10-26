@@ -129,4 +129,18 @@ class RepositoryCsvImportTest {
         assertEquals("PANTRY", item2.storageLocation)
         assertEquals(1f, item2.quantity, 0.001f)
     }
+
+    @Test
+    fun parsePantryCsvItemWithEmptyColumnsReturnsNull() {
+        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+        assertNull(parsePantryCsvItem(emptyList(), dateFormat, 1_000L))
+    }
+
+    @Test
+    fun parseThresholdWithExtendedAndEmptyColsReturnsZero() {
+        assertEquals(0f, parseThreshold(emptyList(), extended = true), 0.001f)
+        assertEquals(0f, parseThreshold(emptyList(), extended = false), 0.001f)
+        val colsWithNegative = listOf("A", "B", "C", "D", "E", "F", "-5.5")
+        assertEquals(0f, parseThreshold(colsWithNegative, extended = true), 0.001f)
+    }
 }

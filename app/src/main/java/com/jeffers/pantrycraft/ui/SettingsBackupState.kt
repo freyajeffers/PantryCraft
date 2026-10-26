@@ -23,13 +23,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.jeffers.pantrycraft.data.backupRecords as loadBackupRecords
 
-private data class BackupLaunchers(
+internal data class BackupLaunchers(
     val launchCreateBackup: (String) -> Unit,
     val launchTree: () -> Unit,
     val launchRestore: () -> Unit,
 )
 
-private data class BackupLauncherCallbacks(
+internal data class BackupLauncherCallbacks(
     val onBackupSaved: (Uri) -> Unit,
     val onBackupFailed: (String) -> Unit,
     val onTreeSelected: (Uri) -> Unit,
@@ -46,7 +46,7 @@ internal data class AutoBackupScheduleArgs(
     val onPerformBackup: (CharArray) -> Unit,
 )
 
-private data class BackupStateProps(
+internal data class BackupStateProps(
     val lastExportedUri: Uri?,
     val hasBackupRecords: Boolean,
     val autoBackupTreeUri: Uri?,
