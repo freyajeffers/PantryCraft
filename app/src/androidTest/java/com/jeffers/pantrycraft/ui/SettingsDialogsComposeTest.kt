@@ -177,4 +177,69 @@ class SettingsDialogsComposeTest {
         composeTestRule.waitForIdle()
         assertTrue(dismissed)
     }
+
+    @Test
+    fun backupListDialogRendersEmptyStateAndNullUri() {
+        val emptyState = BackupListDialogState(
+            records = emptyList(),
+            onDismiss = {},
+            onSelect = {},
+        )
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                BackupListDialog(emptyState)
+            }
+        }
+        composeTestRule.onNodeWithText("No backups have been created yet.").assertIsDisplayed()
+
+        val nullUriRecord = BackupRecord(
+            backupName = "internal.db",
+            createdAt = 1_700_000_000_000L,
+            createdAtLabel = "Today",
+            exportedUri = null,
+        )
+        val nullUriState = BackupListDialogState(
+            records = listOf(nullUriRecord),
+            onDismiss = {},
+            onSelect = {},
+        )
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                BackupListDialog(nullUriState)
+            }
+        }
+        composeTestRule.onNodeWithText("Location: app backup storage").assertIsDisplayed()
+    }
+
+    @Test
+    fun settingsDialogsWrapperRendersActiveDialogs() {
+        var pinDismissed = false
+        val state = SettingsDialogsState(
+            showPinDialog = true,
+            pinText = "",
+            onPinTextChange = {},
+            onDismissPinDialog = { pinDismissed = true },
+            onConfirmPinDialog = {},
+            showBackupList = false,
+            backupRecords = emptyList(),
+            onDismissBackupList = {},
+            onSelectBackup = {},
+            catalogDialog = null,
+            onDismissCatalogDialog = {},
+            confirmDatabaseReset = false,
+            onDismissDatabaseReset = {},
+            confirmCatalogDelete = false,
+            onDismissCatalogDelete = {},
+            onCatalogDeleted = {},
+            onCatalogDeleteFailed = {},
+        )
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                SettingsDialogs(context = context, state = state)
+            }
+        }
+        composeTestRule.onNodeWithText("Enter backup PIN").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+        assertTrue(pinDismissed)
+    }
 }
