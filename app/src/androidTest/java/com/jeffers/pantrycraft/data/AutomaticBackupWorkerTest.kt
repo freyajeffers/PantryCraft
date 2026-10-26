@@ -83,6 +83,31 @@ class AutomaticBackupWorkerTest {
     }
 
     @Test
+    fun doWorkCreatesBackupWhenEnabledWithPinAndActiveInventory() = runBlocking {
+        AutomaticBackupPreferences.setSchedule(context, enabled = true, intervalMinutes = 1440L)
+        val pin = "123456".toCharArray()
+        AutomaticBackupPreferences.savePin(context, pin)
+
+        val db = AppDatabase.getDatabase(context)
+        val testItem = PantryItem(
+            name = "AutoBackupTestItem",
+            quantity = 5f,
+            category = "GRAINS",
+            storageLocation = "PANTRY",
+        )
+        val insertedId = db.pantryDao().insert(testItem)
+        try {
+            val worker = TestListenableWorkerBuilder<AutomaticBackupWorker>(context).build()
+            val result = worker.doWork()
+
+            assertTrue(result is ListenableWorker.Result.Success)
+            assertTrue(backupRecords(context).isNotEmpty())
+        } finally {
+            db.pantryDao().delete(testItem.copy(id = insertedId))
+        }
+    }
+
+    @Test
     fun schedulerEnqueuesAndCancelsPeriodicWork() {
         AutomaticBackupScheduler.schedule(context, intervalMinutes = 60L)
 
