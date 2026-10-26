@@ -61,6 +61,8 @@ class RepositoryTest {
         )
 
         val id = repository.insertPantry(item)
+        assertNotNull(repository.pantryDao)
+        assertNotNull(repository.groceryDao)
         val observed = repository.observePantryItems().first().single { it.id == id }
         assertEquals(marker, observed.normalizedName)
         assertEquals("$marker", observed.name.trim())
@@ -102,6 +104,8 @@ class RepositoryTest {
         )
 
         val id = repository.insertPantry(item)
+        assertNotNull(repository.pantryDao)
+        assertNotNull(repository.groceryDao)
         val observed = repository.observePantryItems().first().single { it.id == id }
         repository.deletePantry(observed)
 
@@ -130,6 +134,8 @@ class RepositoryTest {
         val marker = "repository-exp-${System.nanoTime()}"
         val item = PantryItem(name = marker, quantity = 2f)
         val id = repository.insertPantry(item)
+        assertNotNull(repository.pantryDao)
+        assertNotNull(repository.groceryDao)
         val observed = repository.observePantryItems().first().single { it.id == id }
 
         // Data Sovereignty: JSON and CSV export/import

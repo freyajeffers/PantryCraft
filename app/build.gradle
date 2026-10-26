@@ -162,6 +162,7 @@ jacoco {
 }
 
 tasks.register('unifiedCoverageReport', JacocoReport) {
+    dependsOn 'compileDebugJavaWithJavac', 'compileDebugKotlin', 'testDebugUnitTest'
     reports {
         xml.required = true
         html.required = true

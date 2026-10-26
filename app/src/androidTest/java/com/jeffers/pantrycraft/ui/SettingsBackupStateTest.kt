@@ -190,6 +190,13 @@ class SettingsBackupStateTest {
 
     @Test
     fun backupLaunchersCallbacksAndStatePropsContracts() {
+        verifyLaunchersContract()
+        val uri = Uri.parse("content://backup/test")
+        verifyCallbacksContract(uri)
+        verifyStatePropsContract(uri)
+    }
+
+    private fun verifyLaunchersContract() {
         var createName: String? = null
         var treeLaunched = false
         var restoreLaunched = false
@@ -206,29 +213,39 @@ class SettingsBackupStateTest {
         assertTrue(treeLaunched && restoreLaunched)
         assertEquals(launchers, launchers.copy())
         assertEquals(launchers.hashCode(), launchers.copy().hashCode())
+    }
 
+    private fun verifyCallbacksContract(uri: Uri) {
         var savedUri: Uri? = null
         var failMsg: String? = null
         var treeUri: Uri? = null
         var pinPrompt = false
-        val uri = Uri.parse("content://backup/test")
+        var restorePrompt = false
         val callbacks = BackupLauncherCallbacks(
             onBackupSaved = { savedUri = it },
             onBackupFailed = { failMsg = it },
             onTreeSelected = { treeUri = it },
             onRequirePin = { pinPrompt = true },
-            onRequireRestore = { /* no-op */ },
+            onRequireRestore = { restorePrompt = true },
         )
         callbacks.onBackupSaved(uri)
         callbacks.onBackupFailed("error")
         callbacks.onTreeSelected(uri)
         callbacks.onRequirePin { /* no-op */ }
+        callbacks.onRequireRestore { /* no-op */ }
         assertEquals(uri, savedUri)
         assertEquals("error", failMsg)
         assertEquals(uri, treeUri)
-        assertTrue(pinPrompt)
+        assertTrue(pinPrompt && restorePrompt)
+        assertEquals(callbacks.onBackupSaved, callbacks.component1())
+        assertEquals(callbacks.onBackupFailed, callbacks.component2())
+        assertEquals(callbacks.onTreeSelected, callbacks.component3())
+        assertEquals(callbacks.onRequirePin, callbacks.component4())
+        assertEquals(callbacks.onRequireRestore, callbacks.component5())
         assertEquals(callbacks, callbacks.copy())
+    }
 
+    private fun verifyStatePropsContract(uri: Uri) {
         val stateProps = BackupStateProps(
             lastExportedUri = uri,
             hasBackupRecords = true,

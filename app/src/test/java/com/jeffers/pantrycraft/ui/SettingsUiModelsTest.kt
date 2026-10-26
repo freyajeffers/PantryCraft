@@ -296,6 +296,48 @@ class SettingsUiModelsTest {
         assertEquals(screenState.hashCode(), screenState.copy().hashCode())
         assertTrue(screenState.toString().contains("SettingsScreenState"))
     }
+
+    @Test
+    fun settingsDialogStateHolderOperations() {
+        val dummyContext = object : android.content.ContextWrapper(null) {
+            override fun getFilesDir(): java.io.File = java.io.File("/tmp")
+        }
+        val holder = SettingsDialogStateHolder(dummyContext)
+        assertFalse(holder.showPinDialog)
+        assertFalse(holder.showBackupList)
+        assertFalse(holder.confirmDatabaseReset)
+        assertFalse(holder.confirmCatalogDelete)
+        org.junit.Assert.assertNull(holder.catalogDialog)
+
+        holder.pinDialogAction(charArrayOf('a'))
+        holder.pinDialogAction = { /* no-op */ }
+
+        var pinSubmitted = ""
+        holder.openPin { pinSubmitted = String(it) }
+        assertTrue(holder.showPinDialog)
+        assertEquals("", holder.pinText)
+
+        holder.pinText = "9876"
+        holder.confirmPin()
+        assertFalse(holder.showPinDialog)
+        assertEquals("9876", pinSubmitted)
+
+        holder.openPin {}
+        holder.closePin()
+        assertFalse(holder.showPinDialog)
+
+        holder.catalogDialog = CatalogDialog("Title", "Message", false)
+        assertEquals("Title", holder.catalogDialog?.title)
+
+        holder.confirmDatabaseReset = true
+        assertTrue(holder.confirmDatabaseReset)
+
+        holder.confirmCatalogDelete = true
+        assertTrue(holder.confirmCatalogDelete)
+
+        holder.openBackupList()
+        assertTrue(holder.showBackupList)
+    }
 }
 
 private fun createDummyLauncher(): ManagedActivityResultLauncher<String, Boolean> {
