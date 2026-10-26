@@ -113,6 +113,43 @@ class CameraQuickAddComposeTest {
     }
 
     @Test
+    fun cameraQuickAddCardSpicesZeroShelfLifeQuickAdds() {
+        val context: Context = ApplicationProvider.getApplicationContext()
+        val repository = Repository.getInstance(context)
+        val match = BarcodeMatch(
+            barcode = "998877665500",
+            name = "Ground Cumin",
+            category = "SPICES",
+            unit = "JAR",
+            estimatedShelfLifeDays = 0,
+        )
+        var confirmed = false
+
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                Box {
+                    val scope = rememberCoroutineScope()
+                    val actions = CameraQuickAddActions(
+                        repository = repository,
+                        scope = scope,
+                        onDismiss = {},
+                        onReview = {},
+                        onStatus = {},
+                        onConfirm = { confirmed = true },
+                    )
+                    CameraQuickAddCard(match = match, actions = actions)
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Ground Cumin").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Quick Add (1)").performClick()
+        composeTestRule.waitUntil(5000) { confirmed }
+        assertTrue(confirmed)
+    }
+
+    @Test
     fun cameraQuickAddCardReviewInvokesCallback() {
         val context: Context = ApplicationProvider.getApplicationContext()
         val repository = Repository.getInstance(context)
