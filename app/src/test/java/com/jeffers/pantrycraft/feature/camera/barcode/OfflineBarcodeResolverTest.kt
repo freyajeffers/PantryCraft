@@ -107,7 +107,7 @@ class OfflineBarcodeResolverTest {
 
     @Test
     fun rememberValidatesAndPersistsBarcodeItem() = runBlocking {
-        val dao = FakeDao()
+        val dao = FakeDao(shouldSuspend = true)
         val resolver = OfflineBarcodeResolver(dao)
         val validItem = CustomBarcodeItem(barcode = "123456789012", name = "Test Item")
         resolver.remember(validItem)
@@ -115,8 +115,11 @@ class OfflineBarcodeResolverTest {
         launch(Dispatchers.Default) {
             resolver.remember(validItem)
         }.join()
+
+        val syncDao = FakeDao(shouldSuspend = false)
+        val syncResolver = OfflineBarcodeResolver(syncDao)
         kotlinx.coroutines.withContext(Dispatchers.IO) {
-            resolver.remember(validItem)
+            syncResolver.remember(validItem)
         }
 
         try {
@@ -309,11 +312,12 @@ class OfflineBarcodeResolverTest {
 
     private class FakeDao(
         private var item: CustomBarcodeItem? = null,
+        private val shouldSuspend: Boolean = false,
     ) : CustomBarcodeDao {
         override suspend fun findByBarcode(barcode: String) = item?.takeIf { it.barcode == barcode }
 
         override suspend fun upsert(item: CustomBarcodeItem) {
-            kotlinx.coroutines.delay(1)
+            if (shouldSuspend) kotlinx.coroutines.delay(1)
             this.item = item
         }
 
