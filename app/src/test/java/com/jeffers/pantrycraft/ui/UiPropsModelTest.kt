@@ -5,6 +5,7 @@ import com.jeffers.pantrycraft.data.PantryItem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -204,6 +205,7 @@ class UiPropsModelTest {
         assertEquals(items, props.items)
         assertEquals(PantryLocationFilter.FRIDGE, props.selectedLocation)
         assertEquals("app", props.searchQuery)
+        assertNotNull(props.itemContent)
 
         props.onSearchQueryChange("banana")
         props.onLocationSelected(PantryLocationFilter.FREEZER)
@@ -236,8 +238,21 @@ class UiPropsModelTest {
 
         assertTrue(props.showAddDialog)
         assertEquals(item, props.editorItem)
+        assertEquals(item, props.useItem)
         assertEquals("2.5", props.useAmount)
         assertEquals("Full", props.storageError)
+        assertNotNull(props.onSaveDraft)
+        assertNotNull(props.onAmountChange)
+        var draftSaved = false
+        var amountUpdated = ""
+        val testProps = props.copy(
+            onSaveDraft = { _, _ -> draftSaved = true },
+            onAmountChange = { amountUpdated = it },
+        )
+        testProps.onSaveDraft(true, item)
+        testProps.onAmountChange("3.0")
+        assertTrue(draftSaved)
+        assertEquals("3.0", amountUpdated)
 
         props.onDismissEditor()
         props.onDismissUse()

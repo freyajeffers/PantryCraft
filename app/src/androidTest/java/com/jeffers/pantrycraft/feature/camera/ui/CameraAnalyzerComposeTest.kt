@@ -5,6 +5,7 @@ import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -14,7 +15,9 @@ import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult
 import com.jeffers.pantrycraft.feature.camera.barcode.OfflineBarcodeResolver
 import com.jeffers.pantrycraft.ui.PantryCraftTheme
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -66,5 +69,28 @@ class CameraAnalyzerComposeTest {
 
         analyzerInstance?.close()
         executor.shutdown()
+    }
+
+    @Test
+    fun rememberCameraFocusPointInitialAndAutoClear() {
+        var focusState: FocusPointState? = null
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                val state = rememberCameraFocusPoint()
+                focusState = state
+            }
+        }
+        composeTestRule.waitForIdle()
+        assertNotNull(focusState)
+        assertNull(focusState?.value)
+
+        composeTestRule.runOnIdle {
+            focusState?.value = Offset(50f, 100f)
+        }
+        assertEquals(Offset(50f, 100f), focusState?.value)
+
+        composeTestRule.mainClock.advanceTimeBy(FOCUS_CLEAR_DELAY_MILLIS + 100L)
+        composeTestRule.waitForIdle()
+        assertNull(focusState?.value)
     }
 }

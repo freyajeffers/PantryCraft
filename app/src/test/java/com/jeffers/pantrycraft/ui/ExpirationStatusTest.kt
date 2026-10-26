@@ -46,6 +46,14 @@ class ExpirationStatusTest {
         assertTrue(expirationStatus(now + 5.daysInMillis() + 1, now) == ExpirationStatus.FRESH)
     }
 
+    @Test
+    fun expirationStatusPropertiesAndLabels() {
+        for (status in ExpirationStatus.values()) {
+            assertTrue(status.label.isNotEmpty())
+            assertTrue(status.color.value != 0UL)
+        }
+    }
+
     private fun Int.daysInMillis() = this.toLong() * 24 * 60 * 60 * 1_000
 
     private fun Int.hoursInMillis() = this.toLong() * 60 * 60 * 1_000

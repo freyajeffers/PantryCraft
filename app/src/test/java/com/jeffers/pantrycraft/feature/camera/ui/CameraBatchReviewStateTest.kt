@@ -97,6 +97,8 @@ class CameraBatchReviewStateTest {
             onStatus = {},
         )
 
+        assertEquals(items, state1.items)
+        assertEquals(scope, state1.scope)
         assertEquals(items, state1.component1())
         assertEquals(repo, state1.component2())
         assertEquals(scope, state1.component3())

@@ -82,5 +82,13 @@ class LiveVisionResultTest {
         assertEquals(0.4f, normalized.xmax, 0.001f)
         assertEquals("Apple", normalized.label)
         assertEquals(0.95f, normalized.confidence ?: 0f, 0.001f)
+
+        val defaultBox = rect.toNormalized(1000, 1000)
+        assertNull(defaultBox.label)
+        assertNull(defaultBox.confidence)
+
+        val labelOnlyBox = rect.toNormalized(1000, 1000, label = "Orange")
+        assertEquals("Orange", labelOnlyBox.label)
+        assertNull(labelOnlyBox.confidence)
     }
 }
