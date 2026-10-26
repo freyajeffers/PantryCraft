@@ -1,7 +1,10 @@
 package com.jeffers.pantrycraft.feature.camera.ui
 
+import android.content.Context
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -9,10 +12,16 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.jeffers.pantrycraft.data.AppDatabase
+import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult
 import com.jeffers.pantrycraft.feature.camera.analyzer.NormalizedVisionBox
 import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
+import com.jeffers.pantrycraft.feature.camera.barcode.OfflineBarcodeResolver
+import com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox
+import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
 import com.jeffers.pantrycraft.ui.PantryCraftTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -191,5 +200,72 @@ class CameraScreenComposeTest {
         composeTestRule.waitForIdle()
         assertTrue(labelPaintReady)
         assertTrue(badgePaintReady)
+    }
+
+    @Test
+    fun cameraAssociationDialogRendersAndHandlesSave() {
+        val context: Context = ApplicationProvider.getApplicationContext()
+        val repository = Repository.getInstance(context)
+        val resolver = OfflineBarcodeResolver(AppDatabase.getDatabase(context).customBarcodeDao())
+        val view = View(context)
+        var dismissed = false
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                val scope = rememberCoroutineScope()
+                CameraAssociationDialog(
+                    CameraAssociationState(
+                        barcode = "1122334455",
+                        resolver = resolver,
+                        repository = repository,
+                        scope = scope,
+                        view = view,
+                        onStatus = {},
+                        onDismiss = { dismissed = true },
+                    ),
+                )
+            }
+        }
+        composeTestRule.onNodeWithText("Name Scanned Barcode").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Barcode: 1122334455").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+        assertTrue(dismissed)
+    }
+
+    @Test
+    fun cameraBatchReviewRendersBottomSheet() {
+        val context: Context = ApplicationProvider.getApplicationContext()
+        val repository = Repository.getInstance(context)
+        val view = View(context)
+        var dismissed = false
+        val item = ParsedVisionItem(
+            name = "Organic Apples",
+            category = "PRODUCE",
+            storageLocation = "FRIDGE",
+            quantity = 2f,
+            unit = "COUNT",
+            confidence = 0.95f,
+            estimatedShelfLifeDays = 7,
+            isAromaticOrSeasoning = false,
+            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+            conditionNotes = null,
+        )
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                val scope = rememberCoroutineScope()
+                CameraBatchReview(
+                    CameraBatchReviewState(
+                        items = listOf(item),
+                        repository = repository,
+                        scope = scope,
+                        view = view,
+                        onDismiss = { dismissed = true },
+                        onStatus = {},
+                    ),
+                )
+            }
+        }
+        composeTestRule.onNodeWithText("Review captured items").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+        assertTrue(dismissed)
     }
 }
