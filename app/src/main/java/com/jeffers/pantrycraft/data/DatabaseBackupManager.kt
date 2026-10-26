@@ -8,6 +8,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.InputStream
 import java.security.SecureRandom
 import java.text.DateFormat
 import java.util.Arrays
@@ -297,7 +298,7 @@ object DatabaseBackupManager {
     }
 }
 
-private fun readBackupHeader(fis: FileInputStream): Pair<ByteArray, ByteArray> {
+internal fun readBackupHeader(fis: InputStream): Pair<ByteArray, ByteArray> {
     val magicBytes = ByteArray(MAGIC.length)
     readExact(fis, magicBytes, "Truncated backup")
     if (!magicBytes.contentEquals(MAGIC.toByteArray(Charsets.UTF_8))) {
@@ -312,19 +313,19 @@ private fun readBackupHeader(fis: FileInputStream): Pair<ByteArray, ByteArray> {
     return salt to iv
 }
 
-private fun readExact(
-    input: FileInputStream,
+internal fun readExact(
+    input: InputStream,
     buffer: ByteArray,
     message: String,
 ) {
     if (input.read(buffer) != buffer.size) throw IOException(message)
 }
 
-private fun requirePassphrase(passphrase: ByteArray?): ByteArray =
+internal fun requirePassphrase(passphrase: ByteArray?): ByteArray =
     passphrase
         ?: throw IOException("Backup omitted database passphrase")
 
-private fun throwRestoreFailure(error: IOException): Nothing =
+internal fun throwRestoreFailure(error: IOException): Nothing =
     throw IOException(
         "Failed to restore backup: ${error.message}",
         error,
