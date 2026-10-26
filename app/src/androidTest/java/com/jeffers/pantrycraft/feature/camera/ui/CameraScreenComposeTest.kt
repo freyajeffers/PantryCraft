@@ -211,18 +211,20 @@ class CameraScreenComposeTest {
         var dismissed = false
         composeTestRule.setContent {
             PantryCraftTheme {
-                val scope = rememberCoroutineScope()
-                CameraAssociationDialog(
-                    CameraAssociationState(
-                        barcode = "1122334455",
-                        resolver = resolver,
-                        repository = repository,
-                        scope = scope,
-                        view = view,
-                        onStatus = {},
-                        onDismiss = { dismissed = true },
-                    ),
-                )
+                Box {
+                    val scope = rememberCoroutineScope()
+                    CameraAssociationDialog(
+                        CameraAssociationState(
+                            barcode = "1122334455",
+                            resolver = resolver,
+                            repository = repository,
+                            scope = scope,
+                            view = view,
+                            onStatus = {},
+                            onDismiss = { dismissed = true },
+                        ),
+                    )
+                }
             }
         }
         composeTestRule.onNodeWithText("Name Scanned Barcode").assertIsDisplayed()
@@ -251,17 +253,19 @@ class CameraScreenComposeTest {
         )
         composeTestRule.setContent {
             PantryCraftTheme {
-                val scope = rememberCoroutineScope()
-                CameraBatchReview(
-                    CameraBatchReviewState(
-                        items = listOf(item),
-                        repository = repository,
-                        scope = scope,
-                        view = view,
-                        onDismiss = { dismissed = true },
-                        onStatus = {},
-                    ),
-                )
+                Box {
+                    val scope = rememberCoroutineScope()
+                    CameraBatchReview(
+                        CameraBatchReviewState(
+                            items = listOf(item),
+                            repository = repository,
+                            scope = scope,
+                            view = view,
+                            onDismiss = { dismissed = true },
+                            onStatus = {},
+                        ),
+                    )
+                }
             }
         }
         composeTestRule.onNodeWithText("Review captured items").assertIsDisplayed()

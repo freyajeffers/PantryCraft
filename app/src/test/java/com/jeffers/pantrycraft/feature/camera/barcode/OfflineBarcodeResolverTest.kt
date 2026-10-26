@@ -2,6 +2,8 @@ package com.jeffers.pantrycraft.feature.camera.barcode
 
 import com.jeffers.pantrycraft.data.CustomBarcodeDao
 import com.jeffers.pantrycraft.data.CustomBarcodeItem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -110,6 +112,9 @@ class OfflineBarcodeResolverTest {
         val validItem = CustomBarcodeItem(barcode = "123456789012", name = "Test Item")
         resolver.remember(validItem)
         assertEquals(validItem, dao.findByBarcode("123456789012"))
+        launch(Dispatchers.Default) {
+            resolver.remember(validItem)
+        }.join()
 
         try {
             resolver.remember(CustomBarcodeItem(barcode = "short", name = "Test"))
@@ -305,6 +310,7 @@ class OfflineBarcodeResolverTest {
         override suspend fun findByBarcode(barcode: String) = item?.takeIf { it.barcode == barcode }
 
         override suspend fun upsert(item: CustomBarcodeItem) {
+            kotlinx.coroutines.delay(1)
             this.item = item
         }
 
