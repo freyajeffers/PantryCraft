@@ -25,6 +25,8 @@ import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
 import com.jeffers.pantrycraft.feature.camera.barcode.OfflineBarcodeResolver
 import com.jeffers.pantrycraft.feature.camera.core.CameraManager
 import com.jeffers.pantrycraft.feature.camera.vision.LocalVisionModel
+import com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox
+import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
 import com.jeffers.pantrycraft.feature.camera.vision.SnapshotVisionService
 import com.jeffers.pantrycraft.ui.PantryCraftTheme
 import org.junit.After
@@ -178,5 +180,101 @@ class CameraOverlayControlsComposeTest {
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Organic Rolled Oats").assertIsDisplayed()
+    }
+
+    @Test
+    fun cameraOverlayControlsRendersAssociationDialogAndDismisses() {
+        var dismissedAssociate: String? = "initial"
+
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                Box {
+                    val scope = rememberCoroutineScope()
+                    val args = CameraOverlayArgs(
+                        latestResult = null,
+                        focusPoint = null,
+                        labelPaint = Paint(),
+                        badgePaint = Paint(),
+                        cameraManager = cameraManager,
+                        repository = repository,
+                        scope = scope,
+                        barcodeMatch = null,
+                        unresolvedBarcode = null,
+                        associateDialogBarcode = "777888",
+                        parsedItems = emptyList(),
+                        snapshotVisionService = snapshotVisionService,
+                        barcodeResolver = barcodeResolver,
+                        isTorchOn = false,
+                        onToggleTorch = {},
+                        onClearBarcodeMatch = {},
+                        onParsedItemsChange = {},
+                        onUnresolvedBarcodeChange = {},
+                        onAssociateDialogBarcodeChange = { dismissedAssociate = it },
+                        onSnapshotStatusChange = {},
+                        view = View(context),
+                    )
+                    CameraOverlayControls(args)
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Name Scanned Barcode").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+        assertEquals(null, dismissedAssociate)
+    }
+
+    @Test
+    fun cameraOverlayControlsRendersBatchReviewDialogAndDismisses() {
+        var updatedItems: List<ParsedVisionItem>? = null
+        val item = ParsedVisionItem(
+            name = "Baby Spinach",
+            category = "PRODUCE",
+            storageLocation = "FRIDGE",
+            quantity = 1f,
+            unit = "BAG",
+            confidence = 0.9f,
+            estimatedShelfLifeDays = 7,
+            isAromaticOrSeasoning = false,
+            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+            conditionNotes = null,
+        )
+
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                Box {
+                    val scope = rememberCoroutineScope()
+                    val args = CameraOverlayArgs(
+                        latestResult = null,
+                        focusPoint = null,
+                        labelPaint = Paint(),
+                        badgePaint = Paint(),
+                        cameraManager = cameraManager,
+                        repository = repository,
+                        scope = scope,
+                        barcodeMatch = null,
+                        unresolvedBarcode = null,
+                        associateDialogBarcode = null,
+                        parsedItems = listOf(item),
+                        snapshotVisionService = snapshotVisionService,
+                        barcodeResolver = barcodeResolver,
+                        isTorchOn = false,
+                        onToggleTorch = {},
+                        onClearBarcodeMatch = {},
+                        onParsedItemsChange = { updatedItems = it },
+                        onUnresolvedBarcodeChange = {},
+                        onAssociateDialogBarcodeChange = {},
+                        onSnapshotStatusChange = {},
+                        view = View(context),
+                    )
+                    CameraOverlayControls(args)
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Review captured items").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+        assertEquals(emptyList<ParsedVisionItem>(), updatedItems)
     }
 }
