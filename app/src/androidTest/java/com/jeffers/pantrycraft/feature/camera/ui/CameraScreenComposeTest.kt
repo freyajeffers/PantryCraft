@@ -16,6 +16,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.Repository
+import com.jeffers.pantrycraft.data.offlineBarcodeResolver
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult
 import com.jeffers.pantrycraft.feature.camera.analyzer.NormalizedVisionBox
 import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
@@ -271,5 +272,50 @@ class CameraScreenComposeTest {
         composeTestRule.onNodeWithText("Review captured items").assertIsDisplayed()
         composeTestRule.onNodeWithText("Cancel").performClick()
         assertTrue(dismissed)
+    }
+
+    @Test
+    fun rememberCameraRuntimeForScreenInstantiatesRuntime() {
+        val context: Context = ApplicationProvider.getApplicationContext()
+        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        try {
+            var state: CameraScreenState? = null
+            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                val repository = Repository.getInstance(context)
+                val resolver = repository.offlineBarcodeResolver()
+                val snapshotService = com.jeffers.pantrycraft.feature.camera.vision.SnapshotVisionService(
+                    com.jeffers.pantrycraft.feature.camera.vision.LocalVisionModel { _, _ -> "{}" },
+                )
+                val frameTimingStats = com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats()
+                val previewView = androidx.camera.view.PreviewView(context)
+                val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate)
+
+                val deps = CameraDeps(
+                    context = context,
+                    repository = repository,
+                    analysisExecutor = executor,
+                    scope = scope,
+                    previewView = previewView,
+                    barcodeResolver = resolver,
+                    snapshotVisionService = snapshotService,
+                    frameTimingStats = frameTimingStats,
+                )
+                state = CameraScreenState(deps)
+            }
+            var runtime: CameraRuntime? = null
+
+            composeTestRule.setContent {
+                runtime = rememberCameraRuntimeForScreen(
+                    state = state!!,
+                    onResult = {},
+                    onFrameTime = {},
+                    onBarcodeResolved = {},
+                    onBarcodeUnresolved = {},
+                )
+            }
+            assertNotNull(runtime)
+        } finally {
+            executor.shutdown()
+        }
     }
 }

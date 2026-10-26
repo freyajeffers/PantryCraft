@@ -1,5 +1,6 @@
 package com.jeffers.pantrycraft.ui
 
+import androidx.activity.compose.ManagedActivityResultLauncher
 import com.jeffers.pantrycraft.data.AiProvider
 import com.jeffers.pantrycraft.data.DatabaseBackupManager.BackupRecord
 import org.junit.Assert.assertEquals
@@ -261,4 +262,102 @@ class SettingsUiModelsTest {
         assertEquals(state.hashCode(), state.copy().hashCode())
         assertTrue(state.toString().contains("SettingsDialogsState"))
     }
+
+    @Test
+    fun settingsScreenStateModel() {
+        val launcher = createDummyLauncher()
+        var alertToggle = false
+        val dialogs = createDummyDialogsState()
+        val foodFacts = createDummyFoodFactsProps()
+        val backupProps = createDummyEncryptedBackupProps()
+        val sovereignty = DataSovereigntyProps({}, {}, {}, {})
+
+        val screenState = SettingsScreenState(
+            dialogsState = dialogs,
+            foodFactsProps = foodFacts,
+            encryptedBackupCardProps = backupProps,
+            dataSovereigntyProps = sovereignty,
+            expirationAlertsEnabled = true,
+            onExpirationAlertsEnabledChange = { alertToggle = it },
+            notificationPermissionLauncher = launcher,
+            restoreResult = "Success",
+        )
+
+        assertEquals(dialogs, screenState.dialogsState)
+        assertEquals(foodFacts, screenState.foodFactsProps)
+        assertEquals(backupProps, screenState.encryptedBackupCardProps)
+        assertEquals(sovereignty, screenState.dataSovereigntyProps)
+        assertTrue(screenState.expirationAlertsEnabled)
+        screenState.onExpirationAlertsEnabledChange(true)
+        assertTrue(alertToggle)
+        assertEquals(launcher, screenState.notificationPermissionLauncher)
+        assertEquals("Success", screenState.restoreResult)
+        assertEquals(screenState, screenState.copy())
+        assertEquals(screenState.hashCode(), screenState.copy().hashCode())
+        assertTrue(screenState.toString().contains("SettingsScreenState"))
+    }
 }
+
+private fun createDummyLauncher(): ManagedActivityResultLauncher<String, Boolean> {
+    val unsafeClass = Class.forName("sun.misc.Unsafe")
+    val field = unsafeClass.getDeclaredField("theUnsafe")
+    field.isAccessible = true
+    val unsafeInstance = field.get(null)
+    val allocate = unsafeClass.getMethod("allocateInstance", Class::class.java)
+    @Suppress("UNCHECKED_CAST")
+    return allocate.invoke(unsafeInstance, ManagedActivityResultLauncher::class.java)
+        as ManagedActivityResultLauncher<String, Boolean>
+}
+
+private fun createDummyDialogsState() = SettingsDialogsState(
+    showPinDialog = false,
+    pinText = "",
+    onPinTextChange = {},
+    onDismissPinDialog = {},
+    onConfirmPinDialog = {},
+    showBackupList = false,
+    backupRecords = emptyList(),
+    onDismissBackupList = {},
+    onSelectBackup = {},
+    catalogDialog = null,
+    onDismissCatalogDialog = {},
+    confirmDatabaseReset = false,
+    onDismissDatabaseReset = {},
+    confirmCatalogDelete = false,
+    onDismissCatalogDelete = {},
+    onCatalogDeleted = {},
+    onCatalogDeleteFailed = {},
+)
+
+private fun createDummyFoodFactsProps() = FoodFactsProps(
+    catalogReady = true,
+    catalogFileSize = 1024L,
+    catalogDownloading = false,
+    catalogDownloadedBytes = 0L,
+    catalogTotalBytes = 1024L,
+    onStartDownload = {},
+    onDownloadResult = {},
+    onProgress = { _, _ -> },
+    onDelete = {},
+)
+
+private fun createDummyEncryptedBackupProps() = EncryptedBackupCardProps(
+    autoBackupProps = AutomaticBackupProps(
+        enabled = false,
+        intervalMinutes = 1440L,
+        databaseHasUserData = false,
+        onDisable = {},
+        onEnableRequested = {},
+        onIntervalSelected = {},
+        onBackupNow = {},
+    ),
+    lastExportedUri = null,
+    hasBackupRecords = false,
+    autoBackupTreeUri = null,
+    backupResult = null,
+    onShareSavedBackup = {},
+    onRestoreSavedBackup = {},
+    onSelectAutoBackupLocation = {},
+    onOpenBackupFile = {},
+    onResetDatabase = {},
+)
