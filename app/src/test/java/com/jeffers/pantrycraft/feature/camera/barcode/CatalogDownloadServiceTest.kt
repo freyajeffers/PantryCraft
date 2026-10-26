@@ -2,6 +2,7 @@ package com.jeffers.pantrycraft.feature.camera.barcode
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.os.Build
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -203,5 +204,80 @@ class CatalogDownloadServiceTest {
             }
             assertTrue(exception.message?.contains("Catalog replacement failed") == true)
         }
+    }
+
+    @Test
+    fun downloadIfNeededInvokesDefaultArgumentsAndApiN() = runBlocking {
+        val unsafeClass = Class.forName("sun.misc.Unsafe")
+        val unsafe = unsafeClass.getDeclaredField("theUnsafe").apply { isAccessible = true }.get(null)
+        val putInt = unsafeClass.getMethod(
+            "putInt",
+            Any::class.java,
+            Long::class.javaPrimitiveType,
+            Int::class.javaPrimitiveType,
+        )
+        val staticFieldBase = unsafeClass.getMethod("staticFieldBase", java.lang.reflect.Field::class.java)
+        val staticFieldOffset = unsafeClass.getMethod("staticFieldOffset", java.lang.reflect.Field::class.java)
+        val field = Build.VERSION::class.java.getField("SDK_INT")
+        val orig = Build.VERSION.SDK_INT
+        val base = staticFieldBase.invoke(unsafe, field)
+        val offset = staticFieldOffset.invoke(unsafe, field) as Long
+        putInt.invoke(unsafe, base, offset, 26)
+        try {
+            val context = createTestContext()
+            val payload = "defaults-test".toByteArray(StandardCharsets.UTF_8)
+            runMockServer(
+                statusLine = "HTTP/1.1 200 OK",
+                contentLength = payload.size.toLong(),
+                body = payload,
+            ) { url ->
+                val service = CatalogDownloadService(context)
+                val exception = assertThrows(CatalogDownloadException::class.java) {
+                    runBlocking { service.downloadIfNeeded(url = url) }
+                }
+                assertTrue(exception.message?.contains("Catalog checksum mismatch") == true)
+                try {
+                    runBlocking { service.downloadIfNeeded() }
+                } catch (_: Exception) {
+                }
+            }
+        } finally {
+            putInt.invoke(unsafe, base, offset, orig)
+        }
+    }
+
+    @Test
+    fun downloadIfNeededFailsOnStreamExceedingLimit() = runBlocking {
+        val context = createTestContext()
+        val server = ServerSocket(0)
+        val port = server.localPort
+        val worker = thread {
+            try {
+                val socket = server.accept()
+                val reader = socket.getInputStream().bufferedReader()
+                var line = reader.readLine()
+                while (!line.isNullOrEmpty()) line = reader.readLine()
+                val out = socket.getOutputStream()
+                out.write("HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n".toByteArray(StandardCharsets.UTF_8))
+                val chunk = ByteArray(64 * 1024)
+                repeat(520) {
+                    try {
+                        out.write(chunk)
+                        out.flush()
+                    } catch (_: Exception) {
+                        return@repeat
+                    }
+                }
+                socket.close()
+            } catch (_: Exception) {
+            }
+        }
+        val service = CatalogDownloadService(context)
+        val exception = assertThrows(CatalogDownloadException::class.java) {
+            runBlocking { service.downloadIfNeeded(url = "http://127.0.0.1:$port") }
+        }
+        assertTrue(exception.message?.contains("Catalog exceeds size limit") == true)
+        worker.join()
+        server.close()
     }
 }
