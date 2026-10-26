@@ -12,14 +12,14 @@ detekt {
     buildUponDefaultConfig = true
 }
 
-tasks.named("detekt") {
-    dependsOn("detektTest")
+tasks.named('detekt') {
+    dependsOn 'detektTest'
 }
 
 def signingProperties = new Properties()
-def gitCommit = "git rev-parse --short HEAD".execute([], project.rootDir).text.trim()
+def gitCommit = 'git rev-parse --short HEAD'.execute([], project.rootDir).text.trim()
 if (!gitCommit) {
-    gitCommit = "unknown"
+    gitCommit = 'unknown'
 }
 def signingPropertiesFile = file(
     System.getenv('PANTRYCRAFT_SIGNING_PROPERTIES') ?: "${System.getProperty('user.home')}/.config/pantrycraft/signing.properties",
@@ -29,59 +29,59 @@ if (signingPropertiesFile.isFile()) {
 }
 
 android {
-    namespace 'com.jeffers.pantrycraft'
-    compileSdk 36
+    namespace = 'com.jeffers.pantrycraft'
+    compileSdk = 36
 
     defaultConfig {
-        applicationId "com.jeffers.pantrycraft"
-        minSdk 23
-        targetSdk 36
-        versionCode 1
-        versionName "0.1"
+        applicationId = 'com.jeffers.pantrycraft'
+        minSdk = 23
+        targetSdk = 36
+        versionCode = 1
+        versionName = '0.1'
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = 'androidx.test.runner.AndroidJUnitRunner'
     }
 
     kapt {
         arguments {
-            arg("room.schemaLocation", "$projectDir/schemas")
-            arg("room.incremental", "true")
+            arg('room.schemaLocation', "$projectDir/schemas")
+            arg('room.incremental', 'true')
         }
     }
 
     signingConfigs {
         release {
             if (!signingProperties.isEmpty()) {
-                storeFile file(signingProperties['storeFile'])
-                storePassword signingProperties['storePassword']
-                keyAlias signingProperties['keyAlias']
-                keyPassword signingProperties['keyPassword']
+                storeFile = file(signingProperties['storeFile'])
+                storePassword = signingProperties['storePassword']
+                keyAlias = signingProperties['keyAlias']
+                keyPassword = signingProperties['keyPassword']
             }
         }
     }
 
     buildTypes {
         debug {
-            testCoverageEnabled true
-            versionNameSuffix "-${gitCommit}"
+            testCoverageEnabled = true
+            versionNameSuffix = "-${gitCommit}"
         }
         release {
-            minifyEnabled false
-            signingConfig signingConfigs.release
+            minifyEnabled = false
+            signingConfig = signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
         jvmTarget = '17'
     }
 
     buildFeatures {
-        compose true
+        compose = true
     }
 
     sourceSets {
@@ -153,4 +153,5 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4:1.5.2'
     debugImplementation 'androidx.compose.ui:ui-tooling:1.5.2'
+    debugImplementation 'androidx.compose.ui:ui-test-manifest:1.5.2'
 }

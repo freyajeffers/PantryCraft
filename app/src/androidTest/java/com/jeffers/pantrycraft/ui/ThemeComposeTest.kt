@@ -2,6 +2,7 @@ package com.jeffers.pantrycraft.ui
 
 import android.app.KeyguardManager
 import android.content.Context
+import androidx.activity.ComponentActivity
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -9,7 +10,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.jeffers.pantrycraft.MainActivity
 import org.junit.After
 import org.junit.Assume
 import org.junit.Before
@@ -20,7 +20,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ThemeComposeTest {
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     @Before
     fun setUp() {
