@@ -11,6 +11,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -142,25 +143,41 @@ class CameraScreenComposeTest {
     fun associateBarcodeDialogRendersInputsAndSaves() {
         var savedName = ""
         var savedCategory = ""
+        var savedUnit = ""
+        var savedStorage = ""
+        var savedShelfLife = -1
         var dismissed = false
         composeTestRule.setContent {
             PantryCraftTheme {
                 AssociateBarcodeDialog(
                     barcode = "888999",
                     onDismiss = { dismissed = true },
-                    onSave = { name, cat, _, _, _ ->
+                    onSave = { name, cat, unit, storage, days ->
                         savedName = name
                         savedCategory = cat
+                        savedUnit = unit
+                        savedStorage = storage
+                        savedShelfLife = days
                     },
                 )
             }
         }
         composeTestRule.onNodeWithText("Name Scanned Barcode").assertIsDisplayed()
         composeTestRule.onNodeWithText("Barcode: 888999").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+        assertTrue(dismissed)
+
         composeTestRule.onNodeWithText("Item Name").performTextInput("Organic Olive Oil")
+        composeTestRule.onNodeWithText("Storage (PANTRY, FRIDGE, FREEZER, COUNTER)").performTextClearance()
+        composeTestRule.onNodeWithText("Storage (PANTRY, FRIDGE, FREEZER, COUNTER)").performTextInput("ATTIC")
+        composeTestRule.onNodeWithText("Estimated Shelf Life (Days)").performTextClearance()
+        composeTestRule.onNodeWithText("Estimated Shelf Life (Days)").performTextInput("invalid")
         composeTestRule.onNodeWithText("Save & Remember").performClick()
         assertEquals("Organic Olive Oil", savedName)
         assertEquals("OTHER", savedCategory)
+        assertEquals("COUNT", savedUnit)
+        assertEquals("PANTRY", savedStorage)
+        assertEquals(0, savedShelfLife)
     }
 
     @Test
