@@ -79,6 +79,12 @@ class HomeScreenUnitComposeTest {
 
         composeTestRule.onNodeWithText("Low Stock").performClick()
         assertEquals("grocery", navigatedTarget)
+
+        composeTestRule.onNodeWithText("Add Item").performClick()
+        assertEquals("pantry", navigatedTarget)
+
+        composeTestRule.onNodeWithText("View List").performClick()
+        assertEquals("grocery", navigatedTarget)
     }
 
     @Test
