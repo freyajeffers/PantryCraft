@@ -92,6 +92,8 @@ class RepositoryTest {
         assertFalse(repository.observePantryItems().first().any { it.id == id })
         assertEquals(null, repository.findPantryItemByBarcode(item.barcode!!))
         assertNotNull(repository.findAnyPantryItemByBarcode(item.barcode!!))
+        repository.restorePantry(observed)
+        assertTrue(repository.observePantryItems().first().any { it.id == id })
     }
 
     @Test
@@ -101,6 +103,8 @@ class RepositoryTest {
             name = marker,
             quantity = 2f,
             barcode = "barcode-$marker",
+            category = "PRODUCE",
+            expirationTimestamp = 123456L,
         )
 
         val id = repository.insertPantry(item)
@@ -109,18 +113,30 @@ class RepositoryTest {
         val observed = repository.observePantryItems().first().single { it.id == id }
         repository.deletePantry(observed)
 
-        // Re-inserting with the same barcode restores the soft-deleted item
+        // Re-inserting with the same barcode and zero quantity retains existing quantity
+        val restoredZeroId = repository.insertPantry(item.copy(quantity = 0f))
+        assertEquals(id, restoredZeroId)
+        val restoredZero = repository.observePantryItems().first().single { it.id == id }
+        assertEquals(2f, restoredZero.quantity)
+        assertFalse(restoredZero.isDeleted)
+
+        repository.deletePantry(restoredZero)
+
+        // Re-inserting with the same barcode and positive quantity restores with new quantity
         val restoredId = repository.insertPantry(item.copy(quantity = 3f))
         assertEquals(id, restoredId)
         val restored = repository.observePantryItems().first().single { it.id == id }
         assertEquals(3f, restored.quantity)
         assertFalse(restored.isDeleted)
 
-        // Scanning duplicate barcode increments quantity instead of overwriting
-        val incrementedId = repository.insertPantry(item.copy(quantity = 2f))
+        // Scanning duplicate barcode increments quantity and preserves category/expiration when defaults provided
+        val defaultOtherItem = item.copy(quantity = 2f, category = "OTHER", expirationTimestamp = null)
+        val incrementedId = repository.insertPantry(defaultOtherItem)
         assertEquals(id, incrementedId)
         val incremented = repository.observePantryItems().first().single { it.id == id }
         assertEquals(5f, incremented.quantity)
+        assertEquals("PRODUCE", incremented.category)
+        assertEquals(123456L, incremented.expirationTimestamp)
 
         // Batch insert
         val batchItem1 = PantryItem(name = "$marker-batch1", quantity = 1f)
@@ -197,5 +213,12 @@ class RepositoryTest {
         val resolver = repository.offlineBarcodeResolver()
         assertNotNull(resolver)
         resolver.close()
+    }
+
+    @Test
+    fun defaultPantryRepositoryDefaultConstructorUsesDefaultGroceryRepo() {
+        val db = AppDatabase.getDatabase(context)
+        val defaultRepo = DefaultPantryRepository(db, context)
+        assertNotNull(defaultRepo)
     }
 }
