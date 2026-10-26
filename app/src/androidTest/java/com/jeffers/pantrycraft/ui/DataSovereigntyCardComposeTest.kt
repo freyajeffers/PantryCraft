@@ -77,4 +77,44 @@ class DataSovereigntyCardComposeTest {
         assertNotNull(props?.onImportJson)
         assertNotNull(props?.onImportCsv)
     }
+
+    @Test
+    fun performExportJsonAndCsvWritesToTargetUri() = kotlinx.coroutines.runBlocking {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val repository = Repository.getInstance(context)
+
+        val jsonFile = java.io.File(context.cacheDir, "export_test_${System.nanoTime()}.json")
+        val jsonUri = android.net.Uri.fromFile(jsonFile)
+        val jsonResult = performExportJson(context, repository, jsonUri)
+        assertTrue(jsonResult.isSuccess)
+        assertTrue(jsonFile.exists())
+        jsonFile.delete()
+
+        val csvFile = java.io.File(context.cacheDir, "export_test_${System.nanoTime()}.csv")
+        val csvUri = android.net.Uri.fromFile(csvFile)
+        val csvResult = performExportCsv(context, repository, csvUri)
+        assertTrue(csvResult.isSuccess)
+        assertTrue(csvFile.exists())
+        csvFile.delete()
+    }
+
+    @Test
+    fun performImportJsonAndCsvParsesInputUri() = kotlinx.coroutines.runBlocking {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val repository = Repository.getInstance(context)
+
+        val jsonFile = java.io.File(context.cacheDir, "import_test_${System.nanoTime()}.json")
+        jsonFile.writeText("{\"pantry\":[],\"grocery\":[]}")
+        val jsonUri = android.net.Uri.fromFile(jsonFile)
+        val jsonResult = performImportJson(context, repository, jsonUri)
+        assertTrue(jsonResult.isSuccess)
+        jsonFile.delete()
+
+        val csvFile = java.io.File(context.cacheDir, "import_test_${System.nanoTime()}.csv")
+        csvFile.writeText("Name,Quantity,Unit,Storage\nSovereigntyRice,1,KG,PANTRY")
+        val csvUri = android.net.Uri.fromFile(csvFile)
+        val csvResult = performImportCsv(context, repository, csvUri)
+        assertTrue(csvResult.isSuccess)
+        csvFile.delete()
+    }
 }

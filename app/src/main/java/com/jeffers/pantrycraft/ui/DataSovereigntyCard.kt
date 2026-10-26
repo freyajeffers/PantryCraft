@@ -1,6 +1,7 @@
 package com.jeffers.pantrycraft.ui
 
 import android.content.Context
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -94,14 +95,11 @@ private fun rememberExportActions(
         rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
             if (uri != null) {
                 scope.launch {
-                    runCatching {
-                        val json = withContext(Dispatchers.IO) { repository.exportInventoryToJson() }
-                        context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
-                    }.onSuccess {
-                        Toast.makeText(context, "Inventory exported to JSON", Toast.LENGTH_SHORT).show()
-                    }.onFailure {
-                        Toast.makeText(context, "JSON export failed: ${it.message}", Toast.LENGTH_LONG).show()
-                    }
+                    performExportJson(context, repository, uri)
+                        .onSuccess { Toast.makeText(context, "Inventory exported to JSON", Toast.LENGTH_SHORT).show() }
+                        .onFailure {
+                            Toast.makeText(context, "JSON export failed: ${it.message}", Toast.LENGTH_LONG).show()
+                        }
                 }
             }
         }
@@ -109,14 +107,11 @@ private fun rememberExportActions(
         rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
             if (uri != null) {
                 scope.launch {
-                    runCatching {
-                        val csv = withContext(Dispatchers.IO) { repository.exportPantryToCsv() }
-                        context.contentResolver.openOutputStream(uri)?.use { it.write(csv.toByteArray()) }
-                    }.onSuccess {
-                        Toast.makeText(context, "Pantry exported to CSV", Toast.LENGTH_SHORT).show()
-                    }.onFailure {
-                        Toast.makeText(context, "CSV export failed: ${it.message}", Toast.LENGTH_LONG).show()
-                    }
+                    performExportCsv(context, repository, uri)
+                        .onSuccess { Toast.makeText(context, "Pantry exported to CSV", Toast.LENGTH_SHORT).show() }
+                        .onFailure {
+                            Toast.makeText(context, "CSV export failed: ${it.message}", Toast.LENGTH_LONG).show()
+                        }
                 }
             }
         }
@@ -136,16 +131,12 @@ private fun rememberImportActions(
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null) {
                 scope.launch {
-                    runCatching {
-                        val content =
-                            context.contentResolver.openInputStream(uri)?.use { it.reader().readText() }
-                                ?: error("Unable to read selected JSON file")
-                        withContext(Dispatchers.IO) { repository.importInventoryFromJson(content) }
-                    }.onSuccess { count ->
-                        Toast.makeText(context, "Imported $count items from JSON", Toast.LENGTH_SHORT).show()
-                    }.onFailure {
-                        Toast.makeText(context, "JSON import failed: ${it.message}", Toast.LENGTH_LONG).show()
-                    }
+                    performImportJson(context, repository, uri)
+                        .onSuccess {
+                            Toast.makeText(context, "Imported $it items from JSON", Toast.LENGTH_SHORT).show()
+                        }.onFailure {
+                            Toast.makeText(context, "JSON import failed: ${it.message}", Toast.LENGTH_LONG).show()
+                        }
                 }
             }
         }
@@ -153,16 +144,12 @@ private fun rememberImportActions(
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null) {
                 scope.launch {
-                    runCatching {
-                        val csvText =
-                            context.contentResolver.openInputStream(uri)?.use { it.reader().readText() }
-                                ?: error("Unable to read selected CSV file")
-                        withContext(Dispatchers.IO) { repository.importPantryFromCsv(csvText) }
-                    }.onSuccess { count ->
-                        Toast.makeText(context, "Imported $count pantry items from CSV", Toast.LENGTH_SHORT).show()
-                    }.onFailure {
-                        Toast.makeText(context, "CSV import failed: ${it.message}", Toast.LENGTH_LONG).show()
-                    }
+                    performImportCsv(context, repository, uri)
+                        .onSuccess {
+                            Toast.makeText(context, "Imported $it pantry items from CSV", Toast.LENGTH_SHORT).show()
+                        }.onFailure {
+                            Toast.makeText(context, "CSV import failed: ${it.message}", Toast.LENGTH_LONG).show()
+                        }
                 }
             }
         }
@@ -171,3 +158,50 @@ private fun rememberImportActions(
         { importCsvLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/*")) },
     )
 }
+
+internal suspend fun performExportJson(
+    context: Context,
+    repository: Repository,
+    uri: Uri,
+): Result<Unit> =
+    runCatching {
+        val json = withContext(Dispatchers.IO) { repository.exportInventoryToJson() }
+        context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
+            ?: error("Unable to open output stream")
+    }
+
+internal suspend fun performExportCsv(
+    context: Context,
+    repository: Repository,
+    uri: Uri,
+): Result<Unit> =
+    runCatching {
+        val csv = withContext(Dispatchers.IO) { repository.exportPantryToCsv() }
+        context.contentResolver.openOutputStream(uri)?.use { it.write(csv.toByteArray()) }
+            ?: error("Unable to open output stream")
+    }
+
+internal suspend fun performImportJson(
+    context: Context,
+    repository: Repository,
+    uri: Uri,
+): Result<Int> =
+    runCatching {
+        val content =
+            context.contentResolver.openInputStream(uri)?.use { it.reader().readText() }
+                ?: error("Unable to read selected JSON file")
+        withContext(Dispatchers.IO) { repository.importInventoryFromJson(content) }
+    }
+
+internal suspend fun performImportCsv(
+    context: Context,
+    repository: Repository,
+    uri: Uri,
+): Result<Int> =
+    runCatching {
+        val csvText =
+            context.contentResolver.openInputStream(uri)?.use { it.reader().readText() }
+                ?: error("Unable to read selected CSV file")
+        withContext(Dispatchers.IO) { repository.importPantryFromCsv(csvText) }
+    }
+
