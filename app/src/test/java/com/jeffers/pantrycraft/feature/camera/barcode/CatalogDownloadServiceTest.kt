@@ -129,6 +129,13 @@ class CatalogDownloadServiceTest {
             }
             assertTrue(exception.message?.contains("HTTP 404") == true)
         }
+        runMockServer(statusLine = "HTTP/1.1 199 Early Error") { url ->
+            val service = CatalogDownloadService(context)
+            val exception = assertThrows(CatalogDownloadException::class.java) {
+                runBlocking { service.downloadIfNeeded(url = url, expectedSha256 = "dummy") }
+            }
+            assertTrue(exception.message?.contains("HTTP 199") == true)
+        }
     }
 
     @Test
