@@ -291,6 +291,52 @@ class CameraArgsModelTest {
         org.junit.Assert.assertTrue(actions.toString().contains("CameraQuickAddActions"))
     }
 
+    @Test
+    fun associateBarcodeFieldsStateContract() {
+        var nameInput = ""
+        var catInput = ""
+        var unitInput = ""
+        var locInput = ""
+        var daysInput = ""
+
+        val state = AssociateBarcodeFieldsState(
+            barcode = "998877",
+            name = "Apples",
+            onNameChange = { nameInput = it },
+            category = "PRODUCE",
+            onCategoryChange = { catInput = it },
+            unit = "COUNT",
+            onUnitChange = { unitInput = it },
+            storageLocation = "FRIDGE",
+            onStorageLocationChange = { locInput = it },
+            shelfLifeDaysText = "14",
+            onShelfLifeChange = { daysInput = it },
+        )
+
+        assertEquals("998877", state.barcode)
+        assertEquals("Apples", state.name)
+        assertEquals("PRODUCE", state.category)
+        assertEquals("COUNT", state.unit)
+        assertEquals("FRIDGE", state.storageLocation)
+        assertEquals("14", state.shelfLifeDaysText)
+
+        state.onNameChange("Gala Apples")
+        state.onCategoryChange("FRUIT")
+        state.onUnitChange("KG")
+        state.onStorageLocationChange("PANTRY")
+        state.onShelfLifeChange("21")
+
+        assertEquals("Gala Apples", nameInput)
+        assertEquals("FRUIT", catInput)
+        assertEquals("KG", unitInput)
+        assertEquals("PANTRY", locInput)
+        assertEquals("21", daysInput)
+
+        assertEquals(state, state.copy())
+        assertEquals(state.hashCode(), state.copy().hashCode())
+        org.junit.Assert.assertTrue(state.toString().contains("AssociateBarcodeFieldsState"))
+    }
+
     private fun verifyBoxGetters(b: CameraScreenBoxArgs) {
         assertEquals(Offset(10f, 20f), b.focusPoint)
         assertEquals(false, b.isTorchOn)

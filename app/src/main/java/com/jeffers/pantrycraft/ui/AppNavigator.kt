@@ -163,7 +163,7 @@ private fun DestinationContent(
     }
 }
 
-private enum class BottomDestination(
+internal enum class BottomDestination(
     val route: String,
     val label: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,

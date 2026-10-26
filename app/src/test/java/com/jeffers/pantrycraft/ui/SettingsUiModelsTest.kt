@@ -200,4 +200,65 @@ class SettingsUiModelsTest {
         assertEquals("5678", pinInput)
         assertTrue(openCalled && restoreCalled && resetCalled)
     }
+
+    @Test
+    fun settingsDialogsStateModel() {
+        var pinTextChange = ""
+        var selectedRec: BackupRecord? = null
+        val triggered = mutableSetOf<String>()
+
+        val dummyRecord = BackupRecord(
+            backupName = "b1.db",
+            createdAt = 500L,
+            createdAtLabel = "label",
+            exportedUri = "uri",
+        )
+        val catDialog = CatalogDialog("Title", "Msg", false)
+
+        val state = SettingsDialogsState(
+            showPinDialog = true,
+            pinText = "1234",
+            onPinTextChange = { pinTextChange = it },
+            onDismissPinDialog = { triggered += "dismissPin" },
+            onConfirmPinDialog = { triggered += "confirmPin" },
+            showBackupList = true,
+            backupRecords = listOf(dummyRecord),
+            onDismissBackupList = { triggered += "dismissList" },
+            onSelectBackup = { selectedRec = it },
+            catalogDialog = catDialog,
+            onDismissCatalogDialog = { triggered += "dismissCat" },
+            confirmDatabaseReset = true,
+            onDismissDatabaseReset = { triggered += "dismissReset" },
+            confirmCatalogDelete = true,
+            onDismissCatalogDelete = { triggered += "dismissCatDel" },
+            onCatalogDeleted = { triggered += "catDeleted" },
+            onCatalogDeleteFailed = { triggered += "catDeleteFailed" },
+        )
+
+        assertTrue(state.showPinDialog)
+        assertEquals("1234", state.pinText)
+        assertTrue(state.showBackupList)
+        assertEquals(listOf(dummyRecord), state.backupRecords)
+        assertEquals(catDialog, state.catalogDialog)
+        assertTrue(state.confirmDatabaseReset && state.confirmCatalogDelete)
+
+        state.onPinTextChange("5678")
+        state.onDismissPinDialog()
+        state.onConfirmPinDialog()
+        state.onDismissBackupList()
+        state.onSelectBackup(dummyRecord)
+        state.onDismissCatalogDialog()
+        state.onDismissDatabaseReset()
+        state.onDismissCatalogDelete()
+        state.onCatalogDeleted()
+        state.onCatalogDeleteFailed()
+
+        assertEquals("5678", pinTextChange)
+        assertEquals(dummyRecord, selectedRec)
+        assertEquals(8, triggered.size)
+
+        assertEquals(state, state.copy())
+        assertEquals(state.hashCode(), state.copy().hashCode())
+        assertTrue(state.toString().contains("SettingsDialogsState"))
+    }
 }
