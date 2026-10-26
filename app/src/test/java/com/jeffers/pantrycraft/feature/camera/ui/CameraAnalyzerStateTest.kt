@@ -153,9 +153,22 @@ class CameraAnalyzerStateTest {
         assertNotNull(state1.component9())
         assertNotNull(state1.component10())
 
+        assertEquals(dummyContext, state1.context)
+        assertEquals(dummyView, state1.view)
+        assertEquals(executor, state1.executor)
+        assertNotNull(state1.scope)
+        assertEquals(resolver, state1.barcodeResolver)
+        assertEquals(stats, state1.frameTimingStats)
+        assertNotNull(state1.onResult)
+        assertNotNull(state1.onFrameTime)
+        assertNotNull(state1.onBarcodeResolved)
+        assertNotNull(state1.onBarcodeUnresolved)
+
         val state2 = state1.copy(frameTimingStats = com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats())
         assertNotNull(state2)
         assertNotNull(state1.toString())
+        assertEquals(state1, state1)
+        assertEquals(state1.hashCode(), state1.hashCode())
 
         executor.shutdown()
     }
