@@ -201,4 +201,48 @@ class SettingsCardsComposeTest {
         composeTestRule.onNodeWithText("Delete").performClick()
         assertTrue(deleteCalled)
     }
+
+    @Test
+    fun foodFactsCardIndeterminateProgressAndDownloadTrigger() {
+        var startCalled = false
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val repository = Repository.getInstance(context)
+        val scope = CoroutineScope(Dispatchers.Main.immediate)
+
+        val indeterminateProps = FoodFactsProps(
+            catalogReady = false,
+            catalogDownloading = true,
+            catalogDownloadedBytes = 256L,
+            catalogTotalBytes = 0L,
+            catalogFileSize = null,
+            onStartDownload = {},
+            onDownloadResult = {},
+            onProgress = { _, _ -> },
+            onDelete = {},
+        )
+
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                FoodFactsCard(repository = repository, scope = scope, props = indeterminateProps)
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Downloading 256 B").assertIsDisplayed()
+
+        val idleProps = indeterminateProps.copy(
+            catalogDownloading = false,
+            onStartDownload = { startCalled = true },
+        )
+
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                FoodFactsCard(repository = repository, scope = scope, props = idleProps)
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Download food catalog").performClick()
+        assertTrue(startCalled)
+    }
 }
