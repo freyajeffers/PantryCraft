@@ -120,7 +120,7 @@ private fun GroceryAddButton(onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun GroceryTopBar(
+internal fun GroceryTopBar(
     checkedCount: Int,
     onRestock: () -> Unit,
     onClear: () -> Unit,
@@ -141,7 +141,7 @@ private fun GroceryTopBar(
 }
 
 @Composable
-private fun GroceryListContent(
+internal fun GroceryListContent(
     items: List<GroceryItem>,
     padding: PaddingValues,
     onChecked: (GroceryItem, Boolean) -> Unit,
@@ -219,7 +219,7 @@ fun GroceryItemRow(
 }
 
 @Composable
-private fun AddGroceryItemDialog(
+internal fun AddGroceryItemDialog(
     onDismiss: () -> Unit,
     onAdd: (name: String, quantity: Float, unit: String) -> Unit,
 ) {
