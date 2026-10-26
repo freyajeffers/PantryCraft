@@ -330,7 +330,7 @@ private fun throwRestoreFailure(error: IOException): Nothing =
         error,
     )
 
-private fun readBackupPassphrase(input: CipherInputStream): ByteArray {
+internal fun readBackupPassphrase(input: java.io.InputStream): ByteArray {
     val lengthHigh = input.read()
     val lengthLow = input.read()
     if (lengthHigh < 0 || lengthLow < 0) throw IOException("Truncated backup payload")
@@ -345,7 +345,7 @@ private fun readBackupPassphrase(input: CipherInputStream): ByteArray {
     return passphrase
 }
 
-private fun deriveKeyBytes(
+internal fun deriveKeyBytes(
     pin: CharArray,
     salt: ByteArray,
 ): ByteArray {
@@ -356,7 +356,7 @@ private fun deriveKeyBytes(
     return key
 }
 
-private fun backupFile(
+internal fun backupFile(
     context: Context,
     backupName: String,
 ): File {

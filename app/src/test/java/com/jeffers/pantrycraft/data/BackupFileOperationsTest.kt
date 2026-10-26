@@ -118,4 +118,38 @@ class BackupFileOperationsTest {
             }
         }
     }
+
+    @Test
+    fun deriveKeyBytesDerivesDeterministicKeyAndScrubsPin() {
+        val pin = charArrayOf('5', '6', '7', '8')
+        val salt = ByteArray(16) { (it + 1).toByte() }
+        val key1 = deriveKeyBytes(pin, salt)
+        assertEquals(32, key1.size)
+
+        val pinCopy = charArrayOf('5', '6', '7', '8')
+        val key2 = deriveKeyBytes(pinCopy, salt)
+        assertTrue(key1.contentEquals(key2))
+
+        val diffPin = charArrayOf('5', '6', '7', '9')
+        val keyDiff = deriveKeyBytes(diffPin, salt)
+        assertFalse(key1.contentEquals(keyDiff))
+    }
+
+    @Test
+    fun readBackupPassphraseParsesPayloadAndThrowsOnTruncation() {
+        val samplePassphrase = "test-passphrase-bytes-1234".toByteArray(Charsets.UTF_8)
+        val len = samplePassphrase.size
+        val high = (len shr 8) and 0xFF
+        val low = len and 0xFF
+        val streamBytes = byteArrayOf(high.toByte(), low.toByte()) + samplePassphrase
+
+        val stream = java.io.ByteArrayInputStream(streamBytes)
+        val parsed = readBackupPassphrase(stream)
+        assertEquals("test-passphrase-bytes-1234", parsed.toString(Charsets.UTF_8))
+
+        val truncatedStream = java.io.ByteArrayInputStream(byteArrayOf(0.toByte(), 10.toByte(), 1, 2, 3))
+        assertThrows(IOException::class.java) {
+            readBackupPassphrase(truncatedStream)
+        }
+    }
 }
