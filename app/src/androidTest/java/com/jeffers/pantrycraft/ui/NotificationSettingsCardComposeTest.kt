@@ -70,4 +70,32 @@ class NotificationSettingsCardComposeTest {
         composeTestRule.waitForIdle()
         assertTrue(changeCalled)
     }
+
+    @Test
+    fun notificationSettingsCardTogglesFromDisabledState() {
+        var enabledState = false
+        var changeCalled = false
+
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                val launcher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission(),
+                    onResult = {},
+                )
+                NotificationSettingsCard(
+                    context = context,
+                    enabled = enabledState,
+                    onEnabledChange = {
+                        enabledState = it
+                        changeCalled = true
+                    },
+                    permissionLauncher = launcher,
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Daily expiration alerts").performClick()
+        composeTestRule.waitForIdle()
+    }
 }
