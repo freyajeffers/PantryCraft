@@ -3,8 +3,12 @@ package com.jeffers.pantrycraft.feature.camera.vision
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.SharedPreferences
+import com.jeffers.pantrycraft.data.AiProvider
+import java.net.ServerSocket
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 
@@ -39,7 +43,135 @@ class ByokCloudVisionModelUnitTest {
             .apply { isAccessible = true }
         @Suppress("UNCHECKED_CAST")
         val range = getter.invoke(companionField) as IntRange
-        org.junit.Assert.assertEquals(200..299, range)
+        assertEquals(200..299, range)
+    }
+
+    @Test
+    fun ollamaProviderSuccessParsesResponse() = runBlocking {
+        val json = "{\"response\": \"{\\\"detected_items\\\":[{\\\"name\\\":\\\"Eggs\\\"}]}\"}"
+        SimpleMockHttpServer(200, json).use { server ->
+            val prefsMap = mutableMapOf<String, Any?>(
+                "selected_provider" to AiProvider.OLLAMA.id,
+                "selected_endpoint_url" to server.url,
+                "selected_model_name" to "llava",
+            )
+            val context = object : ContextWrapper(null) {
+                override fun getApplicationContext(): Context = this
+                override fun getSharedPreferences(name: String, mode: Int): SharedPreferences =
+                    createMockPrefs(prefsMap)
+            }
+            val model = ByokCloudVisionModel(context)
+            val result = model.analyze(ByteArray(0), "prompt")
+            assertTrue(result.contains("Eggs"))
+        }
+    }
+
+    @Test
+    fun serverErrorThrowsIllegalStateException() = runBlocking {
+        SimpleMockHttpServer(500, "Internal Server Error").use { server ->
+            val prefsMap = mutableMapOf<String, Any?>(
+                "selected_provider" to AiProvider.OLLAMA.id,
+                "selected_endpoint_url" to server.url,
+                "selected_model_name" to "llava",
+            )
+            val context = object : ContextWrapper(null) {
+                override fun getApplicationContext(): Context = this
+                override fun getSharedPreferences(name: String, mode: Int): SharedPreferences =
+                    createMockPrefs(prefsMap)
+            }
+            val model = ByokCloudVisionModel(context)
+            try {
+                model.analyze(ByteArray(0), "prompt")
+                fail("Expected IllegalStateException for 500 status")
+            } catch (expected: IllegalStateException) {
+                assertTrue(expected.message?.contains("500") == true)
+            }
+        }
+    }
+
+    @Test
+    fun geminiProviderSuccessParsesResponse() = runBlocking {
+        val json = "{\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"Gemini Milk\"}]}}]}"
+        SimpleMockHttpServer(200, json).use { server ->
+            val prefsMap = mutableMapOf<String, Any?>(
+                "selected_provider" to AiProvider.GEMINI.id,
+                "selected_endpoint_url" to server.url,
+                "selected_model_name" to "gemini-flash",
+            )
+            val context = object : ContextWrapper(null) {
+                override fun getApplicationContext(): Context = this
+                override fun getSharedPreferences(name: String, mode: Int): SharedPreferences =
+                    createMockPrefs(prefsMap)
+            }
+            val model = ByokCloudVisionModel(context)
+            val result = model.analyze(ByteArray(0), "prompt")
+            assertTrue(result.contains("Gemini Milk"))
+        }
+    }
+
+    @Test
+    fun openAiProviderSuccessParsesResponse() = runBlocking {
+        val json = "{\"choices\": [{\"message\": {\"content\": \"OpenAI Bread\"}}]}"
+        SimpleMockHttpServer(200, json).use { server ->
+            val prefsMap = mutableMapOf<String, Any?>(
+                "selected_provider" to AiProvider.OPENAI.id,
+                "selected_endpoint_url" to server.url,
+                "selected_model_name" to "gpt-4o",
+            )
+            val context = object : ContextWrapper(null) {
+                override fun getApplicationContext(): Context = this
+                override fun getSharedPreferences(name: String, mode: Int): SharedPreferences =
+                    createMockPrefs(prefsMap)
+            }
+            val model = ByokCloudVisionModel(context)
+            val result = model.analyze(ByteArray(0), "prompt")
+            assertTrue(result.contains("OpenAI Bread"))
+        }
+    }
+
+    @Test
+    fun anthropicProviderSuccessParsesResponse() = runBlocking {
+        val json = "{\"content\": [{\"type\": \"text\", \"text\": \"Anthropic Cheese\"}]}"
+        SimpleMockHttpServer(200, json).use { server ->
+            val prefsMap = mutableMapOf<String, Any?>(
+                "selected_provider" to AiProvider.ANTHROPIC.id,
+                "selected_endpoint_url" to server.url,
+                "selected_model_name" to "claude-sonnet",
+            )
+            val context = object : ContextWrapper(null) {
+                override fun getApplicationContext(): Context = this
+                override fun getSharedPreferences(name: String, mode: Int): SharedPreferences =
+                    createMockPrefs(prefsMap)
+            }
+            val model = ByokCloudVisionModel(context)
+            val result = model.analyze(ByteArray(0), "prompt")
+            assertTrue(result.contains("Anthropic Cheese"))
+        }
+    }
+
+    private class SimpleMockHttpServer(
+        val statusCode: Int,
+        val body: String,
+    ) : AutoCloseable {
+        private val serverSocket = ServerSocket(0)
+        val url: String = "http://127.0.0.1:${serverSocket.localPort}"
+
+        init {
+            Thread {
+                try {
+                    serverSocket.accept().use { socket ->
+                        val reader = socket.getInputStream().bufferedReader()
+                        while (reader.readLine()?.isNotEmpty() == true) { /* drain */ }
+                        val response = "HTTP/1.1 $statusCode OK\r\nContent-Length: ${body.length}\r\n\r\n$body"
+                        socket.getOutputStream().write(response.toByteArray(Charsets.UTF_8))
+                    }
+                } catch (_: Exception) { /* closed */ }
+            }.start()
+        }
+
+        override fun close() {
+            serverSocket.close()
+        }
     }
 
     private fun createMockPrefs(prefsMap: MutableMap<String, Any?>): SharedPreferences =
@@ -89,19 +221,13 @@ class ByokCloudVisionModelUnitTest {
                     return this
                 }
                 override fun commit(): Boolean = true
-                override fun apply() {
-                    // Mock no-op
-                }
+                override fun apply() { /* no-op */ }
             }
             override fun registerOnSharedPreferenceChangeListener(
                 l: SharedPreferences.OnSharedPreferenceChangeListener?,
-            ) {
-                // Mock no-op
-            }
+            ) { /* no-op */ }
             override fun unregisterOnSharedPreferenceChangeListener(
                 l: SharedPreferences.OnSharedPreferenceChangeListener?,
-            ) {
-                // Mock no-op
-            }
+            ) { /* no-op */ }
         }
 }
