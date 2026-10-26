@@ -87,6 +87,89 @@ class CameraAnalyzerStateTest {
         assertNotNull(resolvedMatch)
     }
 
+    @Test
+    fun processLiveBarcodeResultDispatchesResolvedAndUnresolved() = runBlocking {
+        val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
+        val dummyContext = DummyContext()
+        val dummyView = createStub<android.view.View>()
+        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val stats = com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats()
+
+        var resolvedMatch: BarcodeMatch? = null
+        var unresolvedCode: String? = null
+
+        val state = CameraAnalyzerState(
+            context = dummyContext,
+            view = dummyView,
+            executor = executor,
+            scope = this,
+            barcodeResolver = resolver,
+            frameTimingStats = stats,
+            onResult = {},
+            onFrameTime = {},
+            onBarcodeResolved = { resolvedMatch = it },
+            onBarcodeUnresolved = { unresolvedCode = it },
+        )
+
+        processLiveBarcodeResult(state, "012000001056")
+        assertNotNull(resolvedMatch)
+        assertEquals("Coca-Cola", resolvedMatch?.name)
+
+        processLiveBarcodeResult(state, "999999999999")
+        assertEquals("999999999999", unresolvedCode)
+
+        executor.shutdown()
+    }
+
+    @Test
+    fun cameraAnalyzerStateDataClassContract() {
+        val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
+        val dummyContext = DummyContext()
+        val dummyView = createStub<android.view.View>()
+        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val stats = com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats()
+
+        val state1 = CameraAnalyzerState(
+            context = dummyContext,
+            view = dummyView,
+            executor = executor,
+            scope = kotlinx.coroutines.GlobalScope,
+            barcodeResolver = resolver,
+            frameTimingStats = stats,
+            onResult = {},
+            onFrameTime = {},
+            onBarcodeResolved = {},
+            onBarcodeUnresolved = {},
+        )
+
+        assertEquals(dummyContext, state1.component1())
+        assertEquals(dummyView, state1.component2())
+        assertEquals(executor, state1.component3())
+        assertNotNull(state1.component4())
+        assertEquals(resolver, state1.component5())
+        assertEquals(stats, state1.component6())
+        assertNotNull(state1.component7())
+        assertNotNull(state1.component8())
+        assertNotNull(state1.component9())
+        assertNotNull(state1.component10())
+
+        val state2 = state1.copy(frameTimingStats = com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats())
+        assertNotNull(state2)
+        assertNotNull(state1.toString())
+
+        executor.shutdown()
+    }
+
+    private class DummyContext : android.content.ContextWrapper(null)
+
+    private inline fun <reified T : Any> createStub(): T {
+        val unsafeClass = Class.forName("sun.misc.Unsafe")
+        val field = unsafeClass.getDeclaredField("theUnsafe").apply { isAccessible = true }
+        val unsafe = field.get(null)
+        val allocate = unsafeClass.getMethod("allocateInstance", Class::class.java)
+        return allocate.invoke(unsafe, T::class.java) as T
+    }
+
     private class FakeCustomBarcodeDao : CustomBarcodeDao {
         override suspend fun findByBarcode(barcode: String): CustomBarcodeItem? = null
         override suspend fun upsert(item: CustomBarcodeItem) {
