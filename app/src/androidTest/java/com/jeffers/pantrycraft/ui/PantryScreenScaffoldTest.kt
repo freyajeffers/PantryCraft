@@ -1,7 +1,9 @@
 package com.jeffers.pantrycraft.ui
 
 import android.content.Context
+import androidx.activity.ComponentActivity
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeffers.pantrycraft.data.AppDatabase
@@ -16,11 +18,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PantryScreenScaffoldTest {
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
     private val context: Context = ApplicationProvider.getApplicationContext()
     private lateinit var repository: Repository
     private lateinit var viewModel: PantryViewModel
@@ -165,5 +171,26 @@ class PantryScreenScaffoldTest {
             }
         }
         assertTrue("Grocery item must be inserted from pantry item via scaffold prop", foundGrocery)
+    }
+
+    @Test
+    fun pantryScreenScaffoldRendersContent() {
+        val state = PantryScreenScaffoldState(
+            viewModel = viewModel,
+            items = emptyList(),
+            selectedLocation = PantryLocationFilter.ALL,
+            selectedSortOrder = PantrySortOrder.NAME_ASC,
+            searchQuery = "",
+            onOpenEditor = {},
+            onUseItem = {},
+            snackbarHostState = SnackbarHostState(),
+            scope = CoroutineScope(Dispatchers.Main.immediate),
+        )
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                PantryScreenScaffold(state)
+            }
+        }
+        composeTestRule.waitForIdle()
     }
 }
