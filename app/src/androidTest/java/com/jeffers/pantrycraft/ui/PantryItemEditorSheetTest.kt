@@ -87,7 +87,7 @@ class PantryItemEditorSheetTest {
         composeTestRule.onNodeWithText(testItemName).assertIsDisplayed()
 
         // 2. Open edit item sheet via the Edit text button on the row
-        composeTestRule.onNodeWithText("Edit").assertIsDisplayed().performClick()
+        composeTestRule.onAllNodesWithText("Edit")[0].assertIsDisplayed().performClick()
         composeTestRule.waitForIdle()
 
         // 3. Verify Edit pantry item sheet appears with the item details
