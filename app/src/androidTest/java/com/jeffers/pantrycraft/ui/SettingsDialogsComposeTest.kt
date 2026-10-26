@@ -12,6 +12,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeffers.pantrycraft.data.DatabaseBackupManager.BackupRecord
+import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
+import java.io.File
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -135,6 +137,9 @@ class SettingsDialogsComposeTest {
         var deleted = false
         var failed = false
 
+        val catalogFile = File(context.noBackupFilesDir, CatalogDownloadService.CATALOG_FILE_NAME)
+        catalogFile.delete()
+
         composeTestRule.setContent {
             PantryCraftTheme {
                 CatalogDeleteDialog(
@@ -154,7 +159,12 @@ class SettingsDialogsComposeTest {
 
         composeTestRule.onNodeWithText("Delete").performClick()
         composeTestRule.waitForIdle()
-        assertTrue("Non-existent catalog file deletion should invoke onDeleted or onFailure", deleted || failed)
+        assertTrue(failed)
+
+        catalogFile.writeText("test-catalog")
+        composeTestRule.onNodeWithText("Delete").performClick()
+        composeTestRule.waitForIdle()
+        assertTrue(deleted)
     }
 
     @Test
