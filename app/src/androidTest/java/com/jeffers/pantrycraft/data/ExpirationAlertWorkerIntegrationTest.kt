@@ -49,6 +49,15 @@ class ExpirationAlertWorkerIntegrationTest {
     }
 
     @Test
+    fun doWorkSucceedsWhenEnabledWithNoExpiringItems() = runBlocking {
+        ExpirationAlertWorker.setEnabled(context, true)
+        val worker = TestListenableWorkerBuilder<ExpirationAlertWorker>(context).build()
+        val result = worker.doWork()
+
+        assertTrue(result is ListenableWorker.Result.Success)
+    }
+
+    @Test
     fun doWorkSucceedsWhenEnabledWithExpiringItem() = runBlocking {
         ExpirationAlertWorker.setEnabled(context, true)
         val repository = Repository.getInstance(context)
