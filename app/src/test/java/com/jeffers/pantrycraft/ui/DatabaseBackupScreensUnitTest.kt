@@ -1,5 +1,6 @@
 package com.jeffers.pantrycraft.ui
 
+import android.app.Activity
 import android.content.ContextWrapper
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
@@ -19,6 +20,27 @@ import org.junit.Test
 class DatabaseBackupScreensUnitTest {
 
     private class DummyContext : ContextWrapper(null)
+
+    private class DummyActivity : Activity() {
+        var recreated = false
+        override fun recreate() {
+            recreated = true
+        }
+    }
+
+    @Test
+    fun launchRestoreSuccessRecreatesActivity() = runTest {
+        val activity = DummyActivity()
+        val latch = CountDownLatch(1)
+        launchRestore(
+            context = activity,
+            scope = CoroutineScope(Dispatchers.Default),
+            restore = { /* success */ },
+            onResult = { latch.countDown() },
+        )
+        assertTrue(latch.await(5, TimeUnit.SECONDS))
+        assertTrue(activity.recreated)
+    }
 
     @Test
     fun launchRestoreSuccessNotifiesNullResult() = runTest {
