@@ -120,7 +120,7 @@ internal fun rememberEncryptedBackupCardProps(
     )
 }
 
-private fun assembleEncryptedBackupProps(
+internal fun assembleEncryptedBackupProps(
     context: Context,
     autoProps: AutomaticBackupProps,
     state: BackupStateProps,
@@ -221,7 +221,7 @@ internal fun buildAutoBackupProps(
         onBackupNow = { args.onRequirePin(args.onPerformBackup) },
     )
 
-private suspend fun performEncryptedBackup(
+internal suspend fun performEncryptedBackup(
     context: Context,
     pin: CharArray,
     onSuccess: (String) -> Unit,
