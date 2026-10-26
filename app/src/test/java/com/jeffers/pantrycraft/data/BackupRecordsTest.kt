@@ -75,4 +75,20 @@ class BackupRecordsTest {
 
         assertNull(timestamp)
     }
+
+    @Test
+    fun backupFileValidatesExtensionAndRejectsPathTraversal() {
+        val mockContext = DummyContext()
+        org.junit.Assert.assertThrows(java.io.IOException::class.java) {
+            backupFile(mockContext, "../escape.pcbk")
+        }
+        org.junit.Assert.assertThrows(java.io.IOException::class.java) {
+            backupFile(mockContext, "invalid_extension.db")
+        }
+        org.junit.Assert.assertThrows(java.io.IOException::class.java) {
+            backupFile(mockContext, "/absolute/path/backup.pcbk")
+        }
+    }
+
+    private class DummyContext : android.content.ContextWrapper(null)
 }
