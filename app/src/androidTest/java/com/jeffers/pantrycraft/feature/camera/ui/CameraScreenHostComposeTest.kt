@@ -8,6 +8,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeffers.pantrycraft.ui.PantryCraftTheme
 import org.junit.Assert.assertTrue
@@ -90,5 +92,20 @@ class CameraScreenHostComposeTest {
         }
         composeTestRule.waitForIdle()
         composeTestRule.onAllNodesWithText("Scanning…").onFirst().assertIsDisplayed()
+    }
+
+    @Test
+    fun cameraPermissionPromptRendersAndInvokesRequest() {
+        var requested = false
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                CameraPermissionPrompt { requested = true }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Camera access is required to scan pantry items.").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Allow camera").performClick()
+        assertTrue(requested)
     }
 }

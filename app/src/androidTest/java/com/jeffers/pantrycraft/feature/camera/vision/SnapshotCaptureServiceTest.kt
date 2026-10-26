@@ -72,6 +72,41 @@ class SnapshotCaptureServiceTest {
     }
 
     @Test
+    fun applyExifOrientationRotatesAndFlips() {
+        val service = SnapshotCaptureService(context, imageCapture)
+        val method = SnapshotCaptureService::class.java.getDeclaredMethod(
+            "applyExifOrientation",
+            String::class.java,
+            Bitmap::class.java,
+        ).apply { isAccessible = true }
+
+        val scratchDir = File(context.cacheDir, "exif-scratch").apply { mkdirs() }
+        val tempFile = File.createTempFile("exif-", ".jpg", scratchDir)
+        val bitmap = Bitmap.createBitmap(80, 40, Bitmap.Config.ARGB_8888)
+        FileOutputStream(tempFile).use { fos -> bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos) }
+
+        val orientations = listOf(
+            android.media.ExifInterface.ORIENTATION_ROTATE_90,
+            android.media.ExifInterface.ORIENTATION_ROTATE_180,
+            android.media.ExifInterface.ORIENTATION_ROTATE_270,
+            android.media.ExifInterface.ORIENTATION_FLIP_HORIZONTAL,
+            android.media.ExifInterface.ORIENTATION_FLIP_VERTICAL,
+        )
+        orientations.forEach { orientation ->
+            val exif = android.media.ExifInterface(tempFile.absolutePath)
+            exif.setAttribute(android.media.ExifInterface.TAG_ORIENTATION, orientation.toString())
+            exif.saveAttributes()
+
+            val oriented = method.invoke(service, tempFile.absolutePath, bitmap) as Bitmap
+            assertNotNull(oriented)
+            if (oriented !== bitmap) oriented.recycle()
+        }
+        bitmap.recycle()
+        tempFile.delete()
+        scratchDir.delete()
+    }
+
+    @Test
     fun compressForVisionDecodesAndEncodesToWebp() {
         val service = SnapshotCaptureService(context, imageCapture)
         val scratchDir = File(context.cacheDir, "test-scratch")

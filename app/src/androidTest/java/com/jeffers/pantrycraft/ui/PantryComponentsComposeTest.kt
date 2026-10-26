@@ -114,8 +114,20 @@ class PantryComponentsComposeTest {
         composeTestRule.onNodeWithText("My Pantry").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Sort pantry items").performClick()
 
+        composeTestRule.onNodeWithText("✓ Name (A-Z)").assertIsDisplayed()
         composeTestRule.onNodeWithText("Expiring soonest").performClick()
         assertEquals(PantrySortOrder.EXPIRATION_SOONEST, chosenSort)
+
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                PantryTopBar(
+                    selectedSortOrder = PantrySortOrder.CATEGORY,
+                    onSortSelected = {},
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Pantry").assertIsDisplayed()
     }
 
     @Test
