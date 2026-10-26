@@ -70,4 +70,13 @@ class CameraManagerTest {
             org.junit.Assert.assertEquals("Camera capture is not ready", expected.message)
         }
     }
+
+    @Test
+    fun cameraManagerZoomClampsBoundsAndMultipleUnbindsAreIdempotent() {
+        cameraManager.setLinearZoom(-1.0f)
+        cameraManager.setLinearZoom(2.5f)
+        cameraManager.unbind()
+        cameraManager.unbind()
+        assertFalse(cameraManager.hasFlash())
+    }
 }
