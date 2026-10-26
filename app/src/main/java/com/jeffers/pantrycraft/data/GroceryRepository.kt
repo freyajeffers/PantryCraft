@@ -61,9 +61,11 @@ internal class DefaultGroceryRepository(
             allChecked.size
         }
 
-    override fun reclaimTemporaryMedia(): Int {
-        val scratch = appContext.cacheDir.resolve("vision_scratch")
-        if (!scratch.isDirectory) return 0
-        return scratch.listFiles().orEmpty().count { it.deleteRecursively() }
-    }
+    override fun reclaimTemporaryMedia(): Int = reclaimScratchMedia(appContext.cacheDir)
+}
+
+internal fun reclaimScratchMedia(cacheDir: java.io.File): Int {
+    val scratch = cacheDir.resolve("vision_scratch")
+    if (!scratch.isDirectory) return 0
+    return scratch.listFiles().orEmpty().count { it.deleteRecursively() }
 }

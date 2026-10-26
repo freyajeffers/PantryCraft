@@ -105,18 +105,20 @@ internal class DefaultPantryRepository(
         return pantryDao.insert(validated)
     }
 
-    private fun validate(item: PantryItem): PantryItem {
-        require(item.name.isNotBlank()) { "Pantry item name must not be blank" }
-        require(item.quantity >= 0f) { "Pantry item quantity must not be negative" }
-        require(item.threshold >= 0f) { "Pantry item threshold must not be negative" }
-        require(item.storageLocation in PantryTaxonomy.storageLocations) {
-            "Unsupported pantry storage location"
-        }
-        val isAromatic =
-            item.isAromaticOrSeasoning || PantryTaxonomy.isAromaticOrSeasoningCategory(item.category)
-        return item.copy(
-            normalizedName = item.name.trim().lowercase(),
-            isAromaticOrSeasoning = isAromatic,
-        )
+    private fun validate(item: PantryItem): PantryItem = validatePantryItem(item)
+}
+
+internal fun validatePantryItem(item: PantryItem): PantryItem {
+    require(item.name.isNotBlank()) { "Pantry item name must not be blank" }
+    require(item.quantity >= 0f) { "Pantry item quantity must not be negative" }
+    require(item.threshold >= 0f) { "Pantry item threshold must not be negative" }
+    require(item.storageLocation in PantryTaxonomy.storageLocations) {
+        "Unsupported pantry storage location"
     }
+    val isAromatic =
+        item.isAromaticOrSeasoning || PantryTaxonomy.isAromaticOrSeasoningCategory(item.category)
+    return item.copy(
+        normalizedName = item.name.trim().lowercase(),
+        isAromaticOrSeasoning = isAromatic,
+    )
 }
