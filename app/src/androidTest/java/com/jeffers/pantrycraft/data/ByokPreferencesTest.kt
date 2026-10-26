@@ -124,4 +124,13 @@ class ByokPreferencesTest {
         prefs.edit().remove("api_key_ciphertext").apply()
         assertNull(ByokPreferences.loadApiKey(context))
     }
+
+    @Test
+    fun selectedModelAndEndpointFallbackToDefaultsWhenPrefsAreNull() {
+        val prefs = context.getSharedPreferences("byok_ai_preferences", Context.MODE_PRIVATE)
+        prefs.edit().remove("selected_model_name").remove("selected_endpoint_url").apply()
+        val provider = ByokPreferences.selectedProvider(context)
+        assertEquals(provider.defaultModel, ByokPreferences.selectedModel(context))
+        assertEquals(provider.defaultEndpoint, ByokPreferences.selectedEndpoint(context))
+    }
 }
