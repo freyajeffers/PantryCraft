@@ -1,5 +1,7 @@
 package com.jeffers.pantrycraft.data
 
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -155,5 +157,85 @@ class RepositoryExportTest {
         val lines = csv.lines().filter { it.isNotBlank() }
         assertEquals(2, lines.size)
         assertTrue(lines[1].contains("\"COUNT\""))
+    }
+
+    @Test
+    fun repositoryExportExtensionsReturnValidJsonAndCsv() = runBlocking {
+        val pantry = listOf(
+            PantryItem(
+                id = 1L,
+                name = "Rosemary",
+                quantity = 2.5f,
+                unit = "CUSTOM",
+                customUnitName = "sprigs",
+                threshold = 1f,
+                barcode = "123456789012",
+                storageLocation = "PANTRY",
+                category = "SPICES",
+                isOpened = true,
+                isAromaticOrSeasoning = true,
+                notes = "Fresh from garden",
+            ),
+        )
+        val grocery = listOf(
+            GroceryItem(
+                id = 10L,
+                name = "Milk",
+                quantity = 1f,
+                unit = "GALLON",
+                checked = true,
+            ),
+        )
+        val repo = createTestRepository(pantry, grocery)
+        val json = repo.exportInventoryToJson()
+        assertTrue(json.contains("\"name\": \"Rosemary\""))
+        assertTrue(json.contains("\"name\": \"Milk\""))
+
+        val csv = repo.exportPantryToCsv()
+        assertTrue(csv.contains("name,category,storageLocation,quantity"))
+        assertTrue(csv.contains("\"Rosemary\""))
+    }
+
+    private fun createTestRepository(
+        pantryItems: List<PantryItem> = emptyList(),
+        groceryItems: List<GroceryItem> = emptyList(),
+    ): Repository {
+        val unsafeClass = Class.forName("sun.misc.Unsafe")
+        val unsafe = unsafeClass.getDeclaredField("theUnsafe").apply { isAccessible = true }.get(null)
+        val allocateInstance = unsafeClass.getMethod("allocateInstance", Class::class.java)
+        val repo = allocateInstance.invoke(unsafe, Repository::class.java) as Repository
+        val delegateField = Repository::class.java.getDeclaredField("\$\$delegate_0").apply { isAccessible = true }
+        val fakeRepo = object : PantryRepository {
+            override fun observePantryItems() = flowOf(pantryItems)
+            override fun observeGroceryItems() = flowOf(groceryItems)
+            override fun searchPantryItems(query: String) = flowOf(pantryItems)
+            override suspend fun insertPantry(item: PantryItem): Long = 1L
+            override suspend fun updatePantry(item: PantryItem) {
+                // Mock no-op
+            }
+            override suspend fun decrementQuantity(item: PantryItem, delta: Float) {
+                // Mock no-op
+            }
+            override suspend fun deletePantry(item: PantryItem) {
+                // Mock no-op
+            }
+            override suspend fun restorePantry(item: PantryItem) {
+                // Mock no-op
+            }
+            override suspend fun insertGrocery(item: GroceryItem): Long = 1L
+            override suspend fun updateGrocery(item: GroceryItem) {
+                // Mock no-op
+            }
+            override suspend fun deleteGrocery(item: GroceryItem) {
+                // Mock no-op
+            }
+            override suspend fun clearCheckedGrocery() {
+                // Mock no-op
+            }
+            override suspend fun restockCheckedGroceryToPantry(): Int = 0
+            override fun reclaimTemporaryMedia(): Int = 0
+        }
+        delegateField.set(repo, fakeRepo)
+        return repo
     }
 }
