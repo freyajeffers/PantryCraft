@@ -12,9 +12,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.feature.camera.core.CameraManager
 import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
+import com.jeffers.pantrycraft.feature.camera.vision.SnapshotFrame
 import com.jeffers.pantrycraft.feature.camera.vision.SnapshotVisionService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+
+internal suspend fun executeSnapshotCapture(
+    snapshotProvider: suspend () -> SnapshotFrame,
+    snapshotVisionService: SnapshotVisionService,
+    onStatus: (String) -> Unit,
+    onItems: (List<ParsedVisionItem>) -> Unit,
+) {
+    onStatus("Capturing shelf snapshot…")
+    runCatching { snapshotVisionService.analyze(snapshotProvider()) }
+        .onSuccess {
+            onItems(it)
+            onStatus("Detected ${it.size} items from shelf")
+        }.onFailure {
+            onStatus("Snapshot failed: ${it.message ?: "Unknown error"}")
+        }
+}
 
 @Composable
 internal fun BoxScope.CameraSnapshotFab(
@@ -26,15 +43,13 @@ internal fun BoxScope.CameraSnapshotFab(
 ) {
     FloatingActionButton(
         onClick = {
-            onStatus("Capturing shelf snapshot…")
             scope.launch {
-                runCatching { snapshotVisionService.analyze(cameraManager.captureSnapshot()) }
-                    .onSuccess {
-                        onItems(it)
-                        onStatus("Detected ${it.size} items from shelf")
-                    }.onFailure {
-                        onStatus("Snapshot failed: ${it.message ?: "Unknown error"}")
-                    }
+                executeSnapshotCapture(
+                    snapshotProvider = { cameraManager.captureSnapshot() },
+                    snapshotVisionService = snapshotVisionService,
+                    onStatus = onStatus,
+                    onItems = onItems,
+                )
             }
         },
         modifier = Modifier.align(Alignment.BottomCenter).padding(24.dp),

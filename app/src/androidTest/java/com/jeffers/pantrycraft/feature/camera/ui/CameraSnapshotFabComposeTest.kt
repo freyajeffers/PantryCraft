@@ -18,9 +18,13 @@ import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer
 import com.jeffers.pantrycraft.feature.camera.core.CameraManager
 import com.jeffers.pantrycraft.feature.camera.vision.LocalVisionModel
+import com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem
+import com.jeffers.pantrycraft.feature.camera.vision.SnapshotFrame
 import com.jeffers.pantrycraft.feature.camera.vision.SnapshotVisionService
 import com.jeffers.pantrycraft.ui.PantryCraftTheme
+import kotlinx.coroutines.runBlocking
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume
 import org.junit.Before
@@ -92,5 +96,44 @@ class CameraSnapshotFabComposeTest {
         analyzer.close()
         snapshotService.close()
         executor.shutdown()
+    }
+
+    @Test
+    fun executeSnapshotCaptureSuccessProcessesItems() = runBlocking {
+        val dummyModel = LocalVisionModel { _, _ -> "{\"detected_items\":[{\"name\":\"Honeycrisp Apple\"}]}" }
+        val snapshotService = SnapshotVisionService(dummyModel)
+        var receivedItems = emptyList<ParsedVisionItem>()
+        var finalStatus: String? = null
+
+        executeSnapshotCapture(
+            snapshotProvider = { SnapshotFrame(ByteArray(10)) },
+            snapshotVisionService = snapshotService,
+            onStatus = { finalStatus = it },
+            onItems = { receivedItems = it },
+        )
+
+        assertEquals(1, receivedItems.size)
+        assertEquals("Honeycrisp Apple", receivedItems.first().name)
+        assertEquals("Detected 1 items from shelf", finalStatus)
+        snapshotService.close()
+    }
+
+    @Test
+    fun executeSnapshotCaptureFailureReportsError() = runBlocking {
+        val dummyModel = LocalVisionModel { _, _ -> "{}" }
+        val snapshotService = SnapshotVisionService(dummyModel)
+        var receivedItems = emptyList<ParsedVisionItem>()
+        var finalStatus: String? = null
+
+        executeSnapshotCapture(
+            snapshotProvider = { error("Camera hardware failed") },
+            snapshotVisionService = snapshotService,
+            onStatus = { finalStatus = it },
+            onItems = { receivedItems = it },
+        )
+
+        assertEquals(0, receivedItems.size)
+        assertEquals("Snapshot failed: Camera hardware failed", finalStatus)
+        snapshotService.close()
     }
 }
