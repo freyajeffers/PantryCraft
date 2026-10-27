@@ -69,6 +69,11 @@ class AutomaticBackupPreferencesTest {
 
     @Test
     fun saveAndLoadEncryptedBackupPinWithMemoryScrubbing() {
+        val keyStore = java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        if (keyStore.containsAlias("automatic_backup_pin_master_key")) {
+            keyStore.deleteEntry("automatic_backup_pin_master_key")
+        }
+
         val originalPin = "987654"
         val pinChars = originalPin.toCharArray()
 
