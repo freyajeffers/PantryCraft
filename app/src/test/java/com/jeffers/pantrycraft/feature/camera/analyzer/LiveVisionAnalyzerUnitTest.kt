@@ -98,4 +98,53 @@ class LiveVisionAnalyzerUnitTest {
             executor.shutdown()
         }
     }
+
+    @Test
+    fun safeExecuteRunsCommandWhenExecutorActive() {
+        val executor = Executors.newSingleThreadExecutor()
+        val executed = AtomicBoolean(false)
+        val dummyBarcode = Proxy.newProxyInstance(
+            BarcodeScanner::class.java.classLoader,
+            arrayOf(BarcodeScanner::class.java),
+        ) { _, _, _ -> null } as BarcodeScanner
+        val dummyDetector = Proxy.newProxyInstance(
+            ObjectDetector::class.java.classLoader,
+            arrayOf(ObjectDetector::class.java),
+        ) { _, _, _ -> null } as ObjectDetector
+        val analyzer = LiveVisionAnalyzer(
+            barcodeScanner = dummyBarcode,
+            objectDetector = dummyDetector,
+            executor = executor,
+            onResult = {},
+        )
+        try {
+            analyzer.safeExecute({ executed.set(true) })
+            Thread.sleep(50)
+            assertTrue(executed.get())
+        } finally {
+            analyzer.close()
+        }
+    }
+
+    @Test
+    fun safeExecuteInvokesOnRejectedWhenExecutorShutdown() {
+        val executor = Executors.newSingleThreadExecutor().apply { shutdown() }
+        val rejected = AtomicBoolean(false)
+        val dummyBarcode = Proxy.newProxyInstance(
+            BarcodeScanner::class.java.classLoader,
+            arrayOf(BarcodeScanner::class.java),
+        ) { _, _, _ -> null } as BarcodeScanner
+        val dummyDetector = Proxy.newProxyInstance(
+            ObjectDetector::class.java.classLoader,
+            arrayOf(ObjectDetector::class.java),
+        ) { _, _, _ -> null } as ObjectDetector
+        val analyzer = LiveVisionAnalyzer(
+            barcodeScanner = dummyBarcode,
+            objectDetector = dummyDetector,
+            executor = executor,
+            onResult = {},
+        )
+        analyzer.safeExecute({ }, onRejected = { rejected.set(true) })
+        assertTrue(rejected.get())
+    }
 }
