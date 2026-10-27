@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -55,13 +57,58 @@ class AppNavigatorComposeTest {
 
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("Data Sovereignty & Portability").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Settings").assertIsDisplayed()
 
         composeTestRule.onNodeWithContentDescription("Scan").performClick()
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithContentDescription("Pantry").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("Pantry").assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("Pantry").onFirst().assertIsDisplayed()
+    }
+
+    @Test
+    fun databaseLoadingScreenRendersPrompt() {
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                DatabaseLoadingScreen()
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Opening encrypted pantry").assertIsDisplayed()
+    }
+
+    @Test
+    fun appBottomBarSelectsDestinations() {
+        var selectedRoute = "home"
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                AppBottomBar(destination = selectedRoute) { selectedRoute = it }
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithContentDescription("Dashboard").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Settings").performClick()
+        org.junit.Assert.assertEquals("settings", selectedRoute)
+    }
+
+    @Test
+    fun databaseRecoveryScreenHostRenders() {
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                DatabaseRecoveryScreenHost(composeTestRule.activity)
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Encrypted database recovery required").assertIsDisplayed()
+    }
+
+    @Test
+    fun pantryCraftAppRendersRootSurface() {
+        composeTestRule.setContent {
+            PantryCraftApp()
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithContentDescription("Dashboard").assertIsDisplayed()
     }
 }

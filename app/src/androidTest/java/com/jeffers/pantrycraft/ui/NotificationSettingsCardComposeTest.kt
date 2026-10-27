@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -66,7 +67,7 @@ class NotificationSettingsCardComposeTest {
         composeTestRule.onNodeWithText("Notifications & Alerts").assertIsDisplayed()
         composeTestRule.onNodeWithText("Daily expiration alerts").assertIsDisplayed()
 
-        composeTestRule.onNodeWithText("Daily expiration alerts").performClick()
+        composeTestRule.onNode(isToggleable()).performClick()
         composeTestRule.waitForIdle()
         assertTrue(changeCalled)
     }
@@ -95,7 +96,7 @@ class NotificationSettingsCardComposeTest {
         }
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithText("Daily expiration alerts").performClick()
+        composeTestRule.onNode(isToggleable()).performClick()
         composeTestRule.waitForIdle()
     }
 }

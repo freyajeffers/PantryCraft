@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
@@ -86,7 +87,7 @@ class AiSettingsCardComposeTest {
         }
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithText("OpenAI").performClick()
+        composeTestRule.onNodeWithText("OpenAI", substring = true).performScrollTo().performClick()
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Model Name").assertIsDisplayed()

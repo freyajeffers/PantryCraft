@@ -21,6 +21,12 @@ class SettingsScreenStateTest {
         holder = SettingsDialogStateHolder(context)
     }
 
+    @org.junit.After
+    fun tearDown() {
+        com.jeffers.pantrycraft.data.AppDatabase.getDatabase(context)
+        com.jeffers.pantrycraft.data.Repository.getInstance(context)
+    }
+
     @Test
     fun defaultStateIsDismissed() {
         assertFalse(holder.showPinDialog)
@@ -88,5 +94,66 @@ class SettingsScreenStateTest {
         assertTrue(holder.confirmCatalogDelete)
         holder.confirmCatalogDelete = false
         assertFalse(holder.confirmCatalogDelete)
+    }
+
+    @Test
+    fun handleDownloadResultDispatchesSuccessAndFailure() {
+        val testFile = java.io.File(context.cacheDir, "catalog.bin").apply { writeText("data") }
+        var successBytes: Long? = null
+        var failureDialog: CatalogDialog? = null
+
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            handleDownloadResult(
+                context = context,
+                result = Result.success(testFile),
+                onSuccess = { successBytes = it },
+                onFailure = { failureDialog = it },
+            )
+        }
+        assertEquals(4L, successBytes)
+        assertNull(failureDialog)
+
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            handleDownloadResult(
+                context = context,
+                result = Result.failure(java.io.IOException("Network offline")),
+                onSuccess = { successBytes = it },
+                onFailure = { failureDialog = it },
+            )
+        }
+        assertEquals(true, failureDialog?.isError)
+        assertEquals("Network offline", failureDialog?.message)
+        testFile.delete()
+    }
+
+    @Test
+    fun restoreBackupRecordHandlesExportedUriAndDirectName() = kotlinx.coroutines.runBlocking {
+        val recordWithUri = com.jeffers.pantrycraft.data.DatabaseBackupManager.BackupRecord(
+            backupName = "backup_with_uri.pcbk",
+            createdAt = 1000L,
+            createdAtLabel = "2026-01-01",
+            exportedUri = "content://com.test/backup.pcbk",
+        )
+        restoreBackupRecord(
+            context = context,
+            scope = this,
+            record = recordWithUri,
+            suppliedPin = "1234".toCharArray(),
+            onResult = {},
+        )
+
+        val recordWithoutUri = com.jeffers.pantrycraft.data.DatabaseBackupManager.BackupRecord(
+            backupName = "backup_direct.pcbk",
+            createdAt = 2000L,
+            createdAtLabel = "2026-01-02",
+            exportedUri = null,
+        )
+        restoreBackupRecord(
+            context = context,
+            scope = this,
+            record = recordWithoutUri,
+            suppliedPin = "1234".toCharArray(),
+            onResult = {},
+        )
     }
 }

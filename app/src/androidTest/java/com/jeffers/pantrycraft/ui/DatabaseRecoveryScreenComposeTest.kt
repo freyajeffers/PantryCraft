@@ -120,7 +120,7 @@ class DatabaseRecoveryScreenComposeTest {
         }
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithText("backup_test.db").performClick()
+        composeTestRule.onNodeWithText("backup_test.db", substring = true).performClick()
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Backup PIN").performTextInput("1234")
@@ -149,6 +149,26 @@ class DatabaseRecoveryScreenComposeTest {
 
         composeTestRule.onNodeWithText("Open backup file").assertIsNotEnabled()
         composeTestRule.onNodeWithText("Restore selected backup").assertIsNotEnabled()
+    }
+
+    @Test
+    fun databaseRecoveryScreenOpenBackupFileEnabledWithPin() {
+        val testUri = android.net.Uri.parse("content://com.jeffers.pantrycraft/backup_open.db")
+        persistBackupUri(context, testUri)
+
+        composeTestRule.setContent {
+            PantryCraftTheme {
+                DatabaseRecoveryScreen(
+                    context = context,
+                    onRestore = { _, _ -> },
+                    onReset = {},
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Backup PIN").performTextInput("1234")
+        composeTestRule.onNodeWithText("Open backup file").assertIsEnabled().performClick()
     }
 
     @Test

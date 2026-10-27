@@ -6,6 +6,7 @@ import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -70,8 +71,8 @@ class AutomaticBackupCardComposeTest {
             }
         }
 
-        composeTestRule.onNodeWithText("✓ Daily").assertIsDisplayed()
-        composeTestRule.onNodeWithText("1 hour").assertIsDisplayed().performClick()
+        composeTestRule.onNodeWithText("✓ Daily").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("1 hour").performScrollTo().assertIsDisplayed().performClick()
         assertEquals(60L, selectedInterval)
 
         composeTestRule.onNode(isToggleable()).performClick()

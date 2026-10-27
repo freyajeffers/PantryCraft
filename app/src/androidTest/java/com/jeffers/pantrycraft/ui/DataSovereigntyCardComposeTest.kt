@@ -79,42 +79,69 @@ class DataSovereigntyCardComposeTest {
     }
 
     @Test
-    fun performExportJsonAndCsvWritesToTargetUri() = kotlinx.coroutines.runBlocking {
-        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
-        val repository = Repository.getInstance(context)
+    fun performExportJsonAndCsvWritesToTargetUri() {
+        kotlinx.coroutines.runBlocking {
+            val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+            val repository = Repository.getInstance(context)
 
-        val jsonFile = java.io.File(context.cacheDir, "export_test_${System.nanoTime()}.json")
-        val jsonUri = android.net.Uri.fromFile(jsonFile)
-        val jsonResult = performExportJson(context, repository, jsonUri)
-        assertTrue(jsonResult.isSuccess)
-        assertTrue(jsonFile.exists())
-        jsonFile.delete()
+            val jsonFile = java.io.File(context.cacheDir, "export_test_${System.nanoTime()}.json")
+            jsonFile.createNewFile()
+            val jsonUri = android.net.Uri.fromFile(jsonFile)
+            val jsonResult = performExportJson(context, repository, jsonUri)
+            assertTrue(jsonResult.isSuccess)
+            assertTrue(jsonFile.exists())
+            jsonFile.delete()
 
-        val csvFile = java.io.File(context.cacheDir, "export_test_${System.nanoTime()}.csv")
-        val csvUri = android.net.Uri.fromFile(csvFile)
-        val csvResult = performExportCsv(context, repository, csvUri)
-        assertTrue(csvResult.isSuccess)
-        assertTrue(csvFile.exists())
-        csvFile.delete()
+            val csvFile = java.io.File(context.cacheDir, "export_test_${System.nanoTime()}.csv")
+            csvFile.createNewFile()
+            val csvUri = android.net.Uri.fromFile(csvFile)
+            val csvResult = performExportCsv(context, repository, csvUri)
+            assertTrue(csvResult.isSuccess)
+            assertTrue(csvFile.exists())
+            csvFile.delete()
+        }
     }
 
     @Test
-    fun performImportJsonAndCsvParsesInputUri() = kotlinx.coroutines.runBlocking {
-        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
-        val repository = Repository.getInstance(context)
+    fun performImportJsonAndCsvParsesInputUri() {
+        kotlinx.coroutines.runBlocking {
+            val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+            val repository = Repository.getInstance(context)
 
-        val jsonFile = java.io.File(context.cacheDir, "import_test_${System.nanoTime()}.json")
-        jsonFile.writeText("{\"pantry\":[],\"grocery\":[]}")
-        val jsonUri = android.net.Uri.fromFile(jsonFile)
-        val jsonResult = performImportJson(context, repository, jsonUri)
-        assertTrue(jsonResult.isSuccess)
-        jsonFile.delete()
+            val jsonFile = java.io.File(context.cacheDir, "import_test_${System.nanoTime()}.json")
+            jsonFile.writeText("{\"pantry\":[],\"grocery\":[]}")
+            val jsonUri = android.net.Uri.fromFile(jsonFile)
+            val jsonResult = performImportJson(context, repository, jsonUri)
+            assertTrue(jsonResult.isSuccess)
+            jsonFile.delete()
 
-        val csvFile = java.io.File(context.cacheDir, "import_test_${System.nanoTime()}.csv")
-        csvFile.writeText("Name,Quantity,Unit,Storage\nSovereigntyRice,1,KG,PANTRY")
-        val csvUri = android.net.Uri.fromFile(csvFile)
-        val csvResult = performImportCsv(context, repository, csvUri)
-        assertTrue(csvResult.isSuccess)
-        csvFile.delete()
+            val csvFile = java.io.File(context.cacheDir, "import_test_${System.nanoTime()}.csv")
+            csvFile.writeText("Name,Quantity,Unit,Storage\nSovereigntyRice,1,KG,PANTRY")
+            val csvUri = android.net.Uri.fromFile(csvFile)
+            val csvResult = performImportCsv(context, repository, csvUri)
+            assertTrue(csvResult.isSuccess)
+            csvFile.delete()
+        }
+    }
+
+    @Test
+    fun performExportAndImportHandleInvalidUrisGracefully() {
+        kotlinx.coroutines.runBlocking {
+            val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+            val repository = Repository.getInstance(context)
+            val invalidUri = android.net.Uri.parse("file:///nonexistent/invalid_path/file.dat")
+
+            val jsonExport = performExportJson(context, repository, invalidUri)
+            assertTrue(jsonExport.isFailure)
+
+            val csvExport = performExportCsv(context, repository, invalidUri)
+            assertTrue(csvExport.isFailure)
+
+            val jsonImport = performImportJson(context, repository, invalidUri)
+            assertTrue(jsonImport.isFailure)
+
+            val csvImport = performImportCsv(context, repository, invalidUri)
+            assertTrue(csvImport.isFailure)
+        }
     }
 }

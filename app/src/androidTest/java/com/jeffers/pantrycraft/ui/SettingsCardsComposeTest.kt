@@ -2,6 +2,9 @@ package com.jeffers.pantrycraft.ui
 
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -174,9 +177,10 @@ class SettingsCardsComposeTest {
             onDelete = { deleteCalled = true },
         )
 
+        var downloadingPropsState by mutableStateOf(downloadingProps)
         composeTestRule.setContent {
             PantryCraftTheme {
-                FoodFactsCard(repository = repository, scope = scope, props = downloadingProps)
+                FoodFactsCard(repository = repository, scope = scope, props = downloadingPropsState)
             }
         }
         composeTestRule.waitForIdle()
@@ -190,11 +194,7 @@ class SettingsCardsComposeTest {
             catalogFileSize = 5_000_000L,
         )
 
-        composeTestRule.setContent {
-            PantryCraftTheme {
-                FoodFactsCard(repository = repository, scope = scope, props = readyProps)
-            }
-        }
+        downloadingPropsState = readyProps
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Ready for offline barcode scans · 4.8 MB").assertIsDisplayed()
@@ -221,9 +221,10 @@ class SettingsCardsComposeTest {
             onDelete = {},
         )
 
+        var indeterminatePropsState by mutableStateOf(indeterminateProps)
         composeTestRule.setContent {
             PantryCraftTheme {
-                FoodFactsCard(repository = repository, scope = scope, props = indeterminateProps)
+                FoodFactsCard(repository = repository, scope = scope, props = indeterminatePropsState)
             }
         }
         composeTestRule.waitForIdle()
@@ -235,11 +236,7 @@ class SettingsCardsComposeTest {
             onStartDownload = { startCalled = true },
         )
 
-        composeTestRule.setContent {
-            PantryCraftTheme {
-                FoodFactsCard(repository = repository, scope = scope, props = idleProps)
-            }
-        }
+        indeterminatePropsState = idleProps
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Download food catalog").performClick()

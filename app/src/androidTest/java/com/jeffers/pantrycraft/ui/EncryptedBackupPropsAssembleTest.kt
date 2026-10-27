@@ -81,4 +81,63 @@ class EncryptedBackupPropsAssembleTest {
         assertTrue(resultMessage.startsWith("Backup failed:"))
         assertEquals(null, successBackupName)
     }
+
+    @Test
+    fun performEncryptedBackupSucceedsWithValidPin(): Unit = runBlocking {
+        var successBackupName: String? = null
+        val validPin = "123456".toCharArray()
+
+        val resultMessage = performEncryptedBackup(context, validPin) { createdName ->
+            successBackupName = createdName
+        }
+
+        assertTrue(resultMessage.startsWith("Backup created"))
+        assertTrue(successBackupName != null)
+    }
+
+    @Test
+    fun buildAutoBackupPropsWiresAllActions() {
+        var scheduleChangedEnabled: Boolean? = null
+        var scheduleChangedMinutes: Long? = null
+        var requiredPinForEnable: ((CharArray) -> Unit)? = null
+        var requiredPinForBackup: ((CharArray) -> Unit)? = null
+        var performedBackupPin: CharArray? = null
+
+        val args = AutoBackupScheduleArgs(
+            enabled = true,
+            intervalMinutes = 120L,
+            databaseHasUserData = true,
+            onScheduleChange = { enabled, minutes ->
+                scheduleChangedEnabled = enabled
+                scheduleChangedMinutes = minutes
+            },
+            onRequirePin = { action ->
+                requiredPinForEnable = action
+                requiredPinForBackup = action
+            },
+            onPerformBackup = { pin ->
+                performedBackupPin = pin
+            },
+        )
+
+        val props = buildAutoBackupProps(context, args)
+        assertTrue(props.enabled)
+        assertEquals(120L, props.intervalMinutes)
+        assertTrue(props.databaseHasUserData)
+
+        props.onDisable()
+        assertEquals(false, scheduleChangedEnabled)
+
+        props.onIntervalSelected(360L)
+        assertEquals(true, scheduleChangedEnabled)
+        assertEquals(360L, scheduleChangedMinutes)
+
+        props.onEnableRequested()
+        requiredPinForEnable?.invoke("1234".toCharArray())
+        assertEquals(true, scheduleChangedEnabled)
+
+        props.onBackupNow()
+        requiredPinForBackup?.invoke("5678".toCharArray())
+        assertEquals("5678", performedBackupPin?.let { String(it) })
+    }
 }

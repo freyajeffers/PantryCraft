@@ -2,8 +2,11 @@ package com.jeffers.pantrycraft.ui
 
 import android.app.KeyguardManager
 import android.content.Context
+import android.content.res.Configuration
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -45,5 +48,20 @@ class ThemeComposeTest {
             }
         }
         composeTestRule.onNodeWithText("Theme test node text").assertIsDisplayed()
+    }
+
+    @Test
+    fun themeRendersContentWithDarkTheme() {
+        val darkConfig = Configuration(composeTestRule.activity.resources.configuration).apply {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_YES
+        }
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalConfiguration provides darkConfig) {
+                PantryCraftTheme {
+                    Text("Dark theme node text")
+                }
+            }
+        }
+        composeTestRule.onNodeWithText("Dark theme node text").assertIsDisplayed()
     }
 }

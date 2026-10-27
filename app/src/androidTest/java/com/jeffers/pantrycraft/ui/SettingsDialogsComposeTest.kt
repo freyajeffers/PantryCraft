@@ -3,6 +3,9 @@ package com.jeffers.pantrycraft.ui
 import android.app.KeyguardManager
 import android.content.Context
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -195,11 +198,13 @@ class SettingsDialogsComposeTest {
             onDismiss = {},
             onSelect = {},
         )
+        var dialogState by mutableStateOf(emptyState)
         composeTestRule.setContent {
             PantryCraftTheme {
-                BackupListDialog(emptyState)
+                BackupListDialog(dialogState)
             }
         }
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("No backups have been created yet.").assertIsDisplayed()
 
         val nullUriRecord = BackupRecord(
@@ -213,11 +218,8 @@ class SettingsDialogsComposeTest {
             onDismiss = {},
             onSelect = {},
         )
-        composeTestRule.setContent {
-            PantryCraftTheme {
-                BackupListDialog(nullUriState)
-            }
-        }
+        dialogState = nullUriState
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("Location: app backup storage").assertIsDisplayed()
     }
 

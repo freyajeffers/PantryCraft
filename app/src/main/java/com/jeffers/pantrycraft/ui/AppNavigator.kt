@@ -61,7 +61,7 @@ fun AppNavigator() {
     val repositoryResult = repositoryResultState.value ?: return DatabaseLoadingScreen()
     val databaseError = repositoryResult.exceptionOrNull()
     if (databaseError is DatabaseKeyInvalidatedException) {
-        DatabaseRecoveryScreen(context)
+        DatabaseRecoveryScreenHost(context)
         return
     }
     val repository = repositoryResult.getOrThrow()
@@ -77,7 +77,7 @@ fun AppNavigator() {
 }
 
 @Composable
-private fun DatabaseRecoveryScreen(context: android.content.Context) {
+internal fun DatabaseRecoveryScreenHost(context: android.content.Context) {
     DatabaseRecoveryScreen(
         context = context,
         onRestore = { backupName, pin ->
@@ -100,7 +100,7 @@ private fun DatabaseRecoveryScreen(context: android.content.Context) {
 }
 
 @Composable
-private fun AppBottomBar(
+internal fun AppBottomBar(
     destination: String,
     onDestinationSelected: (String) -> Unit,
 ) {
@@ -202,7 +202,7 @@ internal enum class BottomDestination(
 }
 
 @Composable
-private fun DatabaseLoadingScreen() {
+internal fun DatabaseLoadingScreen() {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,

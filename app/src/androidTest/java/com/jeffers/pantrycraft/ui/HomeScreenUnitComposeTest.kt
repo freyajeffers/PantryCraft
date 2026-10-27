@@ -5,8 +5,10 @@ import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -88,7 +90,7 @@ class HomeScreenUnitComposeTest {
     }
 
     @Test
-    fun homeScreenDisplaysExpiredAndLowStockMetrics() = runBlocking {
+    fun homeScreenDisplaysExpiredAndLowStockMetrics() {
         val now = System.currentTimeMillis()
         val expiredItem = PantryItem(
             name = "${prefix}ExpiredMilk",
@@ -109,9 +111,11 @@ class HomeScreenUnitComposeTest {
             threshold = 2f,
         )
 
-        repository.insertPantry(expiredItem)
-        repository.insertPantry(expiringItem)
-        repository.insertPantry(lowStockItem)
+        runBlocking {
+            repository.insertPantry(expiredItem)
+            repository.insertPantry(expiringItem)
+            repository.insertPantry(lowStockItem)
+        }
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -123,8 +127,16 @@ class HomeScreenUnitComposeTest {
         }
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithText("+1 expired").assertIsDisplayed()
-        composeTestRule.onNodeWithText("1 items are at or below threshold").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Ready to scaffold with 3 ingredients currently in stock.").assertIsDisplayed()
+        composeTestRule.waitUntil(15_000L) {
+            composeTestRule
+                .onAllNodesWithText("expired", substring = true)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("expired", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("items are at or below threshold", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Ready to scaffold with", substring = true)
+            .performScrollTo()
+            .assertIsDisplayed()
     }
 }

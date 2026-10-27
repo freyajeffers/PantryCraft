@@ -5,6 +5,9 @@ import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -101,11 +104,14 @@ class PantryComponentsComposeTest {
     fun pantryTopBarOpensMenuAndSelectsSortOrder() {
         var chosenSort: PantrySortOrder? = null
 
+        var sortOrder by mutableStateOf(PantrySortOrder.NAME_ASC)
+        var topBarTitle by mutableStateOf("My Pantry")
+
         composeTestRule.setContent {
             PantryCraftTheme {
                 PantryTopBar(
-                    title = "My Pantry",
-                    selectedSortOrder = PantrySortOrder.NAME_ASC,
+                    title = topBarTitle,
+                    selectedSortOrder = sortOrder,
                     onSortSelected = { chosenSort = it },
                 )
             }
@@ -118,14 +124,8 @@ class PantryComponentsComposeTest {
         composeTestRule.onNodeWithText("Expiring soonest").performClick()
         assertEquals(PantrySortOrder.EXPIRATION_SOONEST, chosenSort)
 
-        composeTestRule.setContent {
-            PantryCraftTheme {
-                PantryTopBar(
-                    selectedSortOrder = PantrySortOrder.CATEGORY,
-                    onSortSelected = {},
-                )
-            }
-        }
+        topBarTitle = "Pantry"
+        sortOrder = PantrySortOrder.CATEGORY
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("Pantry").assertIsDisplayed()
     }

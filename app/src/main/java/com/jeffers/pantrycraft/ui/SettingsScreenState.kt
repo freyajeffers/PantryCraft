@@ -238,7 +238,7 @@ private fun rememberSettingsFoodFactsProps(
     return Pair(props, onReset)
 }
 
-private fun handleDownloadResult(
+internal fun handleDownloadResult(
     context: Context,
     result: Result<File>,
     onSuccess: (Long) -> Unit,
@@ -265,7 +265,7 @@ private fun handleDownloadResult(
     )
 }
 
-private fun restoreBackupRecord(
+internal fun restoreBackupRecord(
     context: Context,
     scope: CoroutineScope,
     record: BackupRecord,

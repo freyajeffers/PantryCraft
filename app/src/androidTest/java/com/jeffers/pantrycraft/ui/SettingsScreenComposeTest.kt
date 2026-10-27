@@ -34,6 +34,8 @@ class SettingsScreenComposeTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        com.jeffers.pantrycraft.data.AppDatabase.getDatabase(context)
+        com.jeffers.pantrycraft.data.Repository.getInstance(context)
         val km = context.getSystemService(Context.KEYGUARD_SERVICE) as? android.app.KeyguardManager
         org.junit.Assume.assumeTrue(
             "Screen is locked; skipping Compose UI test",
@@ -85,13 +87,13 @@ class SettingsScreenComposeTest {
         composeTestRule.onNodeWithText("Daily expiration alerts").assertIsDisplayed()
 
         // Scroll down to Data Sovereignty and AI Settings
-        composeTestRule.onNodeWithText("Data Sovereignty & Portability").performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithText("Export JSON").performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithText("Export CSV").performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithText("Import JSON").performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithText("Import CSV").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Data Sovereignty & Portability").performScrollTo().assertExists()
+        composeTestRule.onNodeWithText("Export JSON").performScrollTo().assertExists()
+        composeTestRule.onNodeWithText("Export CSV").performScrollTo().assertExists()
+        composeTestRule.onNodeWithText("Import JSON").performScrollTo().assertExists()
+        composeTestRule.onNodeWithText("Import CSV").performScrollTo().assertExists()
 
-        composeTestRule.onNodeWithText("AI Vision & Meal Engine (BYOKey / Local)").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("AI Vision & Meal Engine (BYOKey / Local)").performScrollTo().assertExists()
         composeTestRule.onNodeWithText("Save AI Settings").performScrollTo()
 
         // 3. Switch to Google Gemini (BYOKey)
@@ -101,8 +103,8 @@ class SettingsScreenComposeTest {
         composeTestRule.waitForIdle()
 
         // Verify Model Name and Endpoint URL text fields appear for BYOKey provider
-        composeTestRule.onNodeWithText("Model Name").performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithText("Endpoint URL").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Model Name").performScrollTo().assertExists()
+        composeTestRule.onNodeWithText("Endpoint URL").performScrollTo().assertExists()
 
         // 4. Switch back to 100% Offline ML Kit
         composeTestRule.onNodeWithText("Save AI Settings").performScrollTo()

@@ -113,11 +113,11 @@ class PantryScaffoldContentComposeTest {
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Greek Yogurt").assertIsDisplayed()
-        composeTestRule.onNodeWithContentDescription("Increase Greek Yogurt quantity").performClick()
+        composeTestRule.onNodeWithContentDescription("Increase quantity").performClick()
         composeTestRule.waitForIdle()
         assertEquals(42L, incrementItem?.id)
 
-        composeTestRule.onNodeWithContentDescription("Decrease Greek Yogurt quantity").performClick()
+        composeTestRule.onNodeWithContentDescription("Decrease quantity").performClick()
         composeTestRule.waitForIdle()
         assertEquals(42L, decrementItem?.id)
     }

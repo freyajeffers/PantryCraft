@@ -4,6 +4,8 @@ import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -54,7 +56,7 @@ class EncryptedBackupCardComposeTest {
         }
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithText("Encrypted backup").assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("Encrypted backup").onFirst().assertIsDisplayed()
         composeTestRule.onNodeWithText(
             "Choose a file location so it can be found during recovery.",
         ).assertIsDisplayed()

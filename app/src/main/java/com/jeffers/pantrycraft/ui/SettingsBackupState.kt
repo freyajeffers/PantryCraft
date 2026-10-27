@@ -221,6 +221,8 @@ internal fun buildAutoBackupProps(
         onBackupNow = { args.onRequirePin(args.onPerformBackup) },
     )
 
+private const val MIN_BACKUP_PIN_LENGTH = 4
+
 internal suspend fun performEncryptedBackup(
     context: Context,
     pin: CharArray,
@@ -228,6 +230,7 @@ internal suspend fun performEncryptedBackup(
 ): String =
     withContext(Dispatchers.IO) {
         runCatching {
+            require(pin.size >= MIN_BACKUP_PIN_LENGTH) { "PIN must be at least 4 digits" }
             DatabaseBackupManager.createEncryptedBackup(context, pin)
         }.fold(
             onSuccess = {

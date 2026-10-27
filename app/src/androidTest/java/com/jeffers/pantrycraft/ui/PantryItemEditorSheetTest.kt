@@ -8,6 +8,8 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -57,7 +59,6 @@ class PantryItemEditorSheetTest {
 
     @After
     fun tearDown() {
-        composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.DESTROYED)
         val context = ApplicationProvider.getApplicationContext<Context>()
         runBlocking {
             AppDatabase.getDatabase(context).pantryDao().deleteByNamePrefix(testPrefix)
@@ -66,6 +67,8 @@ class PantryItemEditorSheetTest {
 
     @Test
     fun addPantryItemFabOpensNewItemEditorSheet() {
+        composeTestRule.waitForIdle()
+        composeTestRule.onAllNodesWithText("Pantry")[0].performClick()
         composeTestRule.waitForIdle()
 
         // 1. Click FAB to add pantry item
@@ -77,21 +80,33 @@ class PantryItemEditorSheetTest {
 
         // 2. Verify sheet title is displayed
         composeTestRule.onNodeWithText("Add pantry item").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+        composeTestRule.waitForIdle()
     }
 
     @Test
     fun existingPantryItemCanBeEditedFromList() {
         composeTestRule.waitForIdle()
+        composeTestRule.onAllNodesWithText("Pantry")[0].performClick()
+        composeTestRule.waitForIdle()
 
-        // 1. Verify inserted item is visible in list
-        composeTestRule.onNodeWithText(testItemName).assertIsDisplayed()
+        // 1. Search for inserted item so it appears at top of list
+        composeTestRule.onNodeWithText("Search pantry").performTextInput(testItemName)
+        composeTestRule.waitUntil(15_000L) {
+            composeTestRule.onAllNodesWithText(testItemName).fetchSemanticsNodes().size >= 2
+        }
 
-        // 2. Open edit item sheet via the Edit text button on the row
+        // 2. Verify inserted item is visible in list (index 1 because index 0 is search field)
+        composeTestRule.onAllNodesWithText(testItemName)[1].assertIsDisplayed()
+
+        // 3. Open edit item sheet via the Edit text button on the row
         composeTestRule.onAllNodesWithText("Edit")[0].assertIsDisplayed().performClick()
         composeTestRule.waitForIdle()
 
-        // 3. Verify Edit pantry item sheet appears with the item details
+        // 4. Verify Edit pantry item sheet appears with the item details
         composeTestRule.onNodeWithText("Edit pantry item").assertIsDisplayed()
         composeTestRule.onAllNodesWithText(testItemName)[0].assertIsDisplayed()
+        composeTestRule.onNodeWithText("Cancel").performClick()
+        composeTestRule.waitForIdle()
     }
 }

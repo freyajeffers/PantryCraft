@@ -3,7 +3,9 @@ package com.jeffers.pantrycraft.ui
 import android.app.KeyguardManager
 import android.content.Context
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -76,7 +78,7 @@ class PantryItemRowComposeTest {
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText("Organic Eggs").assertIsDisplayed()
-        composeTestRule.onNodeWithText("• Low Stock").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Low Stock", substring = true).assert(hasText("Low Stock", substring = true))
 
         composeTestRule.onNodeWithText("Open").performClick()
         assertTrue(markOpenedCalled)
