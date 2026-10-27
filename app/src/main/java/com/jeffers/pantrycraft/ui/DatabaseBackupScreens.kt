@@ -195,8 +195,8 @@ internal fun launchRestore(
 ) {
     scope.launch {
         val result = withContext(Dispatchers.IO) { runCatching { restore() }.exceptionOrNull()?.message }
-        onResult(result)
         if (result == null) (context as? android.app.Activity)?.recreate()
+        onResult(result)
     }
 }
 

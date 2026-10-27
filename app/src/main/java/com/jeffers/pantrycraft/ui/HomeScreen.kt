@@ -71,7 +71,7 @@ fun HomeScreen(
         )
         QuickIngestionCard(onNavigate)
         GroceryChecklistCard(lowStockItems.size, onNavigate)
-        MealSynthesisCard(pantryItems.size)
+        MealSynthesisCard(pantryItems.size, onNavigate)
     }
 }
 
@@ -207,7 +207,7 @@ private fun GroceryChecklistCard(
 }
 
 @Composable
-private fun MealSynthesisCard(pantryCount: Int) {
+private fun MealSynthesisCard(pantryCount: Int, onNavigate: (String) -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors =
@@ -240,6 +240,13 @@ private fun MealSynthesisCard(pantryCount: Int) {
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
+            Button(
+                onClick = { onNavigate("meals") },
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            ) {
+                Icon(Icons.Filled.AutoAwesome, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                Text("Synthesize Meals")
+            }
         }
     }
 }

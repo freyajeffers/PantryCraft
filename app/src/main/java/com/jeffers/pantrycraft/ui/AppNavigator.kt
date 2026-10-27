@@ -44,6 +44,9 @@ import com.jeffers.pantrycraft.data.DatabaseBackupManager
 import com.jeffers.pantrycraft.data.DatabaseKeyInvalidatedException
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.feature.camera.ui.CameraScreen
+import com.jeffers.pantrycraft.feature.meals.engine.MealSynthesisEngine
+import com.jeffers.pantrycraft.feature.meals.ui.MealSynthesisScreen
+import com.jeffers.pantrycraft.feature.meals.ui.MealSynthesisViewModelFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -159,6 +162,14 @@ private fun DestinationContent(
             "grocery" -> GroceryScreen(viewModel(factory = GroceryViewModelFactory(repository)))
             "camera" -> CameraScreen()
             "settings" -> SettingsScreen(context, repository)
+            "meals" -> MealSynthesisScreen(
+                viewModel(
+                    factory = MealSynthesisViewModelFactory(
+                        repository = repository,
+                        engine = MealSynthesisEngine(context),
+                    ),
+                ),
+            )
         }
     }
 }
