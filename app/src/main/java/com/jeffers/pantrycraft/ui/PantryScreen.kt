@@ -305,7 +305,8 @@ internal fun PantryItemRow(
     )
 }
 
-private fun formatPantryQuantity(quantity: Float) = BigDecimal(quantity.toString()).stripTrailingZeros().toPlainString()
+internal fun formatPantryQuantity(quantity: Float) =
+    BigDecimal(quantity.toString()).stripTrailingZeros().toPlainString()
 
 @Composable
 fun StorageDiagnosticDialog(

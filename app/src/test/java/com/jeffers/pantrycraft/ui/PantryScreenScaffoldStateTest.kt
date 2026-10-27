@@ -176,6 +176,15 @@ class PantryScreenScaffoldStateTest {
         assertEquals(sampleItem.id, fakeRepo.restoredItem?.id)
     }
 
+    @Test
+    fun formatPantryQuantityFormatsNumbersCleanly() {
+        assertEquals("1", formatPantryQuantity(1.0f))
+        assertEquals("2.5", formatPantryQuantity(2.5f))
+        assertEquals("0", formatPantryQuantity(0.0f))
+        assertEquals("100", formatPantryQuantity(100.000f))
+        assertEquals("0.75", formatPantryQuantity(0.75f))
+    }
+
     private class TestPantryRepo : PantryRepository {
         val itemsFlow = MutableStateFlow<List<PantryItem>>(emptyList())
         val groceryFlow = MutableStateFlow<List<GroceryItem>>(emptyList())
