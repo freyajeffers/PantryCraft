@@ -3,9 +3,14 @@ package com.jeffers.pantrycraft.feature.camera.ui
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -100,10 +105,10 @@ class BatchReviewBottomSheetComposeTest {
         }
 
         composeTestRule.onNodeWithText("Save").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Oat Milk").performTextClearance()
+        composeTestRule.onNode(hasSetTextAction() and hasText("Name")).performTextClearance()
         composeTestRule.onNodeWithText("Save").assertIsNotEnabled()
 
-        composeTestRule.onNodeWithText("Item Name").performTextInput("Organic Oat Milk")
+        composeTestRule.onNode(hasSetTextAction() and hasText("Name")).performTextInput("Organic Oat Milk")
         composeTestRule.onNodeWithText("Save").performClick()
 
         assertEquals(1, confirmed?.size)
@@ -125,10 +130,10 @@ class BatchReviewBottomSheetComposeTest {
             }
         }
 
-        composeTestRule.onNodeWithText("Already opened (accelerates perishability)").performClick()
+        composeTestRule.onAllNodes(isToggleable()).onFirst().performScrollTo().performClick()
         composeTestRule.onNodeWithText("Save").performClick()
 
         assertEquals(1, confirmed?.size)
-        assertTrue(confirmed?.first()?.estimatedShelfLifeDays ?: 0 > 0)
+        assertTrue((confirmed?.first()?.estimatedShelfLifeDays ?: 0) > 0)
     }
 }

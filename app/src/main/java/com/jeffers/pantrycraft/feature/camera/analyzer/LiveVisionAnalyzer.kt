@@ -10,7 +10,9 @@ import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.objects.ObjectDetector
+import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Normalized bounding box in [ymin, xmin, ymax, xmax] order with optional classification. */
@@ -41,12 +43,29 @@ class LiveVisionAnalyzer(
     private val isAnalyzing = AtomicBoolean(false)
     private var lastAnalyzedAt = 0L
 
+    fun safeExecute(command: Runnable, onRejected: () -> Unit = {}) {
+        if (!executor.isShutdown) {
+            try {
+                executor.execute(command)
+                return
+            } catch (_: RejectedExecutionException) {
+                // Ignore if rejected during shutdown
+            }
+        }
+        onRejected()
+    }
+
+    private val safeExecutor = Executor { command -> safeExecute(command) }
+
+    private fun canAnalyze(now: Long): Boolean {
+        if (now - lastAnalyzedAt < FRAME_INTERVAL_MS || executor.isShutdown) return false
+        return isAnalyzing.compareAndSet(false, true)
+    }
+
     @OptIn(ExperimentalGetImage::class)
     override fun analyze(imageProxy: ImageProxy) {
         val now = System.currentTimeMillis()
-        if (now - lastAnalyzedAt < FRAME_INTERVAL_MS ||
-            !isAnalyzing.compareAndSet(false, true)
-        ) {
+        if (!canAnalyze(now)) {
             imageProxy.close()
             return
         }
@@ -64,37 +83,23 @@ class LiveVisionAnalyzer(
         val inputImage = InputImage.fromMediaImage(mediaImage, rotation)
         val barcodeTask = barcodeScanner.process(inputImage)
         val objectTask = objectDetector.process(inputImage)
+        val completeExecutor = Executor { command ->
+            safeExecute(command) {
+                try {
+                    imageProxy.close()
+                } finally {
+                    isAnalyzing.set(false)
+                }
+            }
+        }
+
         Tasks
             .whenAllComplete(barcodeTask, objectTask)
-            .continueWith(executor) {
-                val barcodes = barcodeTask.result.orEmpty().mapNotNull { it.rawValue }
-
-                // ML Kit detects objects in the rotated upright input image coordinate space.
-                // When rotation is 90 or 270 degrees, effective width/height are transposed.
-                val isTransposed = rotation % RIGHT_ANGLE_DEGREES != NO_REMAINDER
-                val effectiveWidth = if (isTransposed) imageProxy.height else imageProxy.width
-                val effectiveHeight = if (isTransposed) imageProxy.width else imageProxy.height
-
-                val boxes =
-                    objectTask.result
-                        .orEmpty()
-                        .filter { detected ->
-                            val topLabel = detected.labels.firstOrNull()
-                            topLabel == null || topLabel.confidence >= CONFIDENCE_THRESHOLD
-                        }.map { detected ->
-                            val label = detected.labels.firstOrNull()?.text
-                            val confidence = detected.labels.firstOrNull()?.confidence
-                            detected.boundingBox.toNormalized(effectiveWidth, effectiveHeight, label, confidence)
-                        }
-                LiveVisionResult(
-                    barcodes = barcodes,
-                    objectBoxes = boxes,
-                    imageWidth = effectiveWidth,
-                    imageHeight = effectiveHeight,
-                )
-            }.addOnSuccessListener(executor) { onResult(it) }
-            .addOnFailureListener(executor) { onError(it) }
-            .addOnCompleteListener(executor) {
+            .continueWith(safeExecutor) {
+                buildLiveVisionResult(barcodeTask, objectTask, imageProxy, rotation)
+            }.addOnSuccessListener(safeExecutor) { onResult(it) }
+            .addOnFailureListener(safeExecutor) { onError(it) }
+            .addOnCompleteListener(completeExecutor) {
                 try {
                     imageProxy.close()
                 } finally {
@@ -107,14 +112,45 @@ class LiveVisionAnalyzer(
     fun close() {
         barcodeScanner.close()
         objectDetector.close()
+        isAnalyzing.set(false)
     }
 
     companion object {
         private const val FRAME_INTERVAL_MS = 66L // ~15 FPS throttle
-        private const val RIGHT_ANGLE_DEGREES = 180
-        private const val NO_REMAINDER = 0
+        const val RIGHT_ANGLE_DEGREES = 180
+        const val NO_REMAINDER = 0
         const val CONFIDENCE_THRESHOLD = 0.70f
     }
+}
+
+fun buildLiveVisionResult(
+    barcodeTask: com.google.android.gms.tasks.Task<List<com.google.mlkit.vision.barcode.common.Barcode>>,
+    objectTask: com.google.android.gms.tasks.Task<List<com.google.mlkit.vision.objects.DetectedObject>>,
+    imageProxy: ImageProxy,
+    rotation: Int,
+): LiveVisionResult {
+    val barcodes = barcodeTask.result.orEmpty().mapNotNull { it.rawValue }
+    val isTransposed = rotation % LiveVisionAnalyzer.RIGHT_ANGLE_DEGREES != LiveVisionAnalyzer.NO_REMAINDER
+    val effectiveWidth = if (isTransposed) imageProxy.height else imageProxy.width
+    val effectiveHeight = if (isTransposed) imageProxy.width else imageProxy.height
+
+    val boxes =
+        objectTask.result
+            .orEmpty()
+            .filter { detected ->
+                val topLabel = detected.labels.firstOrNull()
+                topLabel == null || topLabel.confidence >= LiveVisionAnalyzer.CONFIDENCE_THRESHOLD
+            }.map { detected ->
+                val label = detected.labels.firstOrNull()?.text
+                val confidence = detected.labels.firstOrNull()?.confidence
+                detected.boundingBox.toNormalized(effectiveWidth, effectiveHeight, label, confidence)
+            }
+    return LiveVisionResult(
+        barcodes = barcodes,
+        objectBoxes = boxes,
+        imageWidth = effectiveWidth,
+        imageHeight = effectiveHeight,
+    )
 }
 
 internal fun Rect.toNormalized(

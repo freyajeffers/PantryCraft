@@ -127,7 +127,7 @@ private fun CameraPreviewScanner(
     }
 }
 
-private fun createBarcodeAnalyzer(
+internal fun createBarcodeAnalyzer(
     executor: java.util.concurrent.ExecutorService,
     onBarcode: (String) -> Unit,
 ): LiveVisionAnalyzer {

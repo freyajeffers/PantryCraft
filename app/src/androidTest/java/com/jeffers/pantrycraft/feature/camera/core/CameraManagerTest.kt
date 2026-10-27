@@ -57,8 +57,10 @@ class CameraManagerTest {
 
     @Test
     fun cameraManagerFocusOnUnboundPreviewIsSafe() {
-        val previewView = PreviewView(context)
-        cameraManager.focusOn(100f, 150f, previewView)
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            val previewView = PreviewView(context)
+            cameraManager.focusOn(100f, 150f, previewView)
+        }
     }
 
     @Test

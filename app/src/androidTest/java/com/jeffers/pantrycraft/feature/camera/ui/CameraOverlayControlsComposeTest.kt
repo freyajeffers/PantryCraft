@@ -130,7 +130,7 @@ class CameraOverlayControlsComposeTest {
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithContentDescription("Capture shelf for scanning").assertIsDisplayed()
-        composeTestRule.onNodeWithContentDescription("Turn torch on").performClick()
+        composeTestRule.onNodeWithContentDescription("Toggle flashlight").performClick()
         assertTrue(torchToggled)
     }
 
@@ -153,8 +153,8 @@ class CameraOverlayControlsComposeTest {
         }
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithText("Unknown barcode: 987654321098").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Name item").performClick()
+        composeTestRule.onNodeWithText("Unknown Barcode: 987654321098").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Name").performClick()
         assertEquals("987654321098", associatedBarcode)
     }
 

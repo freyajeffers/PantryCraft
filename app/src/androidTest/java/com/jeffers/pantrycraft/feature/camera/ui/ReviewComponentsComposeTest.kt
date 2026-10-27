@@ -1,11 +1,18 @@
 package com.jeffers.pantrycraft.feature.camera.ui
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox
@@ -101,9 +108,18 @@ class ReviewComponentsComposeTest {
             onSetQuantityText = { quantityInput = it },
         )
 
+        var qtyText by mutableStateOf<String?>(null)
         composeTestRule.setContent {
             PantryCraftTheme {
-                ReviewItemCard(state = cardState)
+                ReviewItemCard(
+                    state = cardState.copy(
+                        quantityText = qtyText,
+                        onSetQuantityText = {
+                            qtyText = it
+                            quantityInput = it
+                        },
+                    ),
+                )
             }
         }
         composeTestRule.waitForIdle()
@@ -112,6 +128,7 @@ class ReviewComponentsComposeTest {
         assertTrue(editClicked)
         composeTestRule.onNodeWithText("Remove").performClick()
         assertTrue(toggleClicked)
+        composeTestRule.onNodeWithText("Quantity (KG)").performTextClearance()
         composeTestRule.onNodeWithText("Quantity (KG)").performTextInput("2.5")
         assertEquals("2.5", quantityInput)
     }
@@ -155,7 +172,7 @@ class ReviewComponentsComposeTest {
     @Test
     fun reviewIdentityFieldsWithCustomUnitAndBarcode() {
         var scanBarcodeClicked = false
-        var customUnitVal = ""
+        var customUnitVal by mutableStateOf("bunch")
         val props = ReviewEditorProps(
             name = "Cilantro",
             onNameChange = {},
@@ -179,7 +196,12 @@ class ReviewComponentsComposeTest {
 
         composeTestRule.setContent {
             PantryCraftTheme {
-                ReviewIdentityFields(props = props)
+                ReviewIdentityFields(
+                    props = props.copy(
+                        customUnitName = customUnitVal,
+                        onCustomUnitNameChange = { customUnitVal = it },
+                    ),
+                )
             }
         }
         composeTestRule.waitForIdle()
@@ -187,7 +209,8 @@ class ReviewComponentsComposeTest {
         composeTestRule.onNodeWithText("Barcode: 1234567890").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Scan barcode to fill item").performClick()
         assertTrue(scanBarcodeClicked)
-        composeTestRule.onNodeWithText("Custom unit (e.g. bunch, cloves, stalks)").performTextInput("es")
+        composeTestRule.onNodeWithText("Custom unit (e.g. bunch, cloves, stalks)").performTextClearance()
+        composeTestRule.onNodeWithText("Custom unit (e.g. bunch, cloves, stalks)").performTextInput("bunches")
         assertEquals("bunches", customUnitVal)
     }
 

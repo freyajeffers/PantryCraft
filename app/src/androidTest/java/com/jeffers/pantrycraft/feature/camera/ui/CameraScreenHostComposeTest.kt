@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeffers.pantrycraft.ui.PantryCraftTheme
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -43,7 +44,7 @@ class CameraScreenHostComposeTest {
         }
         composeTestRule.waitForIdle()
         val scanningNodes = composeTestRule.onAllNodesWithText("Scanning…")
-        val permissionNodes = composeTestRule.onAllNodesWithText("Camera permission required")
+        val permissionNodes = composeTestRule.onAllNodesWithText("Camera access is required to scan pantry items.")
         assertTrue(
             scanningNodes.fetchSemanticsNodes().isNotEmpty() ||
                 permissionNodes.fetchSemanticsNodes().isNotEmpty(),
@@ -107,5 +108,19 @@ class CameraScreenHostComposeTest {
         composeTestRule.onNodeWithText("Camera access is required to scan pantry items.").assertIsDisplayed()
         composeTestRule.onNodeWithText("Allow camera").performClick()
         assertTrue(requested)
+    }
+
+    @Test
+    fun rememberCameraFocusPointUpdatesAndClears() {
+        var focusState: FocusPointState? = null
+        composeTestRule.setContent {
+            focusState = rememberCameraFocusPoint()
+        }
+        composeTestRule.waitForIdle()
+        assertNotNull(focusState)
+        composeTestRule.runOnIdle {
+            focusState?.value = Offset(150f, 250f)
+        }
+        composeTestRule.waitForIdle()
     }
 }

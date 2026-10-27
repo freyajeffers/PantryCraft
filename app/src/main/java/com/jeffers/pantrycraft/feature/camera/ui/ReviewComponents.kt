@@ -1,5 +1,6 @@
 package com.jeffers.pantrycraft.feature.camera.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +35,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -229,15 +233,25 @@ internal fun ReviewEditorFields(props: ReviewEditorProps) {
 
 @Composable
 internal fun ReviewIdentityFields(props: ReviewEditorProps) {
-    OutlinedTextField(
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
         value = props.name,
         onValueChange = props.onNameChange,
         label = { Text("Name") },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
         trailingIcon = {
-            IconButton(onClick = props.onScanBarcodeClick) {
-                Icon(Icons.Filled.QrCodeScanner, contentDescription = "Scan barcode to fill item")
+            IconButton(
+                onClick = props.onScanBarcodeClick,
+                modifier = Modifier.semantics {
+                    contentDescription = "Scan barcode to fill item"
+                    onClick {
+                        props.onScanBarcodeClick()
+                        true
+                    }
+                },
+            ) {
+                Icon(Icons.Filled.QrCodeScanner, contentDescription = null)
             }
         },
     )
@@ -265,6 +279,7 @@ internal fun ReviewIdentityFields(props: ReviewEditorProps) {
         PantryTaxonomy.storageLocations,
         props.onStorageLocationChange,
     )
+    }
 }
 
 @Composable
@@ -298,7 +313,10 @@ internal fun ReviewCheckbox(
     onCheckedChange: (Boolean) -> Unit,
     label: String,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clickable { onCheckedChange(!checked) },
+    ) {
         Checkbox(checked = checked, onCheckedChange = onCheckedChange)
         Text(
             label,

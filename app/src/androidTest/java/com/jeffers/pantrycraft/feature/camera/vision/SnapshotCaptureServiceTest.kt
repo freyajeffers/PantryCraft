@@ -131,4 +131,24 @@ class SnapshotCaptureServiceTest {
         tempFile.delete()
         scratchDir.delete()
     }
+
+    @Test
+    fun compressForVisionThrowsOnInvalidImageFile() {
+        val service = SnapshotCaptureService(context, imageCapture)
+        val tempFile = File.createTempFile("invalid-", ".jpg", context.cacheDir)
+        tempFile.writeText("not an image")
+        val compressMethod = SnapshotCaptureService::class.java.getDeclaredMethod(
+            "compressForVision",
+            File::class.java,
+        ).apply { isAccessible = true }
+
+        try {
+            compressMethod.invoke(service, tempFile)
+            org.junit.Assert.fail("Expected InvocationTargetException")
+        } catch (e: java.lang.reflect.InvocationTargetException) {
+            assertTrue(e.targetException is IllegalStateException)
+        } finally {
+            tempFile.delete()
+        }
+    }
 }
