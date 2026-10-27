@@ -41,6 +41,7 @@ class ModelRouter(
 
 class ByokCloudVisionModel(
     private val context: Context,
+    private val geminiLiveClient: LocalVisionModel = GeminiLiveVisionClient(context.applicationContext),
 ) : LocalVisionModel {
     override suspend fun analyze(
         webpBytes: ByteArray,
@@ -51,6 +52,11 @@ class ByokCloudVisionModel(
             val model = ByokPreferences.selectedModel(context)
             val endpoint = ByokPreferences.selectedEndpoint(context)
             val apiKey = ByokPreferences.loadApiKey(context)
+
+            if (provider == AiProvider.GEMINI && LiveVisionPreferences.isGeminiLiveEnabled(context)) {
+                return@withContext geminiLiveClient.analyze(webpBytes, prompt)
+            }
+
             val base64Image = Base64.encodeToString(webpBytes, Base64.NO_WRAP)
 
             when (provider) {

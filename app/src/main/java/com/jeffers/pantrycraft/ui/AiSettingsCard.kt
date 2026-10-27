@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -20,11 +21,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.AiProvider
 import com.jeffers.pantrycraft.data.ByokPreferences
+import com.jeffers.pantrycraft.feature.camera.vision.LiveVisionPreferences
 
 @Composable
 fun AiSettingsCard(context: Context) {
@@ -33,51 +36,48 @@ fun AiSettingsCard(context: Context) {
     var aiEndpointUrl by remember { mutableStateOf(ByokPreferences.selectedEndpoint(context)) }
     var aiApiKeyInput by remember { mutableStateOf("") }
     var hasStoredApiKey by remember { mutableStateOf(ByokPreferences.hasApiKey(context)) }
+    var isGeminiLive by remember { mutableStateOf(LiveVisionPreferences.isGeminiLiveEnabled(context)) }
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             AiSettingsHeader()
-            AiProviderSelector(
-                selectedProvider = selectedAiProvider,
-                onSelect = { provider ->
-                    selectedAiProvider = provider
-                    aiModelName = provider.defaultModel
-                    aiEndpointUrl = provider.defaultEndpoint
-                },
-            )
+            AiProviderSelector(selectedAiProvider) { provider ->
+                selectedAiProvider = provider
+                aiModelName = provider.defaultModel
+                aiEndpointUrl = provider.defaultEndpoint
+            }
             if (selectedAiProvider != AiProvider.OFFLINE_MLKIT) {
                 AiCustomFields(
-                    props =
-                        AiCustomFieldsProps(
-                            provider = selectedAiProvider,
-                            modelName = aiModelName,
-                            onModelNameChange = { aiModelName = it },
-                            endpointUrl = aiEndpointUrl,
-                            onEndpointUrlChange = { aiEndpointUrl = it },
-                            apiKey = aiApiKeyInput,
-                            onApiKeyChange = { aiApiKeyInput = it },
-                            hasStoredApiKey = hasStoredApiKey,
-                        ),
+                    props = AiCustomFieldsProps(
+                        provider = selectedAiProvider,
+                        modelName = aiModelName,
+                        onModelNameChange = { aiModelName = it },
+                        endpointUrl = aiEndpointUrl,
+                        onEndpointUrlChange = { aiEndpointUrl = it },
+                        apiKey = aiApiKeyInput,
+                        onApiKeyChange = { aiApiKeyInput = it },
+                        hasStoredApiKey = hasStoredApiKey,
+                    ),
                 )
             }
-            AiSettingsActions(
-                hasStoredApiKey = hasStoredApiKey,
-                onSave = {
-                    ByokPreferences.saveConfiguration(context, selectedAiProvider, aiModelName, aiEndpointUrl)
-                    if (aiApiKeyInput.isNotBlank()) {
-                        ByokPreferences.saveApiKey(context, aiApiKeyInput.toCharArray())
-                        aiApiKeyInput = ""
-                        hasStoredApiKey = ByokPreferences.hasApiKey(context)
-                    }
-                    Toast.makeText(context, "AI engine configuration saved", Toast.LENGTH_SHORT).show()
-                },
-                onClearKey = {
-                    ByokPreferences.clearApiKey(context)
-                    hasStoredApiKey = false
+            if (selectedAiProvider == AiProvider.GEMINI) {
+                GeminiLiveToggleRow(isGeminiLive) { isGeminiLive = it }
+            }
+            AiSettingsActions(hasStoredApiKey, onSave = {
+                ByokPreferences.saveConfiguration(context, selectedAiProvider, aiModelName, aiEndpointUrl)
+                LiveVisionPreferences.setGeminiLiveEnabled(context, isGeminiLive)
+                if (aiApiKeyInput.isNotBlank()) {
+                    ByokPreferences.saveApiKey(context, aiApiKeyInput.toCharArray())
                     aiApiKeyInput = ""
-                    Toast.makeText(context, "Stored API key cleared", Toast.LENGTH_SHORT).show()
-                },
-            )
+                    hasStoredApiKey = ByokPreferences.hasApiKey(context)
+                }
+                Toast.makeText(context, "AI configuration saved", Toast.LENGTH_SHORT).show()
+            }, onClearKey = {
+                ByokPreferences.clearApiKey(context)
+                hasStoredApiKey = false
+                aiApiKeyInput = ""
+                Toast.makeText(context, "Stored API key cleared", Toast.LENGTH_SHORT).show()
+            })
         }
     }
 }
@@ -181,5 +181,26 @@ private fun AiSettingsActions(
                 Text("Clear Key")
             }
         }
+    }
+}
+
+@Composable
+private fun GeminiLiveToggleRow(
+    isGeminiLiveEnabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+    ) {
+        Checkbox(
+            checked = isGeminiLiveEnabled,
+            onCheckedChange = onToggle,
+        )
+        Text(
+            text = "Enable Gemini Live Vision (WebSocket streaming)",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(start = 8.dp),
+        )
     }
 }
