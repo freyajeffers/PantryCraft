@@ -33,6 +33,7 @@ class AutomaticBackupPreferencesTest {
         originalPin = AutomaticBackupPreferences.loadPin(context)
         originalTreeUri = persistedAutoBackupTreeUri(context)
         originalExportedUri = persistedBackupUri(context)
+        AutomaticBackupPreferences.setSchedule(context, enabled = false, intervalMinutes = 1440L)
     }
 
     @After

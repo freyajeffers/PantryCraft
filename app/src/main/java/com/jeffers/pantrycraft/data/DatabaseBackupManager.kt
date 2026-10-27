@@ -148,6 +148,8 @@ object DatabaseBackupManager {
                 temp.delete()
                 throw IOException("Unable to finalize encrypted backup")
             }
+            AppDatabase.getDatabase(context)
+            Repository.getInstance(context)
         } finally {
             passphrase?.fill(0)
             derived?.fill(0)
@@ -260,6 +262,8 @@ object DatabaseBackupManager {
                 if (!temp.renameTo(dbFile)) {
                     replaceDatabaseFile(temp, dbFile)
                 }
+                AppDatabase.getDatabase(context)
+                Repository.getInstance(context)
             } catch (e: IOException) {
                 temp.delete()
                 throwRestoreFailure(e)

@@ -56,6 +56,8 @@ class DatabaseBackupManagerTest {
         }
         AppDatabase.closeDatabase()
         Repository.resetInstance()
+        AppDatabase.getDatabase(context)
+        Repository.getInstance(context)
     }
 
     private fun removeRoundTripEntries() {

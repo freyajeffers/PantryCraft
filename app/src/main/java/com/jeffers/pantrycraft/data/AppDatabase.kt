@@ -139,6 +139,7 @@ abstract class AppDatabase : RoomDatabase() {
             synchronized(this) {
                 INSTANCE?.close()
                 INSTANCE = null
+                Repository.resetInstance()
             }
         }
 
@@ -162,37 +163,39 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         fun getDatabase(context: Context): AppDatabase =
-            INSTANCE ?: synchronized(this) {
-                val passphrase = DatabaseKeyProvider.getKey(context)
-                val factory = SupportOpenHelperFactory(passphrase)
-                Arrays.fill(passphrase, 0.toByte())
+            INSTANCE?.takeIf { it.isOpen } ?: synchronized(this) {
+                INSTANCE?.takeIf { it.isOpen } ?: run {
+                    val passphrase = DatabaseKeyProvider.getKey(context)
+                    val factory = SupportOpenHelperFactory(passphrase)
+                    Arrays.fill(passphrase, 0.toByte())
 
-                INSTANCE ?: Room
-                    .databaseBuilder(
-                        context.applicationContext,
-                        AppDatabase::class.java,
-                        "pantry_grocery_encrypted.db",
-                    ).openHelperFactory(factory)
-                    .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-                    .addCallback(
-                        object : RoomDatabase.Callback() {
-                            override fun onCreate(db: SupportSQLiteDatabase) {
-                                super.onCreate(db)
-                                configureSearchIndex(db)
-                            }
+                    Room
+                        .databaseBuilder(
+                            context.applicationContext,
+                            AppDatabase::class.java,
+                            "pantry_grocery_encrypted.db",
+                        ).openHelperFactory(factory)
+                        .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+                        .addCallback(
+                            object : RoomDatabase.Callback() {
+                                override fun onCreate(db: SupportSQLiteDatabase) {
+                                    super.onCreate(db)
+                                    configureSearchIndex(db)
+                                }
 
-                            override fun onOpen(db: SupportSQLiteDatabase) {
-                                if (!searchIndexIsConfigured(db)) configureSearchIndex(db)
-                                db.query("PRAGMA synchronous = NORMAL").close()
-                                db.query("PRAGMA foreign_keys = ON").close()
-                                db.query("PRAGMA temp_store = MEMORY").close()
-                                db.query("PRAGMA busy_timeout = 5000").close()
-                                db.query("PRAGMA mmap_size = 268435456").close()
-                            }
-                        },
-                    ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
-                    .build()
-                    .also { INSTANCE = it }
+                                override fun onOpen(db: SupportSQLiteDatabase) {
+                                    if (!searchIndexIsConfigured(db)) configureSearchIndex(db)
+                                    db.query("PRAGMA synchronous = NORMAL").close()
+                                    db.query("PRAGMA foreign_keys = ON").close()
+                                    db.query("PRAGMA temp_store = MEMORY").close()
+                                    db.query("PRAGMA busy_timeout = 5000").close()
+                                    db.query("PRAGMA mmap_size = 268435456").close()
+                                }
+                            },
+                        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                        .build()
+                        .also { INSTANCE = it }
+                }
             }
     }
 }

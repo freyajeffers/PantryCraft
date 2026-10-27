@@ -26,12 +26,7 @@ class AutomaticBackupWorker(
         return try {
             val database = AppDatabase.getDatabase(applicationContext)
             val hasPantryData = database.pantryDao().getAvailableIngredients().isNotEmpty()
-            val hasGroceryData =
-                database
-                    .groceryDao()
-                    .observeAllGroceryItems()
-                    .first()
-                    .isNotEmpty()
+            val hasGroceryData = database.groceryDao().getGroceryItemCount() > 0
             if (hasPantryData || hasGroceryData) {
                 backupIfChanged(pin)
             }
@@ -39,6 +34,10 @@ class AutomaticBackupWorker(
         } catch (_: IllegalStateException) {
             Result.retry()
         } catch (_: java.io.IOException) {
+            Result.retry()
+        } catch (_: SecurityException) {
+            Result.retry()
+        } catch (_: IllegalArgumentException) {
             Result.retry()
         } finally {
             pin.fill('\u0000')

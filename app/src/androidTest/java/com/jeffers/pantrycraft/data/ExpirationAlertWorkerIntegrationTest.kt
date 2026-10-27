@@ -24,6 +24,10 @@ class ExpirationAlertWorkerIntegrationTest {
 
     @Before
     fun setUp() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().uiAutomation
+                .grantRuntimePermission(context.packageName, android.Manifest.permission.POST_NOTIFICATIONS)
+        }
         originalEnabled = ExpirationAlertWorker.isEnabled(context)
         ExpirationAlertWorker.setEnabled(context, false)
         runBlocking {

@@ -30,8 +30,8 @@ class Repository private constructor(
         }
 
         fun getInstance(context: Context): Repository =
-            INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Repository(
+            INSTANCE?.takeIf { it.db.isOpen } ?: synchronized(this) {
+                INSTANCE?.takeIf { it.db.isOpen } ?: Repository(
                     AppDatabase.getDatabase(context),
                     context.applicationContext,
                 ).also { INSTANCE = it }

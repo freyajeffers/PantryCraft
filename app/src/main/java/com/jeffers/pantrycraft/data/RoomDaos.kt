@@ -105,5 +105,8 @@ interface GroceryDao {
 
     @Query("DELETE FROM grocery_items WHERE name LIKE :prefix || '%'")
     suspend fun deleteByNamePrefix(prefix: String): Int
+
+    @Query("SELECT COUNT(*) FROM grocery_items")
+    suspend fun getGroceryItemCount(): Int
 }
 

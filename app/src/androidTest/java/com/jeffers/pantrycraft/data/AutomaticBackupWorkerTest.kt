@@ -28,7 +28,14 @@ class AutomaticBackupWorkerTest {
         originalEnabled = AutomaticBackupPreferences.isEnabled(context)
         originalInterval = AutomaticBackupPreferences.intervalMinutes(context)
         originalPin = AutomaticBackupPreferences.loadPin(context)
+        context
+            .getSharedPreferences("backup_preferences", Context.MODE_PRIVATE)
+            .edit()
+            .remove("automatic_backup_pin_ciphertext")
+            .remove("automatic_backup_pin_iv")
+            .commit()
         AutomaticBackupScheduler.cancel(context)
+        saveLastDbChecksum(context, null)
     }
 
     @After
@@ -103,7 +110,33 @@ class AutomaticBackupWorkerTest {
             assertTrue(result is ListenableWorker.Result.Success)
             assertTrue(backupRecords(context).isNotEmpty())
         } finally {
-            db.pantryDao().delete(testItem.copy(id = insertedId))
+            AppDatabase.getDatabase(context).pantryDao().delete(testItem.copy(id = insertedId))
+        }
+    }
+
+    @Test
+    fun doWorkReturnsRetryWhenLocationThrowsIllegalStateException() = runBlocking {
+        AutomaticBackupPreferences.setSchedule(context, enabled = true, intervalMinutes = 1440L)
+        val pin = "123456".toCharArray()
+        AutomaticBackupPreferences.savePin(context, pin)
+        persistAutoBackupTreeUri(context, android.net.Uri.parse("content://invalid/tree"))
+
+        val db = AppDatabase.getDatabase(context)
+        val testItem = PantryItem(
+            name = "AutoBackupRetryItem",
+            quantity = 2f,
+            category = "SNACKS",
+            storageLocation = "PANTRY",
+        )
+        val insertedId = db.pantryDao().insert(testItem)
+        try {
+            val worker = TestListenableWorkerBuilder<AutomaticBackupWorker>(context).build()
+            val result = worker.doWork()
+
+            assertTrue(result is ListenableWorker.Result.Retry)
+        } finally {
+            AppDatabase.getDatabase(context).pantryDao().delete(testItem.copy(id = insertedId))
+            persistAutoBackupTreeUri(context, null)
         }
     }
 

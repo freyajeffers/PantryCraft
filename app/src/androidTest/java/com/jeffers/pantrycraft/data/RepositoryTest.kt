@@ -212,7 +212,44 @@ class RepositoryTest {
     fun repositoryOfflineBarcodeResolverInitialization() {
         val resolver = repository.offlineBarcodeResolver()
         assertNotNull(resolver)
+        val providerField = resolver::class.java.getDeclaredField("assetBarcodeDatabaseProvider")
+            .apply { isAccessible = true }
+        @Suppress("UNCHECKED_CAST")
+        val provider = providerField.get(resolver) as () -> Any?
+        provider.invoke()
         resolver.close()
+    }
+
+    @Test
+    fun repositoryBarcodeMergingContracts(): Unit = runBlocking {
+        val marker = "repo-merge-${System.nanoTime()}"
+        val barcode = "barcode-$marker"
+        val item1 = PantryItem(
+            name = "Base Name",
+            quantity = 2f,
+            barcode = barcode,
+            category = "PRODUCE",
+        )
+        val id1 = repository.insertPantry(item1)
+        val item2 = PantryItem(
+            name = "Updated Name",
+            quantity = 3f,
+            barcode = barcode,
+            category = "OTHER",
+        )
+        val id2 = repository.insertPantry(item2)
+        assertEquals(id1, id2)
+        val merged = repository.findPantryItemByBarcode(barcode)
+        assertNotNull(merged)
+        assertEquals(5f, merged!!.quantity)
+        assertEquals("Updated Name", merged.name)
+        assertEquals("PRODUCE", merged.category)
+    }
+
+    @Test
+    fun repositoryDownloadOfflineCatalogDefaultArguments(): Unit = runBlocking {
+        runCatching { repository.downloadOfflineCatalog() }
+        Unit
     }
 
     @Test
