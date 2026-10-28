@@ -1,0 +1,12 @@
+name: "Android CodeQL config"
+
+disable-default-queries: false
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+paths-ignore:
+  - "**/build/**"
+  - "**/generated/**"
+  - "**/androidTest/**"
