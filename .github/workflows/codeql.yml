@@ -37,10 +37,10 @@ jobs:
         uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
         with:
           packages: |
-            cmdline-tools;latest
-            platform-tools
-            platforms;android-34
-            build-tools;34.0.0
+            "cmdline-tools;latest"
+            "platform-tools"
+            "platforms;android-36"
+            "build-tools;36.0.0"
 
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses
