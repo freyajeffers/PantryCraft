@@ -134,13 +134,10 @@ dependencies {
         implementation('com.squareup.okio:okio:3.9.1') {
             because 'fixes CVEs in okio < 1.17.6'
         }
-        implementation('com.google.guava:guava:33.4.0-android') {
+        implementation('com.google.guava:guava:33.7.2-android') {
             because 'fixes CVEs in guava < 32.0.0'
         }
     }
-
-    // Navigation and ViewModel compose
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2'
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.json:json:20260814'
