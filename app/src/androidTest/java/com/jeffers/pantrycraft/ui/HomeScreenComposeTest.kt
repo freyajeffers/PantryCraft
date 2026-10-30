@@ -54,9 +54,13 @@ class HomeScreenComposeTest {
         composeTestRule.onNodeWithText("Quick Ingestion").assertIsDisplayed()
         composeTestRule.onNodeWithText("Grocery Checklist").assertIsDisplayed()
         composeTestRule.onNodeWithText("AI Meal Synthesis (Phase 3)").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Scan shelf").assertIsDisplayed().assertHasClickAction()
+        composeTestRule.onNodeWithContentDescription("Add item").assertIsDisplayed().assertHasClickAction()
+        composeTestRule.onNodeWithContentDescription("View grocery list").assertIsDisplayed().assertHasClickAction()
+        composeTestRule.onNodeWithContentDescription("Synthesize meals").assertIsDisplayed().assertHasClickAction()
 
         // 3. Click "Add Item" button under Quick Ingestion -> Navigates to Pantry
-        composeTestRule.onNodeWithText("Add Item").performClick()
+        composeTestRule.onNodeWithContentDescription("Add item").performClick()
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithContentDescription("Add pantry item").assertIsDisplayed()
 

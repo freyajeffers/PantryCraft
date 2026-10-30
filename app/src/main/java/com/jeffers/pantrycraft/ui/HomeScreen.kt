@@ -27,9 +27,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.observeLowStock
@@ -107,38 +107,26 @@ private fun InventoryMetrics(
             title = "In Stock",
             value = pantryCount.toString(),
             subtitle = "Total items",
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .semantics {
-                        contentDescription = "In Stock"
-                        role = Role.Button
-                    }.clickable(onClickLabel = "Open pantry items") { onNavigate("pantry") },
+            modifier = Modifier.weight(1f),
+            onClickLabel = "Open pantry items",
+            onClick = { onNavigate("pantry") },
         )
         MetricCard(
             title = "Expiring",
             value = expiringCount.toString(),
             subtitle = if (expiredCount > 0) "+$expiredCount expired" else "Next 5 days",
             isWarning = expiringCount > 0 || expiredCount > 0,
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .semantics {
-                        contentDescription = "Expiring"
-                        role = Role.Button
-                    }.clickable(onClickLabel = "Open expiring items") { onNavigate("pantry") },
+            modifier = Modifier.weight(1f),
+            onClickLabel = "Open expiring items",
+            onClick = { onNavigate("pantry") },
         )
         MetricCard(
             title = "Low Stock",
             value = lowStockCount.toString(),
             subtitle = "Needs restock",
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .semantics {
-                        contentDescription = "Low Stock"
-                        role = Role.Button
-                    }.clickable(onClickLabel = "Open grocery items") { onNavigate("grocery") },
+            modifier = Modifier.weight(1f),
+            onClickLabel = "Open grocery items",
+            onClick = { onNavigate("grocery") },
         )
     }
 }
@@ -168,7 +156,13 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
             ) {
                 Button(
                     onClick = { onNavigate("camera") },
-                    modifier = Modifier.weight(1f),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .clearAndSetSemantics {
+                                contentDescription = "Scan shelf"
+                                role = Role.Button
+                            },
                 ) {
                     Icon(
                         Icons.Filled.QrCodeScanner,
@@ -179,7 +173,13 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                 }
                 OutlinedButton(
                     onClick = { onNavigate("pantry") },
-                    modifier = Modifier.weight(1f),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .clearAndSetSemantics {
+                                contentDescription = "Add item"
+                                role = Role.Button
+                            },
                 ) {
                     Icon(
                         Icons.Filled.Inventory2,
@@ -216,7 +216,14 @@ private fun GroceryChecklistCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            OutlinedButton(onClick = { onNavigate("grocery") }) {
+            OutlinedButton(
+                onClick = { onNavigate("grocery") },
+                modifier =
+                    Modifier.clearAndSetSemantics {
+                        contentDescription = "View grocery list"
+                        role = Role.Button
+                    },
+            ) {
                 Icon(
                     Icons.Filled.ShoppingCart,
                     contentDescription = null,
@@ -267,7 +274,14 @@ private fun MealSynthesisCard(
             )
             Button(
                 onClick = { onNavigate("meals") },
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
+                        .clearAndSetSemantics {
+                            contentDescription = "Synthesize meals"
+                            role = Role.Button
+                        },
             ) {
                 Icon(Icons.Filled.AutoAwesome, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                 Text("Synthesize Meals")
@@ -283,13 +297,17 @@ private fun MetricCard(
     subtitle: String,
     modifier: Modifier = Modifier,
     isWarning: Boolean = false,
+    onClickLabel: String,
+    onClick: () -> Unit,
 ) {
     Card(
         modifier =
-            modifier.semantics(mergeDescendants = true) {
-                contentDescription = title
-                role = Role.Button
-            },
+            modifier
+                .clickable(onClickLabel = onClickLabel, onClick = onClick)
+                .clearAndSetSemantics {
+                    contentDescription = title
+                    role = Role.Button
+                },
         colors =
             if (isWarning) {
                 CardDefaults.cardColors(
