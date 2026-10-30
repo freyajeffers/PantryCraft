@@ -7,13 +7,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SmartSwapEngineTest {
-
     @Test
     fun findSwapsForMissingItemIdentifiesOnHandStock() {
-        val onHand = listOf(
-            PantryItem(name = "Whole Milk", quantity = 1f, unit = "L"),
-            PantryItem(name = "Greek Yogurt", quantity = 500f, unit = "G"),
-        )
+        val onHand =
+            listOf(
+                PantryItem(name = "Whole Milk", quantity = 1f, unit = "L"),
+                PantryItem(name = "Greek Yogurt", quantity = 500f, unit = "G"),
+            )
 
         val buttermilkSwaps = SmartSwapEngine.findSwapsForMissingItem("buttermilk", onHand)
         assertEquals(1, buttermilkSwaps.size)
@@ -28,9 +28,10 @@ class SmartSwapEngineTest {
 
     @Test
     fun findSwapsForMissingItemFlagsMissingStock() {
-        val onHand = listOf(
-            PantryItem(name = "Olive Oil", quantity = 500f, unit = "ML"),
-        )
+        val onHand =
+            listOf(
+                PantryItem(name = "Olive Oil", quantity = 500f, unit = "ML"),
+            )
 
         val creamSwaps = SmartSwapEngine.findSwapsForMissingItem("heavy cream", onHand)
         assertEquals(1, creamSwaps.size)
@@ -39,9 +40,10 @@ class SmartSwapEngineTest {
 
     @Test
     fun enrichMissingItemsWithSwapsAssociatesAllItems() {
-        val onHand = listOf(
-            PantryItem(name = "Applesauce", quantity = 1f, unit = "CAN"),
-        )
+        val onHand =
+            listOf(
+                PantryItem(name = "Applesauce", quantity = 1f, unit = "CAN"),
+            )
         val missing = listOf("egg", "breadcrumbs")
         val enriched = SmartSwapEngine.enrichMissingItemsWithSwaps(missing, onHand)
 

@@ -6,7 +6,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MealModelsTest {
-
     @Test
     fun mealMatchModeFromIdResolvesCorrectly() {
         assertEquals(MealMatchMode.STRICT, MealMatchMode.fromId("STRICT"))
@@ -20,17 +19,19 @@ class MealModelsTest {
 
     @Test
     fun mealRecipeComputedPropertiesAreAccurate() {
-        val recipe = MealRecipe(
-            recipeId = "rec_1",
-            title = "Test Soup",
-            prepTimeMinutes = 15,
-            cookTimeMinutes = 25,
-            itemsUsedFromStock = listOf(
-                RecipePantryUsage(name = "Carrot", quantityUsed = 2f, preventsWaste = true),
-                RecipePantryUsage(name = "Onion", quantityUsed = 1f, preventsWaste = false),
-                RecipePantryUsage(name = "Celery", quantityUsed = 2f, preventsWaste = true),
-            ),
-        )
+        val recipe =
+            MealRecipe(
+                recipeId = "rec_1",
+                title = "Test Soup",
+                prepTimeMinutes = 15,
+                cookTimeMinutes = 25,
+                itemsUsedFromStock =
+                    listOf(
+                        RecipePantryUsage(name = "Carrot", quantityUsed = 2f, preventsWaste = true),
+                        RecipePantryUsage(name = "Onion", quantityUsed = 1f, preventsWaste = false),
+                        RecipePantryUsage(name = "Celery", quantityUsed = 2f, preventsWaste = true),
+                    ),
+            )
 
         assertEquals(40, recipe.totalTimeMinutes)
         assertEquals(2, recipe.wastePreventionCount)
@@ -38,28 +39,31 @@ class MealModelsTest {
 
     @Test
     fun scaleToPortionsScalesBulkLinearlyAndSeasoningsSubLinearly() {
-        val recipe = MealRecipe(
-            recipeId = "rec_curry",
-            title = "Chickpea Curry",
-            targetPortions = 2,
-            itemsUsedFromStock = listOf(
-                RecipePantryUsage(
-                    name = "Chickpeas",
-                    quantityUsed = 200f,
-                    unit = "g",
-                    isAromaticOrSeasoning = false,
-                ),
-                RecipePantryUsage(
-                    name = "Garam Masala",
-                    quantityUsed = 10f,
-                    unit = "g",
-                    isAromaticOrSeasoning = true,
-                ),
-            ),
-            missingItemsForGrocery = listOf(
-                RecipeMissingItem(name = "Coconut Milk", quantityNeeded = 1f, unit = "can"),
-            ),
-        )
+        val recipe =
+            MealRecipe(
+                recipeId = "rec_curry",
+                title = "Chickpea Curry",
+                targetPortions = 2,
+                itemsUsedFromStock =
+                    listOf(
+                        RecipePantryUsage(
+                            name = "Chickpeas",
+                            quantityUsed = 200f,
+                            unit = "g",
+                            isAromaticOrSeasoning = false,
+                        ),
+                        RecipePantryUsage(
+                            name = "Garam Masala",
+                            quantityUsed = 10f,
+                            unit = "g",
+                            isAromaticOrSeasoning = true,
+                        ),
+                    ),
+                missingItemsForGrocery =
+                    listOf(
+                        RecipeMissingItem(name = "Coconut Milk", quantityNeeded = 1f, unit = "can"),
+                    ),
+            )
 
         val scaled = recipe.scaleToPortions(4)
         assertEquals(4, scaled.targetPortions)

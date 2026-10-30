@@ -6,7 +6,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MealPromptBuilderTest {
-
     @Test
     fun systemPromptEnforcesPureJsonAndRecipeSchema() {
         val sys = MealPromptBuilder.buildSystemPrompt()
@@ -19,16 +18,18 @@ class MealPromptBuilderTest {
 
     @Test
     fun userPromptIncludesConstraintsAndSeasoningCurve() {
-        val prompt = MealPromptBuilder.buildUserPrompt(
-            mode = MealMatchMode.STRICT,
-            targetPortions = 4,
-            inventoryContext = "[INVENTORY_CONTEXT]\nPantry: rice(1kg)",
-            constraints = MealConstraints(
-                dietaryPreferences = listOf("Gluten-Free", "Vegetarian"),
-                availableAppliances = listOf("Air Fryer", "Stovetop"),
-                maxCookTimeMinutes = 30,
-            ),
-        )
+        val prompt =
+            MealPromptBuilder.buildUserPrompt(
+                mode = MealMatchMode.STRICT,
+                targetPortions = 4,
+                inventoryContext = "[INVENTORY_CONTEXT]\nPantry: rice(1kg)",
+                constraints =
+                    MealConstraints(
+                        dietaryPreferences = listOf("Gluten-Free", "Vegetarian"),
+                        availableAppliances = listOf("Air Fryer", "Stovetop"),
+                        maxCookTimeMinutes = 30,
+                    ),
+            )
 
         assertTrue(prompt.contains("Match Mode: STRICT"))
         assertTrue(prompt.contains("Target Portions: 4 servings"))
@@ -41,11 +42,12 @@ class MealPromptBuilderTest {
 
     @Test
     fun userPromptReflectsEmergencySalvageMode() {
-        val prompt = MealPromptBuilder.buildUserPrompt(
-            mode = MealMatchMode.EMERGENCY_SALVAGE,
-            targetPortions = 2,
-            inventoryContext = "[INVENTORY_CONTEXT]\nFridge: eggs(2count)",
-        )
+        val prompt =
+            MealPromptBuilder.buildUserPrompt(
+                mode = MealMatchMode.EMERGENCY_SALVAGE,
+                targetPortions = 2,
+                inventoryContext = "[INVENTORY_CONTEXT]\nFridge: eggs(2count)",
+            )
 
         assertTrue(prompt.contains("Match Mode: EMERGENCY_SALVAGE"))
         assertTrue(prompt.contains("15-Minute Emergency Rescue"))
@@ -54,18 +56,20 @@ class MealPromptBuilderTest {
 
     @Test
     fun userPromptReflectsMostlyAndShoppingModes() {
-        val mostlyPrompt = MealPromptBuilder.buildUserPrompt(
-            mode = MealMatchMode.MOSTLY,
-            targetPortions = 3,
-            inventoryContext = "[INVENTORY_CONTEXT]",
-        )
+        val mostlyPrompt =
+            MealPromptBuilder.buildUserPrompt(
+                mode = MealMatchMode.MOSTLY,
+                targetPortions = 3,
+                inventoryContext = "[INVENTORY_CONTEXT]",
+            )
         assertTrue(mostlyPrompt.contains("85-95% of ingredients must be from active inventory"))
 
-        val shoppingPrompt = MealPromptBuilder.buildUserPrompt(
-            mode = MealMatchMode.SHOPPING,
-            targetPortions = 6,
-            inventoryContext = "[INVENTORY_CONTEXT]",
-        )
+        val shoppingPrompt =
+            MealPromptBuilder.buildUserPrompt(
+                mode = MealMatchMode.SHOPPING,
+                targetPortions = 6,
+                inventoryContext = "[INVENTORY_CONTEXT]",
+            )
         assertTrue(shoppingPrompt.contains("Center the recipe around on-hand star ingredients"))
     }
 }
