@@ -1,16 +1,15 @@
 package com.jeffers.pantrycraft.ui
 
+import android.app.KeyguardManager
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeffers.pantrycraft.MainActivity
@@ -18,9 +17,8 @@ import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.Repository
 import kotlinx.coroutines.runBlocking
-import android.app.KeyguardManager
-import org.junit.Assume
 import org.junit.After
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -67,8 +65,10 @@ class PantryItemEditorSheetTest {
 
     @Test
     fun addPantryItemFabOpensNewItemEditorSheet() {
-        composeTestRule.waitForIdle()
-        composeTestRule.onAllNodesWithText("Pantry")[0].performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodesWithContentDescription("Pantry").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription("Pantry").performClick()
         composeTestRule.waitForIdle()
 
         // 1. Click FAB to add pantry item
@@ -86,8 +86,10 @@ class PantryItemEditorSheetTest {
 
     @Test
     fun existingPantryItemCanBeEditedFromList() {
-        composeTestRule.waitForIdle()
-        composeTestRule.onAllNodesWithText("Pantry")[0].performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodesWithContentDescription("Pantry").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription("Pantry").performClick()
         composeTestRule.waitForIdle()
 
         // 1. Search for inserted item so it appears at top of list

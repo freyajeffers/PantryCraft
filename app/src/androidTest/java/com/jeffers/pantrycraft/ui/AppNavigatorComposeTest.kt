@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -22,7 +23,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class AppNavigatorComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -46,6 +46,12 @@ class AppNavigatorComposeTest {
             }
         }
         composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodesWithContentDescription("Dashboard")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
 
         composeTestRule.onNodeWithContentDescription("Dashboard").performClick()
         composeTestRule.waitForIdle()
@@ -76,6 +82,7 @@ class AppNavigatorComposeTest {
         }
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("Opening encrypted pantry").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Loading encrypted pantry").assertIsDisplayed()
     }
 
     @Test
@@ -109,6 +116,12 @@ class AppNavigatorComposeTest {
             PantryCraftApp()
         }
         composeTestRule.waitForIdle()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule
+                .onAllNodesWithContentDescription("Dashboard")
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
         composeTestRule.onNodeWithContentDescription("Dashboard").assertIsDisplayed()
     }
 }

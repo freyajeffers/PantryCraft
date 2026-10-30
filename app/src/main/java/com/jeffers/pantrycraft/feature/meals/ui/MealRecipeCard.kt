@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.feature.meals.model.MealRecipe
 import com.jeffers.pantrycraft.feature.meals.swap.SmartSwapSuggestion
@@ -30,7 +31,7 @@ fun MealRecipeCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().testTag("recipe_card_${recipe.recipeId}"),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -41,7 +42,11 @@ fun MealRecipeCard(
             RecipeNutritionSection(recipe)
             Button(
                 onClick = { onCook(recipe) },
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
+                        .testTag("cook_meal_button_${recipe.recipeId}"),
             ) {
                 Icon(Icons.Filled.Restaurant, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                 Text("Cook This Meal (${recipe.targetPortions} Servings)")

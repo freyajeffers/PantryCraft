@@ -10,7 +10,8 @@ private typealias CatalogProgress = (Long, Long) -> Unit
 fun Repository.offlineBarcodeResolver(): OfflineBarcodeResolver =
     OfflineBarcodeResolver(
         customBarcodeDao = db.customBarcodeDao(),
-        assetBarcodeDatabase = runCatching { AssetBarcodeDatabase(appContext) }.getOrNull(),
+        // Avoid opening the large asset DB at app start; provide a lazy provider instead.
+        assetBarcodeDatabase = null,
         assetBarcodeDatabaseProvider = { runCatching { AssetBarcodeDatabase(appContext) }.getOrNull() },
     )
 

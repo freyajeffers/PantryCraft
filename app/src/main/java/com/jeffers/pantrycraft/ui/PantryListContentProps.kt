@@ -11,6 +11,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.PantryItem
 
@@ -43,6 +45,10 @@ fun PantryListContent(props: PantryListContentProps) {
                 FilterChip(
                     selected = props.selectedLocation == filter,
                     onClick = { props.onLocationSelected(filter) },
+                    modifier =
+                        Modifier.semantics(mergeDescendants = true) {
+                            contentDescription = filter.label
+                        },
                     label = { Text(filter.label) },
                 )
             }

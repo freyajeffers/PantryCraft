@@ -54,7 +54,7 @@ class ExpirationAlertWorker(
             val notification =
                 NotificationCompat
                     .Builder(applicationContext, CHANNEL_ID)
-                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                    .setSmallIcon(com.jeffers.pantrycraft.R.drawable.ic_launcher_monochrome)
                     .setContentTitle("Pantry items need attention")
                     .setContentText("$summary$suffix")
                     .setStyle(NotificationCompat.BigTextStyle().bigText("$summary$suffix"))

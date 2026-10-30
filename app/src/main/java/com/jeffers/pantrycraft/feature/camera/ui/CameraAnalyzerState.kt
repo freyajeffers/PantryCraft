@@ -8,6 +8,7 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.objects.ObjectDetection
+import com.google.mlkit.vision.objects.ObjectDetector
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer
@@ -29,6 +30,7 @@ data class CameraAnalyzerState(
     val onFrameTime: (Long) -> Unit,
     val onBarcodeResolved: (BarcodeMatch) -> Unit,
     val onBarcodeUnresolved: (String) -> Unit,
+    val objectDetector: ObjectDetector? = null,
 )
 
 internal suspend fun dispatchBarcodeResolution(
@@ -73,16 +75,9 @@ internal fun rememberCameraAnalyzer(state: CameraAnalyzerState): LiveVisionAnaly
                     Barcode.FORMAT_EAN_13,
                     Barcode.FORMAT_QR_CODE,
                 ).build()
-        val objectOptions =
-            ObjectDetectorOptions
-                .Builder()
-                .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-                .enableMultipleObjects()
-                .enableClassification()
-                .build()
         LiveVisionAnalyzer(
             barcodeScanner = BarcodeScanning.getClient(barcodeOptions),
-            objectDetector = ObjectDetection.getClient(objectOptions),
+            objectDetector = state.objectDetector ?: ObjectDetection.getClient(ObjectDetectorOptions.DEFAULT_OPTIONS),
             executor = state.executor,
             onResult = { result ->
                 state.onResult(result)

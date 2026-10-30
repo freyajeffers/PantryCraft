@@ -9,6 +9,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.google.mlkit.vision.objects.ObjectDetection
+import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.offlineBarcodeResolver
 import com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats
@@ -18,6 +20,7 @@ import java.util.concurrent.Executors
 @Stable
 class CameraScreenState(
     val deps: CameraDeps,
+    val objectDetector: com.google.mlkit.vision.objects.ObjectDetector? = null,
 ) {
     var snapshotStatus by mutableStateOf<String?>(null)
     var barcodeMatch by mutableStateOf<BarcodeMatch?>(null)
@@ -52,7 +55,18 @@ internal fun rememberCameraScreenState(context: Context): CameraScreenState {
             }
         }
     val barcodeResolver = remember { repo.offlineBarcodeResolver() }
-    val snapshotService = rememberSnapshotVisionService(context)
+    val objectDetector =
+        remember {
+            ObjectDetection.getClient(
+                ObjectDetectorOptions
+                    .Builder()
+                    .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
+                    .enableMultipleObjects()
+                    .enableClassification()
+                    .build(),
+            )
+        }
+    val snapshotService = rememberSnapshotVisionService(context, objectDetector)
     val frameTimingStats = remember { FrameTimingStats() }
 
     return remember(context) {
@@ -68,6 +82,7 @@ internal fun rememberCameraScreenState(context: Context): CameraScreenState {
                     snapshotVisionService = snapshotService,
                     frameTimingStats = frameTimingStats,
                 ),
+            objectDetector = objectDetector,
         )
     }
 }

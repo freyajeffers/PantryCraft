@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Scaffold
@@ -35,7 +37,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -55,27 +61,40 @@ fun AppNavigator() {
     val context = LocalContext.current
     // Load Repository lazily off the UI thread so composition and first-draw are fast.
     val repositoryResultState = remember { mutableStateOf<Result<Repository>?>(null) }
-    LaunchedEffect(Unit) {
+    val loadAttempt = remember { mutableStateOf(0) }
+    LaunchedEffect(loadAttempt.value) {
         repositoryResultState.value =
             withContext(Dispatchers.IO) {
                 runCatching { Repository.getInstance(context.applicationContext) }
             }
     }
-    val repositoryResult = repositoryResultState.value ?: return DatabaseLoadingScreen()
-    val databaseError = repositoryResult.exceptionOrNull()
+    val repositoryResult = repositoryResultState.value
+    val databaseError = repositoryResult?.exceptionOrNull()
     if (databaseError is DatabaseKeyInvalidatedException) {
         DatabaseRecoveryScreenHost(context)
         return
     }
-    val repository = repositoryResult.getOrThrow()
-    var destination by rememberSaveable { mutableStateOf("pantry") }
+    if (databaseError != null) {
+        DatabaseOpenErrorScreen { loadAttempt.value++ }
+        return
+    }
+    val repository = repositoryResult?.getOrNull()
+
+    var destination by rememberSaveable { mutableStateOf("home") }
     if (destination != "home") {
         BackHandler { destination = "home" }
     }
+
     Scaffold(
         bottomBar = { AppBottomBar(destination) { destination = it } },
     ) { contentPadding ->
-        DestinationContent(destination, repository, context, contentPadding) { destination = it }
+        if (repository == null) {
+            Box(modifier = Modifier.padding(contentPadding)) {
+                DatabaseLoadingScreen()
+            }
+        } else {
+            DestinationContent(destination, repository, context, contentPadding) { destination = it }
+        }
     }
 }
 
@@ -116,7 +135,11 @@ internal fun AppBottomBar(
                         Modifier
                             .weight(1f)
                             .height(64.dp)
-                            .clickable { onDestinationSelected(item.route) },
+                            .clickable(onClickLabel = item.label) { onDestinationSelected(item.route) }
+                            .semantics(mergeDescendants = true) {
+                                contentDescription = item.label
+                                role = Role.Button
+                            },
                     contentAlignment = Alignment.Center,
                 ) {
                     val bubbleWidth = minOf(54.dp, maxWidth - 8.dp)
@@ -132,7 +155,7 @@ internal fun AppBottomBar(
                                         MaterialTheme.colorScheme.surface
                                     },
                                     RoundedCornerShape(16.dp),
-                                ).semantics { contentDescription = item.label },
+                                ),
                         contentAlignment = Alignment.Center,
                     ) {
                         androidx.compose.material3.Icon(
@@ -162,14 +185,16 @@ private fun DestinationContent(
             "grocery" -> GroceryScreen(viewModel(factory = GroceryViewModelFactory(repository)))
             "camera" -> CameraScreen()
             "settings" -> SettingsScreen(context, repository)
-            "meals" -> MealSynthesisScreen(
-                viewModel(
-                    factory = MealSynthesisViewModelFactory(
-                        repository = repository,
-                        engine = MealSynthesisEngine(context),
+            "meals" ->
+                MealSynthesisScreen(
+                    viewModel(
+                        factory =
+                            MealSynthesisViewModelFactory(
+                                repository = repository,
+                                engine = MealSynthesisEngine(context),
+                            ),
                     ),
-                ),
-            )
+                )
         }
     }
 }
@@ -213,12 +238,41 @@ internal enum class BottomDestination(
 }
 
 @Composable
-internal fun DatabaseLoadingScreen() {
+internal fun DatabaseOpenErrorScreen(onRetry: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .semantics { liveRegion = LiveRegionMode.Assertive },
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Text("Unable to open encrypted pantry", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            "The local database could not be opened. Your data was not deleted.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Button(onClick = onRetry) {
+            Text("Retry")
+        }
+    }
+}
+
+@Composable
+internal fun DatabaseLoadingScreen() {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite },
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.semantics { contentDescription = "Loading encrypted pantry" },
+        )
         Text("Opening encrypted pantry", style = MaterialTheme.typography.headlineSmall)
     }
 }

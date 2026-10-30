@@ -35,8 +35,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -235,50 +237,51 @@ internal fun ReviewEditorFields(props: ReviewEditorProps) {
 internal fun ReviewIdentityFields(props: ReviewEditorProps) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
-        value = props.name,
-        onValueChange = props.onNameChange,
-        label = { Text("Name") },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-        trailingIcon = {
-            IconButton(
-                onClick = props.onScanBarcodeClick,
-                modifier = Modifier.semantics {
-                    contentDescription = "Scan barcode to fill item"
-                    onClick {
-                        props.onScanBarcodeClick()
-                        true
-                    }
-                },
-            ) {
-                Icon(Icons.Filled.QrCodeScanner, contentDescription = null)
-            }
-        },
-    )
-    if (!props.barcode.isNullOrBlank()) {
-        Text(
-            "Barcode: ${props.barcode}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.primary,
-        )
-    }
-    ReviewDropdown("Category", props.category, PantryTaxonomy.categories, props.onCategoryChange)
-    ReviewDropdown("Unit", props.unit, PantryTaxonomy.units, props.onUnitChange)
-    if (props.unit == "CUSTOM") {
-        OutlinedTextField(
-            value = props.customUnitName,
-            onValueChange = props.onCustomUnitNameChange,
-            label = { Text("Custom unit (e.g. bunch, cloves, stalks)") },
+            value = props.name,
+            onValueChange = props.onNameChange,
+            label = { Text("Name") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(
+                    onClick = props.onScanBarcodeClick,
+                    modifier =
+                        Modifier.semantics {
+                            contentDescription = "Scan barcode to fill item"
+                            onClick {
+                                props.onScanBarcodeClick()
+                                true
+                            }
+                        },
+                ) {
+                    Icon(Icons.Filled.QrCodeScanner, contentDescription = null)
+                }
+            },
         )
-    }
-    ReviewDropdown(
-        "Storage location",
-        props.storageLocation,
-        PantryTaxonomy.storageLocations,
-        props.onStorageLocationChange,
-    )
+        if (!props.barcode.isNullOrBlank()) {
+            Text(
+                "Barcode: ${props.barcode}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        ReviewDropdown("Category", props.category, PantryTaxonomy.categories, props.onCategoryChange)
+        ReviewDropdown("Unit", props.unit, PantryTaxonomy.units, props.onUnitChange)
+        if (props.unit == "CUSTOM") {
+            OutlinedTextField(
+                value = props.customUnitName,
+                onValueChange = props.onCustomUnitNameChange,
+                label = { Text("Custom unit (e.g. bunch, cloves, stalks)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        ReviewDropdown(
+            "Storage location",
+            props.storageLocation,
+            PantryTaxonomy.storageLocations,
+            props.onStorageLocationChange,
+        )
     }
 }
 
@@ -315,7 +318,13 @@ internal fun ReviewCheckbox(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.clickable { onCheckedChange(!checked) },
+        modifier =
+            Modifier
+                .clickable(onClickLabel = "Toggle $label") { onCheckedChange(!checked) }
+                .semantics(mergeDescendants = true) {
+                    contentDescription = label
+                    role = Role.Checkbox
+                },
     ) {
         Checkbox(checked = checked, onCheckedChange = onCheckedChange)
         Text(

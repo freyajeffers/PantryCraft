@@ -36,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.feature.meals.model.MAX_PORTIONS
 import com.jeffers.pantrycraft.feature.meals.model.MIN_PORTIONS
@@ -69,14 +70,14 @@ fun MealSynthesisScreen(viewModel: MealSynthesisViewModel) {
             Button(
                 onClick = viewModel::generateMeals,
                 enabled = !isLoading,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("synthesize_meals_button"),
             ) {
                 Icon(Icons.Filled.AutoAwesome, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                 Text(if (isLoading) "Synthesizing Meals…" else "Synthesize Meals")
             }
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(modifier = Modifier.testTag("meal_synthesis_loading"))
                 }
             } else {
                 RecipeListView(recipes = recipes, swaps = smartSwaps, onCook = viewModel::cookMeal)
@@ -90,7 +91,7 @@ private fun PanicButtonBanner(onTrigger: () -> Unit) {
     Button(
         onClick = onTrigger,
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("panic_button"),
     ) {
         Icon(Icons.Filled.Bolt, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
         Text("15-Min Pantry Panic Button (Rescue Expiring Food)")
@@ -98,7 +99,10 @@ private fun PanicButtonBanner(onTrigger: () -> Unit) {
 }
 
 @Composable
-private fun PortionSelectorRow(portions: Int, onUpdate: (Int) -> Unit) {
+private fun PortionSelectorRow(
+    portions: Int,
+    onUpdate: (Int) -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -106,15 +110,23 @@ private fun PortionSelectorRow(portions: Int, onUpdate: (Int) -> Unit) {
     ) {
         Text("Servings / Portions:", style = MaterialTheme.typography.titleSmall)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { onUpdate(portions - 1) }, enabled = portions > MIN_PORTIONS) {
+            IconButton(
+                onClick = { onUpdate(portions - 1) },
+                enabled = portions > MIN_PORTIONS,
+                modifier = Modifier.testTag("portion_decrease_button"),
+            ) {
                 Icon(Icons.Filled.Remove, contentDescription = "Decrease portions")
             }
             Text(
                 text = "$portions",
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = 8.dp),
+                modifier = Modifier.padding(horizontal = 8.dp).testTag("portion_value_text"),
             )
-            IconButton(onClick = { onUpdate(portions + 1) }, enabled = portions < MAX_PORTIONS) {
+            IconButton(
+                onClick = { onUpdate(portions + 1) },
+                enabled = portions < MAX_PORTIONS,
+                modifier = Modifier.testTag("portion_increase_button"),
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = "Increase portions")
             }
         }
@@ -123,13 +135,17 @@ private fun PortionSelectorRow(portions: Int, onUpdate: (Int) -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ModeSelectorChips(selected: MealMatchMode, onSelect: (MealMatchMode) -> Unit) {
+private fun ModeSelectorChips(
+    selected: MealMatchMode,
+    onSelect: (MealMatchMode) -> Unit,
+) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items(MealMatchMode.entries) { mode ->
             ElevatedFilterChip(
                 selected = selected == mode,
                 onClick = { onSelect(mode) },
                 label = { Text(mode.title) },
+                modifier = Modifier.testTag("mode_chip_${mode.name}"),
             )
         }
     }
@@ -151,6 +167,7 @@ private fun RecipeListView(
         }
     } else {
         LazyColumn(
+            modifier = Modifier.testTag("meal_recipe_list"),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 24.dp),
         ) {

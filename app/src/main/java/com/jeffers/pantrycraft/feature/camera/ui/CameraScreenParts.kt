@@ -6,6 +6,7 @@ import android.graphics.Typeface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.google.mlkit.vision.objects.ObjectDetection
+import com.google.mlkit.vision.objects.ObjectDetector
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import com.jeffers.pantrycraft.feature.camera.vision.MlKitSnapshotModel
 import com.jeffers.pantrycraft.feature.camera.vision.ModelRouter
@@ -39,22 +40,19 @@ internal fun rememberBadgePaint(): Paint =
     }
 
 @Composable
-internal fun rememberSnapshotVisionService(context: Context): SnapshotVisionService =
-    remember(context) {
+internal fun rememberSnapshotVisionService(
+    context: Context,
+    objectDetector: ObjectDetector? = null,
+): SnapshotVisionService =
+    remember(context, objectDetector) {
+        val detector =
+            objectDetector
+                ?: ObjectDetection.getClient(ObjectDetectorOptions.DEFAULT_OPTIONS)
         SnapshotVisionService(
             ModelRouter(
                 context = context.applicationContext,
-                localFallbackModel =
-                    MlKitSnapshotModel(
-                        ObjectDetection.getClient(
-                            ObjectDetectorOptions
-                                .Builder()
-                                .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
-                                .enableMultipleObjects()
-                                .enableClassification()
-                                .build(),
-                        ),
-                    ),
+                localFallbackModel = MlKitSnapshotModel(detector),
             ),
+            closeModel = false,
         )
     }

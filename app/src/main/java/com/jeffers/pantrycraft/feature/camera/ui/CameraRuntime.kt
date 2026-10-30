@@ -28,6 +28,7 @@ internal fun rememberCameraRuntime(
                 executor = state.analysisExecutor,
                 scope = state.scope,
                 barcodeResolver = state.barcodeResolver,
+                objectDetector = state.objectDetector,
                 frameTimingStats = state.frameTimingStats,
                 onResult = onResult,
                 onFrameTime = onFrameTime,

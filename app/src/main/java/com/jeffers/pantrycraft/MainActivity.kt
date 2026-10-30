@@ -14,17 +14,19 @@ import com.jeffers.pantrycraft.ui.PantryCraftApp
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        AutomaticBackupScheduler.scheduleIfEnabled(this)
-        ExpirationAlertScheduler.scheduleIfEnabled(this)
-        if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ExpirationAlertWorker.isEnabled(this) &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST_CODE)
-        }
         setContent {
             PantryCraftApp()
+        }
+        window.decorView.post {
+            AutomaticBackupScheduler.scheduleIfEnabled(this)
+            ExpirationAlertScheduler.scheduleIfEnabled(this)
+            if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ExpirationAlertWorker.isEnabled(this) &&
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST_CODE)
+            }
         }
     }
 

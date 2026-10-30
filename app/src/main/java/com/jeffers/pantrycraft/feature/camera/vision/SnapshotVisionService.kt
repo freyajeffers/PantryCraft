@@ -11,6 +11,7 @@ fun interface LocalVisionModel {
 class SnapshotVisionService(
     private val model: LocalVisionModel,
     private val parser: VisionOutputParser = VisionOutputParser(),
+    private val closeModel: Boolean = true,
 ) : AutoCloseable {
     suspend fun analyze(frame: SnapshotFrame): List<ParsedVisionItem> =
         try {
@@ -20,7 +21,7 @@ class SnapshotVisionService(
         }
 
     override fun close() {
-        (model as? AutoCloseable)?.close()
+        if (closeModel) (model as? AutoCloseable)?.close()
     }
 
     companion object {

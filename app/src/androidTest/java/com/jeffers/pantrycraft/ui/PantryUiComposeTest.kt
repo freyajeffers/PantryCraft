@@ -1,17 +1,17 @@
 package com.jeffers.pantrycraft.ui
 
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.performClick
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.jeffers.pantrycraft.MainActivity
 import android.app.KeyguardManager
 import android.content.Context
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
-import org.junit.Assume
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.jeffers.pantrycraft.MainActivity
 import org.junit.After
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -39,13 +39,10 @@ class PantryUiComposeTest {
 
     @Test
     fun appLaunchesAndNavigatesBetweenScreens() {
-        composeTestRule.waitForIdle()
-
-        // Pantry screen title is displayed
-        composeTestRule.onAllNodesWithText("Pantry")[0].assertIsDisplayed()
-
-        // Switch to Grocery destination via bottom navigation
-        composeTestRule.onNodeWithContentDescription("Grocery").assertIsDisplayed().performClick()
+        composeTestRule.waitUntil(10_000) {
+            composeTestRule.onAllNodesWithContentDescription("Pantry").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithContentDescription("Pantry").assertIsDisplayed().performClick()
         composeTestRule.waitForIdle()
 
         // Switch to Settings destination

@@ -40,6 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -195,7 +197,23 @@ private fun PantryItemContent(
             Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .semantics(mergeDescendants = true) {
+                    val unitDisplay =
+                        if (item.unit == "CUSTOM" && !item.customUnitName.isNullOrBlank()) {
+                            item.customUnitName
+                        } else {
+                            item.unit.orEmpty()
+                        }
+                    val descParts =
+                        listOfNotNull(
+                            item.name.takeIf { it.isNotBlank() },
+                            "${formatPantryQuantity(item.quantity)} $unitDisplay",
+                            expiration.label.takeIf { it != ExpirationStatus.NONE.label },
+                            if (isLowStock) "Low stock" else null,
+                        )
+                    contentDescription = descParts.joinToString(", ")
+                },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -242,9 +260,17 @@ private fun PantryItemActions(
     isLowStock: Boolean,
     actions: PantryItemRowActions,
 ) {
-    if (!item.isOpened) TextButton(onClick = actions.onMarkOpened) { Text("Open") }
+    if (!item.isOpened) {
+        TextButton(
+            onClick = actions.onMarkOpened,
+            modifier = Modifier.semantics { contentDescription = "Open ${item.name}" },
+        ) { Text("Open") }
+    }
     if (isLowStock) {
-        IconButton(onClick = actions.onAddToGrocery) {
+        IconButton(
+            onClick = actions.onAddToGrocery,
+            modifier = Modifier.semantics { contentDescription = "Add ${item.name} to grocery list" },
+        ) {
             Icon(
                 Icons.Filled.AddShoppingCart,
                 contentDescription = "Add to grocery list",
@@ -253,18 +279,35 @@ private fun PantryItemActions(
         }
     }
     if (item.unit.orEmpty() in PantryTaxonomy.integerQuantityUnits) {
-        IconButton(onClick = actions.onDecrement, enabled = item.quantity > 0f) {
+        IconButton(
+            onClick = actions.onDecrement,
+            enabled = item.quantity > 0f,
+            modifier = Modifier.semantics { contentDescription = "Decrease ${item.name} quantity" },
+        ) {
             Icon(Icons.Filled.Remove, contentDescription = "Decrease quantity")
         }
         Text(formatPantryQuantity(item.quantity))
-        IconButton(onClick = actions.onIncrement) {
+        IconButton(
+            onClick = actions.onIncrement,
+            modifier = Modifier.semantics { contentDescription = "Increase ${item.name} quantity" },
+        ) {
             Icon(Icons.Filled.Add, contentDescription = "Increase quantity")
         }
     } else {
-        TextButton(onClick = actions.onUse, enabled = item.quantity > 0f) { Text("Use") }
+        TextButton(
+            onClick = actions.onUse,
+            enabled = item.quantity > 0f,
+            modifier = Modifier.semantics { contentDescription = "Use ${item.name}" },
+        ) { Text("Use") }
     }
-    TextButton(onClick = actions.onEdit) { Text("Edit") }
-    TextButton(onClick = actions.onDelete) { Text("Delete") }
+    TextButton(
+        onClick = actions.onEdit,
+        modifier = Modifier.semantics { contentDescription = "Edit ${item.name}" },
+    ) { Text("Edit") }
+    TextButton(
+        onClick = actions.onDelete,
+        modifier = Modifier.semantics { contentDescription = "Delete ${item.name}" },
+    ) { Text("Delete") }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -305,8 +348,7 @@ internal fun PantryItemRow(
     )
 }
 
-internal fun formatPantryQuantity(quantity: Float) =
-    BigDecimal(quantity.toString()).stripTrailingZeros().toPlainString()
+internal fun formatPantryQuantity(quantity: Float) = BigDecimal(quantity.toString()).stripTrailingZeros().toPlainString()
 
 @Composable
 fun StorageDiagnosticDialog(
