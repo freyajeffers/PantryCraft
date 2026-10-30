@@ -1,13 +1,12 @@
 package com.jeffers.pantrycraft.ui
 
-import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class FoodFactsUnitTest {
-
     @Test
     fun formatFileSizeFormatsBytesKilobytesAndMegabytes() {
         assertEquals("0 B", formatFileSize(0L))
@@ -30,20 +29,21 @@ class FoodFactsUnitTest {
         var progressTotal = 0L
         var downloadResult: Result<File>? = null
 
-        val props = FoodFactsProps(
-            catalogReady = false,
-            catalogFileSize = 1024L,
-            catalogDownloading = false,
-            catalogDownloadedBytes = 0L,
-            catalogTotalBytes = 0L,
-            onStartDownload = { startCalled = true },
-            onDownloadResult = { downloadResult = it },
-            onProgress = { cur, tot ->
-                progressDownloaded = cur
-                progressTotal = tot
-            },
-            onDelete = { deleteCalled = true },
-        )
+        val props =
+            FoodFactsProps(
+                catalogReady = false,
+                catalogFileSize = 1024L,
+                catalogDownloading = false,
+                catalogDownloadedBytes = 0L,
+                catalogTotalBytes = 0L,
+                onStartDownload = { startCalled = true },
+                onDownloadResult = { downloadResult = it },
+                onProgress = { cur, tot ->
+                    progressDownloaded = cur
+                    progressTotal = tot
+                },
+                onDelete = { deleteCalled = true },
+            )
 
         assertFalse(props.catalogReady)
         assertFalse(props.catalogDownloading)

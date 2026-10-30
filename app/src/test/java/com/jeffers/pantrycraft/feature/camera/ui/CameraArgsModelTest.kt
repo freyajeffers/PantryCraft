@@ -1,6 +1,5 @@
 package com.jeffers.pantrycraft.feature.camera.ui
 
-import android.content.Context
 import android.graphics.Paint
 import android.view.View
 import androidx.camera.view.PreviewView
@@ -9,7 +8,6 @@ import androidx.lifecycle.LifecycleOwner
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats
 import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer
-import com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionResult
 import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
 import com.jeffers.pantrycraft.feature.camera.barcode.OfflineBarcodeResolver
 import com.jeffers.pantrycraft.feature.camera.core.CameraManager
@@ -20,7 +18,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class CameraArgsModelTest {
