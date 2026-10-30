@@ -12,12 +12,13 @@ class PantryItemModelTest {
 
     @Test
     fun markOpenedCalculatesShelfLifeForDairy() {
-        val item = PantryItem(
-            name = "Organic Milk",
-            category = "DAIRY",
-            quantity = 1f,
-            expirationTimestamp = null,
-        )
+        val item =
+            PantryItem(
+                name = "Organic Milk",
+                category = "DAIRY",
+                quantity = 1f,
+                expirationTimestamp = null,
+            )
 
         val opened = item.markOpened(now)
 
@@ -32,12 +33,13 @@ class PantryItemModelTest {
     fun markOpenedShortensFarFutureExpirationForPerishables() {
         // Original expiration is 100 days away
         val originalExpiration = now + 100 * millisPerDay
-        val item = PantryItem(
-            name = "Fresh Salmon",
-            category = "SEAFOOD",
-            quantity = 1f,
-            expirationTimestamp = originalExpiration,
-        )
+        val item =
+            PantryItem(
+                name = "Fresh Salmon",
+                category = "SEAFOOD",
+                quantity = 1f,
+                expirationTimestamp = originalExpiration,
+            )
 
         val opened = item.markOpened(now)
 
@@ -51,12 +53,13 @@ class PantryItemModelTest {
     fun markOpenedPreservesSoonerExpirationIfOriginalExpiresEarlier() {
         // Original expiration is tomorrow (1 day away)
         val originalExpiration = now + 1 * millisPerDay
-        val item = PantryItem(
-            name = "Ground Beef",
-            category = "MEAT",
-            quantity = 1f,
-            expirationTimestamp = originalExpiration,
-        )
+        val item =
+            PantryItem(
+                name = "Ground Beef",
+                category = "MEAT",
+                quantity = 1f,
+                expirationTimestamp = originalExpiration,
+            )
 
         val opened = item.markOpened(now)
 
@@ -67,14 +70,15 @@ class PantryItemModelTest {
 
     @Test
     fun markOpenedIsIdempotentWhenAlreadyOpened() {
-        val openedItem = PantryItem(
-            name = "Mustard",
-            category = "CONDIMENTS",
-            quantity = 1f,
-            isOpened = true,
-            openedTimestamp = now,
-            expirationTimestamp = now + 14 * millisPerDay,
-        )
+        val openedItem =
+            PantryItem(
+                name = "Mustard",
+                category = "CONDIMENTS",
+                quantity = 1f,
+                isOpened = true,
+                openedTimestamp = now,
+                expirationTimestamp = now + 14 * millisPerDay,
+            )
 
         val result = openedItem.markOpened(now + 10_000L)
 
@@ -84,10 +88,11 @@ class PantryItemModelTest {
 
     @Test
     fun defaultNormalizedNameTrimsAndLowercases() {
-        val item = PantryItem(
-            name = "  Organic Whole Milk  ",
-            quantity = 1f,
-        )
+        val item =
+            PantryItem(
+                name = "  Organic Whole Milk  ",
+                quantity = 1f,
+            )
 
         assertEquals("organic whole milk", item.normalizedName)
         assertFalse(item.isDeleted)
@@ -113,22 +118,24 @@ class PantryItemModelTest {
 
     @Test
     fun markOpenedWithSpicesCalculatesNinetyDayShelfLife() {
-        val spice = PantryItem(
-            name = "Paprika",
-            category = "SPICES",
-            quantity = 1f,
-        )
+        val spice =
+            PantryItem(
+                name = "Paprika",
+                category = "SPICES",
+                quantity = 1f,
+            )
         val opened = spice.markOpened(now)
         assertEquals(now + 90 * millisPerDay, opened.expirationTimestamp)
     }
 
     @Test
     fun markOpenedWithFrozenCalculatesThirtyDayShelfLife() {
-        val frozenItem = PantryItem(
-            name = "Frozen Berries",
-            category = "FROZEN",
-            quantity = 1f,
-        )
+        val frozenItem =
+            PantryItem(
+                name = "Frozen Berries",
+                category = "FROZEN",
+                quantity = 1f,
+            )
         val opened = frozenItem.markOpened(now)
         assertEquals(now + 30 * millisPerDay, opened.expirationTimestamp)
     }
@@ -136,11 +143,12 @@ class PantryItemModelTest {
     @Test
     fun markOpenedWithDefaultTimestampUsesCurrentTime() {
         val before = System.currentTimeMillis()
-        val item = PantryItem(
-            name = "Default Milk",
-            category = "DAIRY",
-            quantity = 1f,
-        )
+        val item =
+            PantryItem(
+                name = "Default Milk",
+                category = "DAIRY",
+                quantity = 1f,
+            )
         val opened = item.markOpened()
         val after = System.currentTimeMillis()
 

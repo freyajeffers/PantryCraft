@@ -8,11 +8,23 @@ import org.junit.Test
 class PantryTaxonomyTest {
     @Test
     fun categoriesListContainsRequiredTaxonomy() {
-        val expected = listOf(
-            "OTHER", "PRODUCE", "DAIRY", "MEAT", "SEAFOOD",
-            "BAKERY", "GRAINS", "CANNED", "PANTRY_STAPLE", "FROZEN",
-            "SNACKS", "BEVERAGES", "CONDIMENTS", "SPICES"
-        )
+        val expected =
+            listOf(
+                "OTHER",
+                "PRODUCE",
+                "DAIRY",
+                "MEAT",
+                "SEAFOOD",
+                "BAKERY",
+                "GRAINS",
+                "CANNED",
+                "PANTRY_STAPLE",
+                "FROZEN",
+                "SNACKS",
+                "BEVERAGES",
+                "CONDIMENTS",
+                "SPICES",
+            )
         assertEquals(expected, PantryTaxonomy.categories)
     }
 
@@ -78,10 +90,21 @@ class PantryTaxonomyTest {
 
     @Test
     fun unitsListContainsSupportedMeasurementUnits() {
-        val expectedUnits = listOf(
-            "COUNT", "EACH", "G", "KG", "ML", "L", "OZ", "LB",
-            "PACKAGE", "CAN", "BOTTLE", "CUSTOM"
-        )
+        val expectedUnits =
+            listOf(
+                "COUNT",
+                "EACH",
+                "G",
+                "KG",
+                "ML",
+                "L",
+                "OZ",
+                "LB",
+                "PACKAGE",
+                "CAN",
+                "BOTTLE",
+                "CUSTOM",
+            )
         assertEquals(expectedUnits, PantryTaxonomy.units)
     }
 

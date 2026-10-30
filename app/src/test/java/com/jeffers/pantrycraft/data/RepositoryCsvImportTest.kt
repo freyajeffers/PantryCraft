@@ -17,10 +17,11 @@ class RepositoryCsvImportTest {
     @Test
     fun parsesExtendedCsvColumnsAccurately() {
         val now = 1_700_000_000_000L
-        val csv = """
+        val csv =
+            """
             name,category,storageLocation,quantity,unit,customUnitName,threshold,expirationDate,isOpened,notes
             "Organic Olive Oil",OILS,PANTRY,2.5,BOTTLE,500ml,1.0,2026-12-31,true,"Extra virgin, cold-pressed"
-        """.trimIndent()
+            """.trimIndent()
 
         val items = parsePantryItemsFromCsv(csv, now)
         assertEquals(1, items.size)
@@ -42,10 +43,11 @@ class RepositoryCsvImportTest {
     @Test
     fun parsesLegacyEightColumnFormatWithDefaults() {
         val now = 1_700_000_000_000L
-        val csv = """
+        val csv =
+            """
             name,category,storageLocation,quantity,unit,expirationDate,isOpened,notes
             "Rolled Oats",GRAINS,PANTRY,3,KG,2027-01-15,false,"Quick oats"
-        """.trimIndent()
+            """.trimIndent()
 
         val items = parsePantryItemsFromCsv(csv, now)
         assertEquals(1, items.size)
@@ -66,11 +68,12 @@ class RepositoryCsvImportTest {
 
     @Test
     fun invalidValuesFallBackToSafeDefaults() {
-        val csv = """
+        val csv =
+            """
             name,category,storageLocation,quantity,unit,customUnitName,threshold,expirationDate,isOpened,notes
             "Test Item",UNKNOWN_CAT,INVALID_LOC,-5.0,,   ,non_number,invalid-date,not-a-bool,
             "   ",DAIRY,FRIDGE,1,COUNT,,0,,,
-        """.trimIndent()
+            """.trimIndent()
 
         val items = parsePantryItemsFromCsv(csv)
         // Second row has blank name, so it must be skipped
@@ -91,10 +94,11 @@ class RepositoryCsvImportTest {
 
     @Test
     fun legacyFormatWithInvalidDateFallsBackToNull() {
-        val csv = """
+        val csv =
+            """
             name,category,storageLocation,quantity,unit,expirationDate,isOpened,notes
             "Legacy Unparseable",GRAINS,PANTRY,1,KG,not-a-date,false,""
-        """.trimIndent()
+            """.trimIndent()
 
         val items = parsePantryItemsFromCsv(csv)
         assertEquals(1, items.size)
@@ -103,11 +107,12 @@ class RepositoryCsvImportTest {
 
     @Test
     fun minimalCsvRowsWithMissingColumnsUseFallbacks() {
-        val csv = """
+        val csv =
+            """
             name
             "Solo Item"
             "Legacy Minimal",,,,,,
-        """.trimIndent()
+            """.trimIndent()
 
         val items = parsePantryItemsFromCsv(csv)
         assertEquals(2, items.size)

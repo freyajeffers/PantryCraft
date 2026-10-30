@@ -3,8 +3,6 @@ package com.jeffers.pantrycraft.data
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.SharedPreferences
-import java.io.File
-import java.lang.reflect.Proxy
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -13,20 +11,22 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.File
+import java.lang.reflect.Proxy
 
 class BackupRecordsTest {
-
     @get:Rule
     val tempFolder = TemporaryFolder()
 
     @Test
     fun backupRecordDataClassHoldsExpectedFields() {
-        val record = DatabaseBackupManager.BackupRecord(
-            backupName = "pantrycraft_backup.1700000000.pcbk",
-            createdAt = 1700000000L,
-            createdAtLabel = "Nov 14, 2023",
-            exportedUri = "content://com.android.providers.downloads/1",
-        )
+        val record =
+            DatabaseBackupManager.BackupRecord(
+                backupName = "pantrycraft_backup.1700000000.pcbk",
+                createdAt = 1700000000L,
+                createdAtLabel = "Nov 14, 2023",
+                exportedUri = "content://com.android.providers.downloads/1",
+            )
 
         assertEquals("pantrycraft_backup.1700000000.pcbk", record.backupName)
         assertEquals(1700000000L, record.createdAt)
@@ -36,32 +36,34 @@ class BackupRecordsTest {
 
     @Test
     fun backupRecordJsonDeserializationExtractsFields() {
-        val jsonArray = JSONArray().apply {
-            put(
-                JSONObject().apply {
-                    put("name", "backup_1.pcbk")
-                    put("createdAt", 1600000000L)
-                    put("createdAtLabel", "Backup 1")
-                    put("uri", "content://media/external/123")
-                },
-            )
-            put(
-                JSONObject().apply {
-                    put("name", "backup_2.pcbk")
-                    put("createdAt", 1700000000L)
-                },
-            )
-        }
+        val jsonArray =
+            JSONArray().apply {
+                put(
+                    JSONObject().apply {
+                        put("name", "backup_1.pcbk")
+                        put("createdAt", 1600000000L)
+                        put("createdAtLabel", "Backup 1")
+                        put("uri", "content://media/external/123")
+                    },
+                )
+                put(
+                    JSONObject().apply {
+                        put("name", "backup_2.pcbk")
+                        put("createdAt", 1700000000L)
+                    },
+                )
+            }
 
-        val records = (0 until jsonArray.length()).map { index ->
-            val item = jsonArray.getJSONObject(index)
-            DatabaseBackupManager.BackupRecord(
-                backupName = item.getString("name"),
-                createdAt = item.getLong("createdAt"),
-                createdAtLabel = item.optString("createdAtLabel", item.getString("name")),
-                exportedUri = item.optString("uri").takeIf { it.isNotBlank() },
-            )
-        }
+        val records =
+            (0 until jsonArray.length()).map { index ->
+                val item = jsonArray.getJSONObject(index)
+                DatabaseBackupManager.BackupRecord(
+                    backupName = item.getString("name"),
+                    createdAt = item.getLong("createdAt"),
+                    createdAtLabel = item.optString("createdAtLabel", item.getString("name")),
+                    exportedUri = item.optString("uri").takeIf { it.isNotBlank() },
+                )
+            }
 
         assertEquals(2, records.size)
         assertEquals("backup_1.pcbk", records[0].backupName)
@@ -110,14 +112,16 @@ class BackupRecordsTest {
     @Test
     fun listBackupFilesReturnsSortedPcbkFilesOnly() {
         val backupsDir = File(tempFolder.root, "backups").apply { mkdirs() }
-        val older = File(backupsDir, "backup_old.pcbk").apply {
-            writeText("data")
-            setLastModified(1000L)
-        }
-        val newer = File(backupsDir, "backup_new.pcbk").apply {
-            writeText("data")
-            setLastModified(2000L)
-        }
+        val older =
+            File(backupsDir, "backup_old.pcbk").apply {
+                writeText("data")
+                setLastModified(1000L)
+            }
+        val newer =
+            File(backupsDir, "backup_new.pcbk").apply {
+                writeText("data")
+                setLastModified(2000L)
+            }
         File(backupsDir, "unrelated.txt").writeText("text")
 
         val context = DummyContext(tempFolder.root, createMockPrefs(emptyMap()))
@@ -132,7 +136,8 @@ class BackupRecordsTest {
         File(backupsDir, "pantrycraft_backup.1700000000.pcbk").writeText("db")
         File(backupsDir, "unindexed_backup.1705000000.pcbk").writeText("db")
 
-        val storedJson = """
+        val storedJson =
+            """
             [
               {
                 "name": "pantrycraft_backup.1700000000.pcbk",
@@ -140,7 +145,7 @@ class BackupRecordsTest {
                 "createdAtLabel": "First Backup"
               }
             ]
-        """.trimIndent()
+            """.trimIndent()
         val prefs = createMockPrefs(mapOf("backup_records" to storedJson))
         val context = DummyContext(tempFolder.root, prefs)
 
@@ -181,7 +186,10 @@ class BackupRecordsTest {
         private val prefs: SharedPreferences,
     ) : ContextWrapper(null) {
         override fun getFilesDir(): File = baseFilesDir
-        override fun getSharedPreferences(name: String, mode: Int): SharedPreferences = prefs
+
+        override fun getSharedPreferences(
+            name: String,
+            mode: Int,
+        ): SharedPreferences = prefs
     }
 }
-

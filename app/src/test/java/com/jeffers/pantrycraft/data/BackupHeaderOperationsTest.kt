@@ -8,7 +8,6 @@ import java.io.ByteArrayInputStream
 import java.io.IOException
 
 class BackupHeaderOperationsTest {
-
     @Test
     fun readBackupHeaderValidHeaderReturnsSaltAndIv() {
         val magic = "PCBK".toByteArray(Charsets.UTF_8)
@@ -29,9 +28,10 @@ class BackupHeaderOperationsTest {
         val rest = ByteArray(29)
         val stream = ByteArrayInputStream(badMagic + rest)
 
-        val ex = assertThrows(IOException::class.java) {
-            readBackupHeader(stream)
-        }
+        val ex =
+            assertThrows(IOException::class.java) {
+                readBackupHeader(stream)
+            }
         assertEquals("Invalid backup magic", ex.message)
     }
 
@@ -42,9 +42,10 @@ class BackupHeaderOperationsTest {
         val rest = ByteArray(28)
         val stream = ByteArrayInputStream(magic + unsupportedVersion + rest)
 
-        val ex = assertThrows(IOException::class.java) {
-            readBackupHeader(stream)
-        }
+        val ex =
+            assertThrows(IOException::class.java) {
+                readBackupHeader(stream)
+            }
         assertEquals("Unsupported backup version: 99", ex.message)
     }
 
@@ -53,9 +54,10 @@ class BackupHeaderOperationsTest {
         val truncatedMagic = "PC".toByteArray(Charsets.UTF_8)
         val stream = ByteArrayInputStream(truncatedMagic)
 
-        val ex = assertThrows(IOException::class.java) {
-            readBackupHeader(stream)
-        }
+        val ex =
+            assertThrows(IOException::class.java) {
+                readBackupHeader(stream)
+            }
         assertEquals("Truncated backup", ex.message)
     }
 
@@ -66,9 +68,10 @@ class BackupHeaderOperationsTest {
         val truncatedSalt = ByteArray(8)
         val stream = ByteArrayInputStream(magic + version + truncatedSalt)
 
-        val ex = assertThrows(IOException::class.java) {
-            readBackupHeader(stream)
-        }
+        val ex =
+            assertThrows(IOException::class.java) {
+                readBackupHeader(stream)
+            }
         assertEquals("Truncated backup salt", ex.message)
     }
 
@@ -80,9 +83,10 @@ class BackupHeaderOperationsTest {
         val truncatedIv = ByteArray(5)
         val stream = ByteArrayInputStream(magic + version + salt + truncatedIv)
 
-        val ex = assertThrows(IOException::class.java) {
-            readBackupHeader(stream)
-        }
+        val ex =
+            assertThrows(IOException::class.java) {
+                readBackupHeader(stream)
+            }
         assertEquals("Truncated backup IV", ex.message)
     }
 
@@ -92,18 +96,20 @@ class BackupHeaderOperationsTest {
         val result = requirePassphrase(validPassphrase)
         assertArrayEquals(validPassphrase, result)
 
-        val ex = assertThrows(IOException::class.java) {
-            requirePassphrase(null)
-        }
+        val ex =
+            assertThrows(IOException::class.java) {
+                requirePassphrase(null)
+            }
         assertEquals("Backup omitted database passphrase", ex.message)
     }
 
     @Test
     fun throwRestoreFailureWrapsIOException() {
         val rootError = IOException("Corrupted payload")
-        val ex = assertThrows(IOException::class.java) {
-            throwRestoreFailure(rootError)
-        }
+        val ex =
+            assertThrows(IOException::class.java) {
+                throwRestoreFailure(rootError)
+            }
         assertEquals("Failed to restore backup: Corrupted payload", ex.message)
         assertEquals(rootError, ex.cause)
     }
