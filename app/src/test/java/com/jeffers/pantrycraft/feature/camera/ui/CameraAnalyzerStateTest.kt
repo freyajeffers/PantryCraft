@@ -12,135 +12,150 @@ import org.junit.Test
 
 class CameraAnalyzerStateTest {
     @Test
-    fun dispatchBarcodeResolution_whenMatchFound_invokesOnBarcodeResolvedAndHaptic() = runBlocking {
-        val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
-        var resolvedMatch: BarcodeMatch? = null
-        var unresolvedCode: String? = null
-        var hapticTicks = 0
+    fun dispatchBarcodeResolution_whenMatchFound_invokesOnBarcodeResolvedAndHaptic() =
+        runBlocking {
+            val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
+            var resolvedMatch: BarcodeMatch? = null
+            var unresolvedCode: String? = null
+            var hapticTicks = 0
 
-        dispatchBarcodeResolution(
-            barcode = "012000001056",
-            barcodeResolver = resolver,
-            onBarcodeResolved = { resolvedMatch = it },
-            onBarcodeUnresolved = { unresolvedCode = it },
-            onHapticFeedback = { hapticTicks++ },
-        )
+            dispatchBarcodeResolution(
+                barcode = "012000001056",
+                barcodeResolver = resolver,
+                onBarcodeResolved = { resolvedMatch = it },
+                onBarcodeUnresolved = { unresolvedCode = it },
+                onHapticFeedback = { hapticTicks++ },
+            )
 
-        assertNotNull(resolvedMatch)
-        assertEquals("Coca-Cola", resolvedMatch?.name)
-        assertEquals(1, hapticTicks)
-        assertNull(unresolvedCode)
-    }
-
-    @Test
-    fun dispatchBarcodeResolution_whenBarcodeUnresolved_invokesOnBarcodeUnresolved() = runBlocking {
-        val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
-        var resolvedMatch: BarcodeMatch? = null
-        var unresolvedCode: String? = null
-        var hapticTicks = 0
-
-        dispatchBarcodeResolution(
-            barcode = "888888888888",
-            barcodeResolver = resolver,
-            onBarcodeResolved = { resolvedMatch = it },
-            onBarcodeUnresolved = { unresolvedCode = it },
-            onHapticFeedback = { hapticTicks++ },
-        )
-
-        assertNull(resolvedMatch)
-        assertEquals("888888888888", unresolvedCode)
-        assertEquals(0, hapticTicks)
-    }
+            assertNotNull(resolvedMatch)
+            assertEquals("Coca-Cola", resolvedMatch?.name)
+            assertEquals(1, hapticTicks)
+            assertNull(unresolvedCode)
+        }
 
     @Test
-    fun dispatchBarcodeResolution_whenResolverThrows_invokesOnBarcodeUnresolvedGracefully() = runBlocking {
-        val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
-        var resolvedMatch: BarcodeMatch? = null
-        var unresolvedCode: String? = null
-        var hapticTicks = 0
+    fun dispatchBarcodeResolution_whenBarcodeUnresolved_invokesOnBarcodeUnresolved() =
+        runBlocking {
+            val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
+            var resolvedMatch: BarcodeMatch? = null
+            var unresolvedCode: String? = null
+            var hapticTicks = 0
 
-        dispatchBarcodeResolution(
-            barcode = "non-numeric-code",
-            barcodeResolver = resolver,
-            onBarcodeResolved = { resolvedMatch = it },
-            onBarcodeUnresolved = { unresolvedCode = it },
-            onHapticFeedback = { hapticTicks++ },
-        )
+            dispatchBarcodeResolution(
+                barcode = "888888888888",
+                barcodeResolver = resolver,
+                onBarcodeResolved = { resolvedMatch = it },
+                onBarcodeUnresolved = { unresolvedCode = it },
+                onHapticFeedback = { hapticTicks++ },
+            )
 
-        assertNull(resolvedMatch)
-        assertEquals("non-numeric-code", unresolvedCode)
-        assertEquals(0, hapticTicks)
-    }
-
-    @Test
-    fun dispatchBarcodeResolution_withDefaultHapticCallbackDoesNotThrow() = runBlocking {
-        val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
-        var resolvedMatch: BarcodeMatch? = null
-
-        dispatchBarcodeResolution(
-            barcode = "012000001056",
-            barcodeResolver = resolver,
-            onBarcodeResolved = { resolvedMatch = it },
-            onBarcodeUnresolved = {},
-        )
-
-        assertNotNull(resolvedMatch)
-    }
+            assertNull(resolvedMatch)
+            assertEquals("888888888888", unresolvedCode)
+            assertEquals(0, hapticTicks)
+        }
 
     @Test
-    fun processLiveBarcodeResultDispatchesResolvedAndUnresolved() = runBlocking {
-        val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
-        val dummyContext = DummyContext()
-        val dummyView = createStub<android.view.View>()
-        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
-        val stats = com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats()
+    fun dispatchBarcodeResolution_whenResolverThrows_invokesOnBarcodeUnresolvedGracefully() =
+        runBlocking {
+            val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
+            var resolvedMatch: BarcodeMatch? = null
+            var unresolvedCode: String? = null
+            var hapticTicks = 0
 
-        var resolvedMatch: BarcodeMatch? = null
-        var unresolvedCode: String? = null
+            dispatchBarcodeResolution(
+                barcode = "non-numeric-code",
+                barcodeResolver = resolver,
+                onBarcodeResolved = { resolvedMatch = it },
+                onBarcodeUnresolved = { unresolvedCode = it },
+                onHapticFeedback = { hapticTicks++ },
+            )
 
-        val state = CameraAnalyzerState(
-            context = dummyContext,
-            view = dummyView,
-            executor = executor,
-            scope = this,
-            barcodeResolver = resolver,
-            frameTimingStats = stats,
-            onResult = {},
-            onFrameTime = {},
-            onBarcodeResolved = { resolvedMatch = it },
-            onBarcodeUnresolved = { unresolvedCode = it },
-        )
+            assertNull(resolvedMatch)
+            assertEquals("non-numeric-code", unresolvedCode)
+            assertEquals(0, hapticTicks)
+        }
 
-        processLiveBarcodeResult(state, "012000001056")
-        assertNotNull(resolvedMatch)
-        assertEquals("Coca-Cola", resolvedMatch?.name)
+    @Test
+    fun dispatchBarcodeResolution_withDefaultHapticCallbackDoesNotThrow() =
+        runBlocking {
+            val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
+            var resolvedMatch: BarcodeMatch? = null
 
-        processLiveBarcodeResult(state, "999999999999")
-        assertEquals("999999999999", unresolvedCode)
+            dispatchBarcodeResolution(
+                barcode = "012000001056",
+                barcodeResolver = resolver,
+                onBarcodeResolved = { resolvedMatch = it },
+                onBarcodeUnresolved = {},
+            )
 
-        executor.shutdown()
-    }
+            assertNotNull(resolvedMatch)
+        }
+
+    @Test
+    fun processLiveBarcodeResultDispatchesResolvedAndUnresolved() =
+        runBlocking {
+            val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
+            val dummyContext = DummyContext()
+            val dummyView = createStub<android.view.View>()
+            val executor =
+                java.util.concurrent.Executors
+                    .newSingleThreadExecutor()
+            val stats =
+                com.jeffers.pantrycraft.feature.camera.analyzer
+                    .FrameTimingStats()
+
+            var resolvedMatch: BarcodeMatch? = null
+            var unresolvedCode: String? = null
+
+            val state =
+                CameraAnalyzerState(
+                    context = dummyContext,
+                    view = dummyView,
+                    executor = executor,
+                    scope = this,
+                    barcodeResolver = resolver,
+                    frameTimingStats = stats,
+                    onResult = {},
+                    onFrameTime = {},
+                    onBarcodeResolved = { resolvedMatch = it },
+                    onBarcodeUnresolved = { unresolvedCode = it },
+                )
+
+            processLiveBarcodeResult(state, "012000001056")
+            assertNotNull(resolvedMatch)
+            assertEquals("Coca-Cola", resolvedMatch?.name)
+
+            processLiveBarcodeResult(state, "999999999999")
+            assertEquals("999999999999", unresolvedCode)
+
+            executor.shutdown()
+        }
 
     @Test
     fun cameraAnalyzerStateDataClassContract() {
         val resolver = OfflineBarcodeResolver(FakeCustomBarcodeDao())
         val dummyContext = DummyContext()
         val dummyView = createStub<android.view.View>()
-        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
-        val stats = com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats()
+        val executor =
+            java.util.concurrent.Executors
+                .newSingleThreadExecutor()
+        val stats =
+            com.jeffers.pantrycraft.feature.camera.analyzer
+                .FrameTimingStats()
 
-        val state1 = CameraAnalyzerState(
-            context = dummyContext,
-            view = dummyView,
-            executor = executor,
-            scope = kotlinx.coroutines.GlobalScope,
-            barcodeResolver = resolver,
-            frameTimingStats = stats,
-            onResult = {},
-            onFrameTime = {},
-            onBarcodeResolved = {},
-            onBarcodeUnresolved = {},
-        )
+        val state1 =
+            CameraAnalyzerState(
+                context = dummyContext,
+                view = dummyView,
+                executor = executor,
+                scope = kotlinx.coroutines.GlobalScope,
+                barcodeResolver = resolver,
+                frameTimingStats = stats,
+                onResult = {},
+                onFrameTime = {},
+                onBarcodeResolved = {},
+                onBarcodeUnresolved = {},
+            )
 
         assertEquals(dummyContext, state1.component1())
         assertEquals(dummyView, state1.component2())
@@ -164,7 +179,12 @@ class CameraAnalyzerStateTest {
         assertNotNull(state1.onBarcodeResolved)
         assertNotNull(state1.onBarcodeUnresolved)
 
-        val state2 = state1.copy(frameTimingStats = com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats())
+        val state2 =
+            state1.copy(
+                frameTimingStats =
+                    com.jeffers.pantrycraft.feature.camera.analyzer
+                        .FrameTimingStats(),
+            )
         assertNotNull(state2)
         assertNotNull(state1.toString())
         assertEquals(state1, state1)
@@ -185,12 +205,15 @@ class CameraAnalyzerStateTest {
 
     private class FakeCustomBarcodeDao : CustomBarcodeDao {
         override suspend fun findByBarcode(barcode: String): CustomBarcodeItem? = null
+
         override suspend fun upsert(item: CustomBarcodeItem) {
             // No-op for test
         }
+
         override suspend fun delete(item: CustomBarcodeItem) {
             // No-op for test
         }
+
         override suspend fun deleteByBarcodePrefix(prefix: String): Int = 0
     }
 }

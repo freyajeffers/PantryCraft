@@ -24,7 +24,6 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class CameraArgsModelTest {
-
     @Test
     fun cameraDepsDataClassContract() {
         val context = DummyContext()
@@ -36,16 +35,17 @@ class CameraArgsModelTest {
         val snapshotService = createStub<SnapshotVisionService>()
         val stats = FrameTimingStats()
 
-        val deps1 = CameraDeps(
-            context = context,
-            repository = repo,
-            analysisExecutor = executor,
-            scope = scope,
-            previewView = previewView,
-            barcodeResolver = resolver,
-            snapshotVisionService = snapshotService,
-            frameTimingStats = stats,
-        )
+        val deps1 =
+            CameraDeps(
+                context = context,
+                repository = repo,
+                analysisExecutor = executor,
+                scope = scope,
+                previewView = previewView,
+                barcodeResolver = resolver,
+                snapshotVisionService = snapshotService,
+                frameTimingStats = stats,
+            )
 
         assertEquals(context, deps1.component1())
         assertEquals(repo, deps1.component2())
@@ -81,15 +81,16 @@ class CameraArgsModelTest {
         val snapshotService = createStub<SnapshotVisionService>()
         val executor = Executors.newSingleThreadExecutor()
 
-        val args1 = CameraLifecycleArgs(
-            cameraManager = cameraManager,
-            lifecycleOwner = lifecycleOwner,
-            previewView = previewView,
-            analyzer = analyzer,
-            barcodeResolver = resolver,
-            snapshotVisionService = snapshotService,
-            analysisExecutor = executor,
-        )
+        val args1 =
+            CameraLifecycleArgs(
+                cameraManager = cameraManager,
+                lifecycleOwner = lifecycleOwner,
+                previewView = previewView,
+                analyzer = analyzer,
+                barcodeResolver = resolver,
+                snapshotVisionService = snapshotService,
+                analysisExecutor = executor,
+            )
 
         assertEquals(cameraManager, args1.component1())
         assertEquals(lifecycleOwner, args1.component2())
@@ -125,30 +126,31 @@ class CameraArgsModelTest {
         val resolver = createStub<OfflineBarcodeResolver>()
         val view = createStub<View>()
 
-        val boxArgs1 = CameraScreenBoxArgs(
-            previewView = previewView,
-            latestResult = null,
-            focusPoint = Offset(10f, 20f),
-            labelPaint = labelPaint,
-            badgePaint = badgePaint,
-            cameraManager = cameraManager,
-            repository = repo,
-            scope = scope,
-            barcodeMatch = null,
-            unresolvedBarcode = null,
-            associateDialogBarcode = null,
-            parsedItems = emptyList(),
-            snapshotVisionService = snapshotService,
-            barcodeResolver = resolver,
-            isTorchOn = false,
-            onToggleTorch = {},
-            onClearBarcodeMatch = {},
-            onParsedItemsChange = {},
-            onUnresolvedBarcodeChange = {},
-            onAssociateDialogBarcodeChange = {},
-            onSnapshotStatusChange = {},
-            view = view,
-        )
+        val boxArgs1 =
+            CameraScreenBoxArgs(
+                previewView = previewView,
+                latestResult = null,
+                focusPoint = Offset(10f, 20f),
+                labelPaint = labelPaint,
+                badgePaint = badgePaint,
+                cameraManager = cameraManager,
+                repository = repo,
+                scope = scope,
+                barcodeMatch = null,
+                unresolvedBarcode = null,
+                associateDialogBarcode = null,
+                parsedItems = emptyList(),
+                snapshotVisionService = snapshotService,
+                barcodeResolver = resolver,
+                isTorchOn = false,
+                onToggleTorch = {},
+                onClearBarcodeMatch = {},
+                onParsedItemsChange = {},
+                onUnresolvedBarcodeChange = {},
+                onAssociateDialogBarcodeChange = {},
+                onSnapshotStatusChange = {},
+                view = view,
+            )
 
         assertEquals(previewView, boxArgs1.component1())
         assertEquals(Offset(10f, 20f), boxArgs1.component3())
@@ -172,29 +174,30 @@ class CameraArgsModelTest {
         val resolver = createStub<OfflineBarcodeResolver>()
         val view = createStub<View>()
 
-        val overlayArgs1 = CameraOverlayArgs(
-            latestResult = null,
-            focusPoint = null,
-            labelPaint = labelPaint,
-            badgePaint = badgePaint,
-            cameraManager = cameraManager,
-            repository = repo,
-            scope = scope,
-            barcodeMatch = BarcodeMatch("123", "Item", "OTHER", "COUNT", 0),
-            unresolvedBarcode = "123",
-            associateDialogBarcode = null,
-            parsedItems = emptyList(),
-            snapshotVisionService = snapshotService,
-            barcodeResolver = resolver,
-            isTorchOn = true,
-            onToggleTorch = {},
-            onClearBarcodeMatch = {},
-            onParsedItemsChange = {},
-            onUnresolvedBarcodeChange = {},
-            onAssociateDialogBarcodeChange = {},
-            onSnapshotStatusChange = {},
-            view = view,
-        )
+        val overlayArgs1 =
+            CameraOverlayArgs(
+                latestResult = null,
+                focusPoint = null,
+                labelPaint = labelPaint,
+                badgePaint = badgePaint,
+                cameraManager = cameraManager,
+                repository = repo,
+                scope = scope,
+                barcodeMatch = BarcodeMatch("123", "Item", "OTHER", "COUNT", 0),
+                unresolvedBarcode = "123",
+                associateDialogBarcode = null,
+                parsedItems = emptyList(),
+                snapshotVisionService = snapshotService,
+                barcodeResolver = resolver,
+                isTorchOn = true,
+                onToggleTorch = {},
+                onClearBarcodeMatch = {},
+                onParsedItemsChange = {},
+                onUnresolvedBarcodeChange = {},
+                onAssociateDialogBarcodeChange = {},
+                onSnapshotStatusChange = {},
+                view = view,
+            )
 
         assertEquals(labelPaint, overlayArgs1.component3())
         assertEquals(badgePaint, overlayArgs1.component4())
@@ -220,14 +223,15 @@ class CameraArgsModelTest {
     @Test
     fun cameraStatusHudStateContract() {
         var torchToggled = false
-        val state = CameraStatusHudState(
-            latestResult = null,
-            latestFrameTime = 25L,
-            barcodeMatch = null,
-            snapshotStatus = "Analyzing",
-            isTorchOn = true,
-            onToggleTorch = { torchToggled = true },
-        )
+        val state =
+            CameraStatusHudState(
+                latestResult = null,
+                latestFrameTime = 25L,
+                barcodeMatch = null,
+                snapshotStatus = "Analyzing",
+                isTorchOn = true,
+                onToggleTorch = { torchToggled = true },
+            )
 
         assertEquals(25L, state.latestFrameTime)
         assertEquals("Analyzing", state.snapshotStatus)
@@ -252,14 +256,15 @@ class CameraArgsModelTest {
         var confirmed = false
         var reviewedItem: com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem? = null
 
-        val actions = CameraQuickAddActions(
-            repository = createStub<Repository>(),
-            scope = CoroutineScope(Dispatchers.Unconfined),
-            onDismiss = { dismissed = true },
-            onReview = { reviewedItem = it },
-            onStatus = { statusMsg = it },
-            onConfirm = { confirmed = true },
-        )
+        val actions =
+            CameraQuickAddActions(
+                repository = createStub<Repository>(),
+                scope = CoroutineScope(Dispatchers.Unconfined),
+                onDismiss = { dismissed = true },
+                onReview = { reviewedItem = it },
+                onStatus = { statusMsg = it },
+                onConfirm = { confirmed = true },
+            )
 
         assertNotNull(actions.repository)
         assertNotNull(actions.scope)
@@ -268,18 +273,21 @@ class CameraArgsModelTest {
         actions.onStatus("Ready")
         actions.onConfirm()
 
-        val parsed = com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem(
-            name = "Milk",
-            category = "DAIRY",
-            storageLocation = "FRIDGE",
-            quantity = 1f,
-            unit = "BOTTLE",
-            confidence = 0.95f,
-            estimatedShelfLifeDays = 7,
-            isAromaticOrSeasoning = false,
-            boundingBox = com.jeffers.pantrycraft.feature.camera.vision.NormalizedBox(0f, 0f, 1f, 1f),
-            conditionNotes = null,
-        )
+        val parsed =
+            com.jeffers.pantrycraft.feature.camera.vision.ParsedVisionItem(
+                name = "Milk",
+                category = "DAIRY",
+                storageLocation = "FRIDGE",
+                quantity = 1f,
+                unit = "BOTTLE",
+                confidence = 0.95f,
+                estimatedShelfLifeDays = 7,
+                isAromaticOrSeasoning = false,
+                boundingBox =
+                    com.jeffers.pantrycraft.feature.camera.vision
+                        .NormalizedBox(0f, 0f, 1f, 1f),
+                conditionNotes = null,
+            )
         actions.onReview(parsed)
 
         org.junit.Assert.assertTrue(dismissed)
@@ -299,19 +307,20 @@ class CameraArgsModelTest {
         var locInput = ""
         var daysInput = ""
 
-        val state = AssociateBarcodeFieldsState(
-            barcode = "998877",
-            name = "Apples",
-            onNameChange = { nameInput = it },
-            category = "PRODUCE",
-            onCategoryChange = { catInput = it },
-            unit = "COUNT",
-            onUnitChange = { unitInput = it },
-            storageLocation = "FRIDGE",
-            onStorageLocationChange = { locInput = it },
-            shelfLifeDaysText = "14",
-            onShelfLifeChange = { daysInput = it },
-        )
+        val state =
+            AssociateBarcodeFieldsState(
+                barcode = "998877",
+                name = "Apples",
+                onNameChange = { nameInput = it },
+                category = "PRODUCE",
+                onCategoryChange = { catInput = it },
+                unit = "COUNT",
+                onUnitChange = { unitInput = it },
+                storageLocation = "FRIDGE",
+                onStorageLocationChange = { locInput = it },
+                shelfLifeDaysText = "14",
+                onShelfLifeChange = { daysInput = it },
+            )
 
         assertEquals("998877", state.barcode)
         assertEquals("Apples", state.name)
