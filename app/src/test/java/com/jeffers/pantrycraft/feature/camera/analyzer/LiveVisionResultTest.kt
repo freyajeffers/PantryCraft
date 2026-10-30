@@ -7,12 +7,13 @@ import org.junit.Test
 class LiveVisionResultTest {
     @Test
     fun normalizedVisionBoxDefaultsAndCopy() {
-        val box = NormalizedVisionBox(
-            ymin = 0.1f,
-            xmin = 0.2f,
-            ymax = 0.8f,
-            xmax = 0.9f,
-        )
+        val box =
+            NormalizedVisionBox(
+                ymin = 0.1f,
+                xmin = 0.2f,
+                ymax = 0.8f,
+                xmax = 0.9f,
+            )
 
         assertEquals(0.1f, box.ymin)
         assertEquals(0.2f, box.xmin)
@@ -29,13 +30,15 @@ class LiveVisionResultTest {
     @Test
     fun liveVisionResultDefaultsAndValues() {
         val barcodes = listOf("012345678901")
-        val boxes = listOf(
-            NormalizedVisionBox(ymin = 0f, xmin = 0f, ymax = 1f, xmax = 1f, label = "Food"),
-        )
-        val result = LiveVisionResult(
-            barcodes = barcodes,
-            objectBoxes = boxes,
-        )
+        val boxes =
+            listOf(
+                NormalizedVisionBox(ymin = 0f, xmin = 0f, ymax = 1f, xmax = 1f, label = "Food"),
+            )
+        val result =
+            LiveVisionResult(
+                barcodes = barcodes,
+                objectBoxes = boxes,
+            )
 
         assertEquals(barcodes, result.barcodes)
         assertEquals(boxes, result.objectBoxes)
@@ -63,18 +66,20 @@ class LiveVisionResultTest {
 
     @Test
     fun rectToNormalizedClampsAndCalculatesRatios() {
-        val rect = android.graphics.Rect().apply {
-            left = 100
-            top = 200
-            right = 400
-            bottom = 800
-        }
-        val normalized = rect.toNormalized(
-            width = 1000,
-            height = 1000,
-            label = "Apple",
-            confidence = 0.95f,
-        )
+        val rect =
+            android.graphics.Rect().apply {
+                left = 100
+                top = 200
+                right = 400
+                bottom = 800
+            }
+        val normalized =
+            rect.toNormalized(
+                width = 1000,
+                height = 1000,
+                label = "Apple",
+                confidence = 0.95f,
+            )
 
         assertEquals(0.2f, normalized.ymin, 0.001f)
         assertEquals(0.1f, normalized.xmin, 0.001f)

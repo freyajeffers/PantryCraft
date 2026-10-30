@@ -11,21 +11,22 @@ import org.junit.Test
 class RepositoryJsonParserTest {
     @Test
     fun parseFullPantryItemWithAllFieldsPopulated() {
-        val json = JSONObject().apply {
-            put("name", "Whole Milk")
-            put("quantity", 2.5)
-            put("unit", "L")
-            put("customUnitName", "Jug")
-            put("threshold", 1.0)
-            put("barcode", "123456789012")
-            put("storageLocation", "FRIDGE")
-            put("category", "DAIRY")
-            put("expirationTimestamp", 1700000000000L)
-            put("isOpened", true)
-            put("openedTimestamp", 1699900000000L)
-            put("isAromaticOrSeasoning", false)
-            put("notes", "Organic whole milk")
-        }
+        val json =
+            JSONObject().apply {
+                put("name", "Whole Milk")
+                put("quantity", 2.5)
+                put("unit", "L")
+                put("customUnitName", "Jug")
+                put("threshold", 1.0)
+                put("barcode", "123456789012")
+                put("storageLocation", "FRIDGE")
+                put("category", "DAIRY")
+                put("expirationTimestamp", 1700000000000L)
+                put("isOpened", true)
+                put("openedTimestamp", 1699900000000L)
+                put("isAromaticOrSeasoning", false)
+                put("notes", "Organic whole milk")
+            }
 
         val item = json.toPantryItem()
         assertNotNull(item)
@@ -46,9 +47,10 @@ class RepositoryJsonParserTest {
 
     @Test
     fun parseMinimalItemAppliesDefaults() {
-        val json = JSONObject().apply {
-            put("name", "Basmati Rice")
-        }
+        val json =
+            JSONObject().apply {
+                put("name", "Basmati Rice")
+            }
 
         val item = json.toPantryItem()
         assertNotNull(item)
@@ -75,11 +77,12 @@ class RepositoryJsonParserTest {
 
     @Test
     fun negativeQuantitiesAreClampedToZero() {
-        val json = JSONObject().apply {
-            put("name", "Sugar")
-            put("quantity", -10.0)
-            put("threshold", -5.0)
-        }
+        val json =
+            JSONObject().apply {
+                put("name", "Sugar")
+                put("quantity", -10.0)
+                put("threshold", -5.0)
+            }
 
         val item = json.toPantryItem()
         assertNotNull(item)
@@ -89,7 +92,8 @@ class RepositoryJsonParserTest {
 
     @Test
     fun parseInventoryJsonExtractsListAndIgnoresMalformedRecords() {
-        val payload = """
+        val payload =
+            """
             {
                 "version": 1,
                 "exportedAt": 1700000000000,
@@ -100,7 +104,7 @@ class RepositoryJsonParserTest {
                     { "name": "Black Pepper", "isAromaticOrSeasoning": true, "category": "SPICES" }
                 ]
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val items = parsePantryItemsFromJson(payload)
         assertEquals(2, items.size)
@@ -119,14 +123,15 @@ class RepositoryJsonParserTest {
 
     @Test
     fun zeroOrNegativeTimestampsAndEmptyStringsMapToNullFields() {
-        val json = JSONObject().apply {
-            put("name", "Cinnamon")
-            put("expirationTimestamp", 0L)
-            put("openedTimestamp", -100L)
-            put("barcode", "")
-            put("customUnitName", "")
-            put("notes", "")
-        }
+        val json =
+            JSONObject().apply {
+                put("name", "Cinnamon")
+                put("expirationTimestamp", 0L)
+                put("openedTimestamp", -100L)
+                put("barcode", "")
+                put("customUnitName", "")
+                put("notes", "")
+            }
 
         val item = json.toPantryItem()
         assertNotNull(item)
