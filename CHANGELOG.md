@@ -5,6 +5,7 @@
 - Added the Detekt Kotlin static-analysis plugin and Gradle task for app quality checks.
 - Added project Detekt configuration for the standard PascalCase naming convention used by Compose functions.
 - Completed scoped KtLint formatting across the remaining production Kotlin sources; main and test source-set checks now pass.
+- Added an instrumentation runner cleanup hook that removes only unmistakable synthetic test records and closes the test database after the suite.
 
 ### PantryCraft Kitchen Usability & Notifications
 - Added EmbeddedBarcodeScannerDialog and a trailing barcode scanner button inside BatchReviewBottomSheet to auto-fill items during manual add/edit.
