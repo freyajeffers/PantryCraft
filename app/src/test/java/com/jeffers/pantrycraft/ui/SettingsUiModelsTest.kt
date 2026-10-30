@@ -10,7 +10,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SettingsUiModelsTest {
-
     @Test
     fun catalogDialogModel() {
         val defaultDialog = CatalogDialog(title = "Info", message = "All good", isError = false)
@@ -33,18 +32,20 @@ class SettingsUiModelsTest {
     fun backupListDialogStateModel() {
         var dismissed = false
         var selectedRecord: BackupRecord? = null
-        val dummyRecord = BackupRecord(
-            backupName = "backup.db",
-            createdAt = 1000L,
-            createdAtLabel = "1970-01-01",
-            exportedUri = "content://backup/1",
-        )
+        val dummyRecord =
+            BackupRecord(
+                backupName = "backup.db",
+                createdAt = 1000L,
+                createdAtLabel = "1970-01-01",
+                exportedUri = "content://backup/1",
+            )
 
-        val state = BackupListDialogState(
-            records = listOf(dummyRecord),
-            onDismiss = { dismissed = true },
-            onSelect = { selectedRecord = it },
-        )
+        val state =
+            BackupListDialogState(
+                records = listOf(dummyRecord),
+                onDismiss = { dismissed = true },
+                onSelect = { selectedRecord = it },
+            )
 
         assertEquals(listOf(dummyRecord), state.records)
         state.onDismiss()
@@ -63,14 +64,15 @@ class SettingsUiModelsTest {
         var pinRequired = false
         var backupPerformed = false
 
-        val args = AutoBackupScheduleArgs(
-            enabled = true,
-            intervalMinutes = 360L,
-            databaseHasUserData = true,
-            onScheduleChange = { _, _ -> scheduleChanged = true },
-            onRequirePin = { pinRequired = true },
-            onPerformBackup = { backupPerformed = true },
-        )
+        val args =
+            AutoBackupScheduleArgs(
+                enabled = true,
+                intervalMinutes = 360L,
+                databaseHasUserData = true,
+                onScheduleChange = { _, _ -> scheduleChanged = true },
+                onRequirePin = { pinRequired = true },
+                onPerformBackup = { backupPerformed = true },
+            )
 
         assertTrue(args.enabled)
         assertEquals(360L, args.intervalMinutes)
@@ -90,11 +92,12 @@ class SettingsUiModelsTest {
         var treeLaunched = false
         var restoreLaunched = false
 
-        val launchers = BackupLaunchers(
-            launchCreateBackup = { createName = it },
-            launchTree = { treeLaunched = true },
-            launchRestore = { restoreLaunched = true },
-        )
+        val launchers =
+            BackupLaunchers(
+                launchCreateBackup = { createName = it },
+                launchTree = { treeLaunched = true },
+                launchRestore = { restoreLaunched = true },
+            )
 
         launchers.launchCreateBackup("test.db")
         launchers.launchTree()
@@ -113,13 +116,14 @@ class SettingsUiModelsTest {
         var listOpened = false
         var resetDb = false
 
-        val actions = SettingsDialogActions(
-            showCatalogDialog = { catalogShown = true },
-            requestDeleteCatalog = { deleteCatalog = true },
-            requirePin = { pinRequired = true },
-            openBackupList = { listOpened = true },
-            requestResetDatabase = { resetDb = true },
-        )
+        val actions =
+            SettingsDialogActions(
+                showCatalogDialog = { catalogShown = true },
+                requestDeleteCatalog = { deleteCatalog = true },
+                requirePin = { pinRequired = true },
+                openBackupList = { listOpened = true },
+                requestResetDatabase = { resetDb = true },
+            )
 
         actions.showCatalogDialog(CatalogDialog("T", "M", false))
         actions.requestDeleteCatalog()
@@ -137,16 +141,17 @@ class SettingsUiModelsTest {
         var url = "http://localhost"
         var key = "secret"
 
-        val props = AiCustomFieldsProps(
-            provider = AiProvider.OPENAI,
-            modelName = model,
-            onModelNameChange = { model = it },
-            endpointUrl = url,
-            onEndpointUrlChange = { url = it },
-            apiKey = key,
-            onApiKeyChange = { key = it },
-            hasStoredApiKey = true,
-        )
+        val props =
+            AiCustomFieldsProps(
+                provider = AiProvider.OPENAI,
+                modelName = model,
+                onModelNameChange = { model = it },
+                endpointUrl = url,
+                onEndpointUrlChange = { url = it },
+                apiKey = key,
+                onApiKeyChange = { key = it },
+                hasStoredApiKey = true,
+            )
 
         assertEquals(AiProvider.OPENAI, props.provider)
         assertTrue(props.hasStoredApiKey)
@@ -174,17 +179,18 @@ class SettingsUiModelsTest {
         var restoreCalled = false
         var resetCalled = false
 
-        val state = RecoveryContentState(
-            backups = listOf("backup-1.db"),
-            selectedBackup = "backup-1.db",
-            pin = "1234",
-            error = "Invalid PIN",
-            onSelectBackup = { selected = it },
-            onPinChange = { pinInput = it },
-            onOpenBackup = { openCalled = true },
-            onRestore = { restoreCalled = true },
-            onReset = { resetCalled = true },
-        )
+        val state =
+            RecoveryContentState(
+                backups = listOf("backup-1.db"),
+                selectedBackup = "backup-1.db",
+                pin = "1234",
+                error = "Invalid PIN",
+                onSelectBackup = { selected = it },
+                onPinChange = { pinInput = it },
+                onOpenBackup = { openCalled = true },
+                onRestore = { restoreCalled = true },
+                onReset = { resetCalled = true },
+            )
 
         assertEquals(listOf("backup-1.db"), state.backups)
         assertEquals("backup-1.db", state.selectedBackup)
@@ -208,33 +214,35 @@ class SettingsUiModelsTest {
         var selectedRec: BackupRecord? = null
         val triggered = mutableSetOf<String>()
 
-        val dummyRecord = BackupRecord(
-            backupName = "b1.db",
-            createdAt = 500L,
-            createdAtLabel = "label",
-            exportedUri = "uri",
-        )
+        val dummyRecord =
+            BackupRecord(
+                backupName = "b1.db",
+                createdAt = 500L,
+                createdAtLabel = "label",
+                exportedUri = "uri",
+            )
         val catDialog = CatalogDialog("Title", "Msg", false)
 
-        val state = SettingsDialogsState(
-            showPinDialog = true,
-            pinText = "1234",
-            onPinTextChange = { pinTextChange = it },
-            onDismissPinDialog = { triggered += "dismissPin" },
-            onConfirmPinDialog = { triggered += "confirmPin" },
-            showBackupList = true,
-            backupRecords = listOf(dummyRecord),
-            onDismissBackupList = { triggered += "dismissList" },
-            onSelectBackup = { selectedRec = it },
-            catalogDialog = catDialog,
-            onDismissCatalogDialog = { triggered += "dismissCat" },
-            confirmDatabaseReset = true,
-            onDismissDatabaseReset = { triggered += "dismissReset" },
-            confirmCatalogDelete = true,
-            onDismissCatalogDelete = { triggered += "dismissCatDel" },
-            onCatalogDeleted = { triggered += "catDeleted" },
-            onCatalogDeleteFailed = { triggered += "catDeleteFailed" },
-        )
+        val state =
+            SettingsDialogsState(
+                showPinDialog = true,
+                pinText = "1234",
+                onPinTextChange = { pinTextChange = it },
+                onDismissPinDialog = { triggered += "dismissPin" },
+                onConfirmPinDialog = { triggered += "confirmPin" },
+                showBackupList = true,
+                backupRecords = listOf(dummyRecord),
+                onDismissBackupList = { triggered += "dismissList" },
+                onSelectBackup = { selectedRec = it },
+                catalogDialog = catDialog,
+                onDismissCatalogDialog = { triggered += "dismissCat" },
+                confirmDatabaseReset = true,
+                onDismissDatabaseReset = { triggered += "dismissReset" },
+                confirmCatalogDelete = true,
+                onDismissCatalogDelete = { triggered += "dismissCatDel" },
+                onCatalogDeleted = { triggered += "catDeleted" },
+                onCatalogDeleteFailed = { triggered += "catDeleteFailed" },
+            )
 
         assertTrue(state.showPinDialog)
         assertEquals("1234", state.pinText)
@@ -272,16 +280,17 @@ class SettingsUiModelsTest {
         val backupProps = createDummyEncryptedBackupProps()
         val sovereignty = DataSovereigntyProps({}, {}, {}, {})
 
-        val screenState = SettingsScreenState(
-            dialogsState = dialogs,
-            foodFactsProps = foodFacts,
-            encryptedBackupCardProps = backupProps,
-            dataSovereigntyProps = sovereignty,
-            expirationAlertsEnabled = true,
-            onExpirationAlertsEnabledChange = { alertToggle = it },
-            notificationPermissionLauncher = launcher,
-            restoreResult = "Success",
-        )
+        val screenState =
+            SettingsScreenState(
+                dialogsState = dialogs,
+                foodFactsProps = foodFacts,
+                encryptedBackupCardProps = backupProps,
+                dataSovereigntyProps = sovereignty,
+                expirationAlertsEnabled = true,
+                onExpirationAlertsEnabledChange = { alertToggle = it },
+                notificationPermissionLauncher = launcher,
+                restoreResult = "Success",
+            )
 
         assertEquals(dialogs, screenState.dialogsState)
         assertEquals(foodFacts, screenState.foodFactsProps)
@@ -299,9 +308,10 @@ class SettingsUiModelsTest {
 
     @Test
     fun settingsDialogStateHolderOperations() {
-        val dummyContext = object : android.content.ContextWrapper(null) {
-            override fun getFilesDir(): java.io.File = java.io.File("/tmp")
-        }
+        val dummyContext =
+            object : android.content.ContextWrapper(null) {
+                override fun getFilesDir(): java.io.File = java.io.File("/tmp")
+            }
         val holder = SettingsDialogStateHolder(dummyContext)
         assertFalse(holder.showPinDialog)
         assertFalse(holder.showBackupList)
@@ -351,55 +361,59 @@ private fun createDummyLauncher(): ManagedActivityResultLauncher<String, Boolean
         as ManagedActivityResultLauncher<String, Boolean>
 }
 
-private fun createDummyDialogsState() = SettingsDialogsState(
-    showPinDialog = false,
-    pinText = "",
-    onPinTextChange = {},
-    onDismissPinDialog = {},
-    onConfirmPinDialog = {},
-    showBackupList = false,
-    backupRecords = emptyList(),
-    onDismissBackupList = {},
-    onSelectBackup = {},
-    catalogDialog = null,
-    onDismissCatalogDialog = {},
-    confirmDatabaseReset = false,
-    onDismissDatabaseReset = {},
-    confirmCatalogDelete = false,
-    onDismissCatalogDelete = {},
-    onCatalogDeleted = {},
-    onCatalogDeleteFailed = {},
-)
+private fun createDummyDialogsState() =
+    SettingsDialogsState(
+        showPinDialog = false,
+        pinText = "",
+        onPinTextChange = {},
+        onDismissPinDialog = {},
+        onConfirmPinDialog = {},
+        showBackupList = false,
+        backupRecords = emptyList(),
+        onDismissBackupList = {},
+        onSelectBackup = {},
+        catalogDialog = null,
+        onDismissCatalogDialog = {},
+        confirmDatabaseReset = false,
+        onDismissDatabaseReset = {},
+        confirmCatalogDelete = false,
+        onDismissCatalogDelete = {},
+        onCatalogDeleted = {},
+        onCatalogDeleteFailed = {},
+    )
 
-private fun createDummyFoodFactsProps() = FoodFactsProps(
-    catalogReady = true,
-    catalogFileSize = 1024L,
-    catalogDownloading = false,
-    catalogDownloadedBytes = 0L,
-    catalogTotalBytes = 1024L,
-    onStartDownload = {},
-    onDownloadResult = {},
-    onProgress = { _, _ -> },
-    onDelete = {},
-)
+private fun createDummyFoodFactsProps() =
+    FoodFactsProps(
+        catalogReady = true,
+        catalogFileSize = 1024L,
+        catalogDownloading = false,
+        catalogDownloadedBytes = 0L,
+        catalogTotalBytes = 1024L,
+        onStartDownload = {},
+        onDownloadResult = {},
+        onProgress = { _, _ -> },
+        onDelete = {},
+    )
 
-private fun createDummyEncryptedBackupProps() = EncryptedBackupCardProps(
-    autoBackupProps = AutomaticBackupProps(
-        enabled = false,
-        intervalMinutes = 1440L,
-        databaseHasUserData = false,
-        onDisable = {},
-        onEnableRequested = {},
-        onIntervalSelected = {},
-        onBackupNow = {},
-    ),
-    lastExportedUri = null,
-    hasBackupRecords = false,
-    autoBackupTreeUri = null,
-    backupResult = null,
-    onShareSavedBackup = {},
-    onRestoreSavedBackup = {},
-    onSelectAutoBackupLocation = {},
-    onOpenBackupFile = {},
-    onResetDatabase = {},
-)
+private fun createDummyEncryptedBackupProps() =
+    EncryptedBackupCardProps(
+        autoBackupProps =
+            AutomaticBackupProps(
+                enabled = false,
+                intervalMinutes = 1440L,
+                databaseHasUserData = false,
+                onDisable = {},
+                onEnableRequested = {},
+                onIntervalSelected = {},
+                onBackupNow = {},
+            ),
+        lastExportedUri = null,
+        hasBackupRecords = false,
+        autoBackupTreeUri = null,
+        backupResult = null,
+        onShareSavedBackup = {},
+        onRestoreSavedBackup = {},
+        onSelectAutoBackupLocation = {},
+        onOpenBackupFile = {},
+        onResetDatabase = {},
+    )

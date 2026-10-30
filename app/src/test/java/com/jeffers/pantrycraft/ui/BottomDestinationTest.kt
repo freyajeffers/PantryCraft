@@ -6,7 +6,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BottomDestinationTest {
-
     @Test
     fun bottomDestinationEnumEntriesAndProperties() {
         assertEquals(5, BottomDestination.entries.size)

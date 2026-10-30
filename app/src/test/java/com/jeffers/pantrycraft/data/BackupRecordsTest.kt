@@ -1,6 +1,5 @@
 package com.jeffers.pantrycraft.data
 
-import android.content.Context
 import android.content.ContextWrapper
 import android.content.SharedPreferences
 import org.json.JSONArray

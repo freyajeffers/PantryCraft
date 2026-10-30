@@ -6,13 +6,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
 class UiPropsModelTest {
-
     @Test
     fun automaticBackupPropsDataClassModel() {
         var disabledCalled = false
@@ -20,15 +18,16 @@ class UiPropsModelTest {
         var intervalSet: Long? = null
         var backupNowCalled = false
 
-        val props = AutomaticBackupProps(
-            enabled = true,
-            intervalMinutes = 1440L,
-            databaseHasUserData = true,
-            onDisable = { disabledCalled = true },
-            onEnableRequested = { enableCalled = true },
-            onIntervalSelected = { intervalSet = it },
-            onBackupNow = { backupNowCalled = true },
-        )
+        val props =
+            AutomaticBackupProps(
+                enabled = true,
+                intervalMinutes = 1440L,
+                databaseHasUserData = true,
+                onDisable = { disabledCalled = true },
+                onEnableRequested = { enableCalled = true },
+                onIntervalSelected = { intervalSet = it },
+                onBackupNow = { backupNowCalled = true },
+            )
 
         assertTrue(props.enabled)
         assertEquals(1440L, props.intervalMinutes)
@@ -51,15 +50,16 @@ class UiPropsModelTest {
 
     @Test
     fun encryptedBackupCardPropsDataClassModel() {
-        val dummyAutoProps = AutomaticBackupProps(
-            enabled = false,
-            intervalMinutes = 720L,
-            databaseHasUserData = false,
-            onDisable = {},
-            onEnableRequested = {},
-            onIntervalSelected = {},
-            onBackupNow = {},
-        )
+        val dummyAutoProps =
+            AutomaticBackupProps(
+                enabled = false,
+                intervalMinutes = 720L,
+                databaseHasUserData = false,
+                onDisable = {},
+                onEnableRequested = {},
+                onIntervalSelected = {},
+                onBackupNow = {},
+            )
         val dummyUri = Uri.parse("content://backups/1")
 
         var shareCalled = false
@@ -68,18 +68,19 @@ class UiPropsModelTest {
         var openFileCalled = false
         var resetDbCalled = false
 
-        val cardProps = EncryptedBackupCardProps(
-            autoBackupProps = dummyAutoProps,
-            lastExportedUri = dummyUri,
-            hasBackupRecords = true,
-            autoBackupTreeUri = dummyUri,
-            backupResult = "Success",
-            onShareSavedBackup = { shareCalled = true },
-            onRestoreSavedBackup = { restoreSavedCalled = true },
-            onSelectAutoBackupLocation = { selectLocationCalled = true },
-            onOpenBackupFile = { openFileCalled = true },
-            onResetDatabase = { resetDbCalled = true },
-        )
+        val cardProps =
+            EncryptedBackupCardProps(
+                autoBackupProps = dummyAutoProps,
+                lastExportedUri = dummyUri,
+                hasBackupRecords = true,
+                autoBackupTreeUri = dummyUri,
+                backupResult = "Success",
+                onShareSavedBackup = { shareCalled = true },
+                onRestoreSavedBackup = { restoreSavedCalled = true },
+                onSelectAutoBackupLocation = { selectLocationCalled = true },
+                onOpenBackupFile = { openFileCalled = true },
+                onResetDatabase = { resetDbCalled = true },
+            )
 
         cardProps.onShareSavedBackup()
         cardProps.onRestoreSavedBackup()
@@ -110,12 +111,13 @@ class UiPropsModelTest {
         var importJson = false
         var importCsv = false
 
-        val props = DataSovereigntyProps(
-            onExportJson = { exportJson = true },
-            onExportCsv = { exportCsv = true },
-            onImportJson = { importJson = true },
-            onImportCsv = { importCsv = true },
-        )
+        val props =
+            DataSovereigntyProps(
+                onExportJson = { exportJson = true },
+                onExportCsv = { exportCsv = true },
+                onImportJson = { importJson = true },
+                onImportCsv = { importCsv = true },
+            )
 
         props.onExportJson()
         props.onExportCsv()
@@ -135,12 +137,13 @@ class UiPropsModelTest {
         var showList = false
         var reset = false
 
-        val callbacks = BackupCallbacks(
-            onRequirePin = { pinPrompted = true },
-            onRequireRestore = { restoreRequested = true },
-            onShowBackupList = { showList = true },
-            onResetDatabase = { reset = true },
-        )
+        val callbacks =
+            BackupCallbacks(
+                onRequirePin = { pinPrompted = true },
+                onRequireRestore = { restoreRequested = true },
+                onShowBackupList = { showList = true },
+                onResetDatabase = { reset = true },
+            )
 
         callbacks.onRequirePin {}
         callbacks.onRequireRestore {}
@@ -159,17 +162,18 @@ class UiPropsModelTest {
         var deleted = false
         var progressTotal = 0L
 
-        val props = FoodFactsProps(
-            catalogReady = true,
-            catalogFileSize = 5000L,
-            catalogDownloading = false,
-            catalogDownloadedBytes = 2500L,
-            catalogTotalBytes = 5000L,
-            onStartDownload = { downloadStarted = true },
-            onDownloadResult = {},
-            onProgress = { _, total -> progressTotal = total },
-            onDelete = { deleted = true },
-        )
+        val props =
+            FoodFactsProps(
+                catalogReady = true,
+                catalogFileSize = 5000L,
+                catalogDownloading = false,
+                catalogDownloadedBytes = 2500L,
+                catalogTotalBytes = 5000L,
+                onStartDownload = { downloadStarted = true },
+                onDownloadResult = {},
+                onProgress = { _, total -> progressTotal = total },
+                onDelete = { deleted = true },
+            )
 
         assertTrue(props.catalogReady)
         assertEquals(5000L, props.catalogFileSize)
@@ -193,14 +197,15 @@ class UiPropsModelTest {
         var selectedFilter: PantryLocationFilter? = null
         val items = listOf(PantryItem(name = "Apples", quantity = 3f))
 
-        val props = PantryListContentProps(
-            items = items,
-            selectedLocation = PantryLocationFilter.FRIDGE,
-            searchQuery = "app",
-            onSearchQueryChange = { queryChanged = it },
-            onLocationSelected = { selectedFilter = it },
-            itemContent = {},
-        )
+        val props =
+            PantryListContentProps(
+                items = items,
+                selectedLocation = PantryLocationFilter.FRIDGE,
+                searchQuery = "app",
+                onSearchQueryChange = { queryChanged = it },
+                onLocationSelected = { selectedFilter = it },
+                itemContent = {},
+            )
 
         assertEquals(items, props.items)
         assertEquals(PantryLocationFilter.FRIDGE, props.selectedLocation)
@@ -222,19 +227,20 @@ class UiPropsModelTest {
         var confirmedUse = 0f
         val item = PantryItem(name = "Flour", quantity = 10f)
 
-        val props = PantryScreenOverlayProps(
-            showAddDialog = true,
-            editorItem = item,
-            onSaveDraft = { _, _ -> },
-            onDismissEditor = { editorDismissed = true },
-            useItem = item,
-            useAmount = "2.5",
-            onAmountChange = {},
-            onConfirmUse = { confirmedUse = it },
-            onDismissUse = { useDismissed = true },
-            storageError = "Full",
-            onDismissStorageError = { errorDismissed = true },
-        )
+        val props =
+            PantryScreenOverlayProps(
+                showAddDialog = true,
+                editorItem = item,
+                onSaveDraft = { _, _ -> },
+                onDismissEditor = { editorDismissed = true },
+                useItem = item,
+                useAmount = "2.5",
+                onAmountChange = {},
+                onConfirmUse = { confirmedUse = it },
+                onDismissUse = { useDismissed = true },
+                storageError = "Full",
+                onDismissStorageError = { errorDismissed = true },
+            )
 
         assertTrue(props.showAddDialog)
         assertEquals(item, props.editorItem)
@@ -245,10 +251,11 @@ class UiPropsModelTest {
         assertNotNull(props.onAmountChange)
         var draftSaved = false
         var amountUpdated = ""
-        val testProps = props.copy(
-            onSaveDraft = { _, _ -> draftSaved = true },
-            onAmountChange = { amountUpdated = it },
-        )
+        val testProps =
+            props.copy(
+                onSaveDraft = { _, _ -> draftSaved = true },
+                onAmountChange = { amountUpdated = it },
+            )
         testProps.onSaveDraft(true, item)
         testProps.onAmountChange("3.0")
         assertTrue(draftSaved)
@@ -275,15 +282,16 @@ class UiPropsModelTest {
         var addG = false
         var del = false
 
-        val actions = PantryItemRowActions(
-            onDecrement = { dec = true },
-            onIncrement = { inc = true },
-            onUse = { use = true },
-            onEdit = { edit = true },
-            onMarkOpened = { mark = true },
-            onAddToGrocery = { addG = true },
-            onDelete = { del = true },
-        )
+        val actions =
+            PantryItemRowActions(
+                onDecrement = { dec = true },
+                onIncrement = { inc = true },
+                onUse = { use = true },
+                onEdit = { edit = true },
+                onMarkOpened = { mark = true },
+                onAddToGrocery = { addG = true },
+                onDelete = { del = true },
+            )
 
         actions.onDecrement()
         actions.onIncrement()

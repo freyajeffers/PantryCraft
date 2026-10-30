@@ -16,6 +16,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class ViewModelSecondaryConstructorTest {
     private val testDispatcher = StandardTestDispatcher()
@@ -49,29 +50,33 @@ class ViewModelSecondaryConstructorTest {
         val pantryFactory = PantryViewModelFactory(repo)
         val pantryVm = pantryFactory.create(PantryViewModel::class.java)
         assertNotNull(pantryVm)
-        val pantryVmExtras = pantryFactory.create(
-            PantryViewModel::class.java,
-            androidx.lifecycle.viewmodel.CreationExtras.Empty,
-        )
+        val pantryVmExtras =
+            pantryFactory.create(
+                PantryViewModel::class.java,
+                androidx.lifecycle.viewmodel.CreationExtras.Empty,
+            )
         assertNotNull(pantryVmExtras)
 
         val groceryFactory = GroceryViewModelFactory(repo)
         val groceryVm = groceryFactory.create(GroceryViewModel::class.java)
         assertNotNull(groceryVm)
-        val groceryVmExtras = groceryFactory.create(
-            GroceryViewModel::class.java,
-            androidx.lifecycle.viewmodel.CreationExtras.Empty,
-        )
+        val groceryVmExtras =
+            groceryFactory.create(
+                GroceryViewModel::class.java,
+                androidx.lifecycle.viewmodel.CreationExtras.Empty,
+            )
         assertNotNull(groceryVmExtras)
 
-        val unkPantry = org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            pantryFactory.create(UnregisteredViewModel::class.java)
-        }
+        val unkPantry =
+            org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+                pantryFactory.create(UnregisteredViewModel::class.java)
+            }
         assertEquals("Unknown ViewModel class", unkPantry.message)
 
-        val unkGrocery = org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
-            groceryFactory.create(UnregisteredViewModel::class.java)
-        }
+        val unkGrocery =
+            org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+                groceryFactory.create(UnregisteredViewModel::class.java)
+            }
         assertEquals("Unknown ViewModel class", unkGrocery.message)
     }
 
@@ -79,15 +84,17 @@ class ViewModelSecondaryConstructorTest {
 
     private fun createStubRepository(): Repository {
         val unsafeClass = Class.forName("sun.misc.Unsafe")
-        val theUnsafeField = unsafeClass.getDeclaredField("theUnsafe").apply {
-            isAccessible = true
-        }
+        val theUnsafeField =
+            unsafeClass.getDeclaredField("theUnsafe").apply {
+                isAccessible = true
+            }
         val unsafe = theUnsafeField.get(null)
         val allocateMethod = unsafeClass.getMethod("allocateInstance", Class::class.java)
         val repo = allocateMethod.invoke(unsafe, Repository::class.java) as Repository
 
         for (field in Repository::class.java.declaredFields) {
-            if (!java.lang.reflect.Modifier.isStatic(field.modifiers) &&
+            if (!java.lang.reflect.Modifier
+                    .isStatic(field.modifiers) &&
                 PantryRepository::class.java.isAssignableFrom(field.type)
             ) {
                 field.isAccessible = true
@@ -112,32 +119,48 @@ class ViewModelSecondaryConstructorTest {
         private val groceryFlow = MutableStateFlow<List<GroceryItem>>(emptyList())
 
         override fun observePantryItems(): Flow<List<PantryItem>> = pantryFlow
+
         override fun searchPantryItems(query: String): Flow<List<PantryItem>> = pantryFlow
+
         override suspend fun insertPantry(item: PantryItem): Long = 1L
+
         override suspend fun updatePantry(item: PantryItem) {
             // No-op for constructor test
         }
-        override suspend fun decrementQuantity(item: PantryItem, delta: Float) {
+
+        override suspend fun decrementQuantity(
+            item: PantryItem,
+            delta: Float,
+        ) {
             // No-op for constructor test
         }
+
         override suspend fun deletePantry(item: PantryItem) {
             // No-op for constructor test
         }
+
         override suspend fun restorePantry(item: PantryItem) {
             // No-op for constructor test
         }
+
         override fun observeGroceryItems(): Flow<List<GroceryItem>> = groceryFlow
+
         override suspend fun insertGrocery(item: GroceryItem): Long = 1L
+
         override suspend fun updateGrocery(item: GroceryItem) {
             // No-op for constructor test
         }
+
         override suspend fun deleteGrocery(item: GroceryItem) {
             // No-op for constructor test
         }
+
         override suspend fun clearCheckedGrocery() {
             // No-op for constructor test
         }
+
         override suspend fun restockCheckedGroceryToPantry(): Int = 0
+
         override fun reclaimTemporaryMedia(): Int = 0
     }
 }

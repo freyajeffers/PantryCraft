@@ -8,7 +8,6 @@ import org.junit.rules.TemporaryFolder
 import java.io.File
 
 class TemporaryMediaUnitTest {
-
     @get:Rule
     val tempFolder = TemporaryFolder()
 
@@ -25,10 +24,11 @@ class TemporaryMediaUnitTest {
 
         val frame1 = File(scratchDir, "snapshot-101.jpg").apply { writeText("frame1") }
         val frame2 = File(scratchDir, "snapshot-102.jpg").apply { writeText("frame2") }
-        val subDir = File(scratchDir, "sub_batch").apply {
-            mkdirs()
-            File(this, "nested.jpg").writeText("nested")
-        }
+        val subDir =
+            File(scratchDir, "sub_batch").apply {
+                mkdirs()
+                File(this, "nested.jpg").writeText("nested")
+            }
 
         val deletedCount = reclaimScratchMedia(cacheDir)
         assertEquals(3, deletedCount)
