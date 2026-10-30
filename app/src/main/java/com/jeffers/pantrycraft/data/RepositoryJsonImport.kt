@@ -15,8 +15,9 @@ internal suspend fun Repository.importInventoryFromJson(jsonString: String): Int
     }
 
 internal fun parsePantryItemsFromJson(jsonString: String): List<PantryItem> {
-    val pantry = runCatching { JSONObject(jsonString) }.getOrNull()?.optJSONArray("pantry")
-        ?: return emptyList()
+    val pantry =
+        runCatching { JSONObject(jsonString) }.getOrNull()?.optJSONArray("pantry")
+            ?: return emptyList()
     return (0 until pantry.length()).mapNotNull { index ->
         pantry.optJSONObject(index)?.toPantryItem()
     }

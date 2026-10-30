@@ -20,6 +20,7 @@ class GroceryViewModel(
     private val repo: GroceryRepository,
 ) : ViewModel() {
     constructor(repo: Repository) : this(repo as GroceryRepository)
+
     val items: StateFlow<List<GroceryItem>> =
         repo.observeGroceryItems().stateIn(
             scope = viewModelScope,

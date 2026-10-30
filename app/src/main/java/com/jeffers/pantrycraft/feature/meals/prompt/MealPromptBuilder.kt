@@ -6,7 +6,6 @@ import com.jeffers.pantrycraft.feature.meals.model.MealConstraints
 import com.jeffers.pantrycraft.feature.meals.model.MealMatchMode
 
 object MealPromptBuilder {
-
     fun buildSystemPrompt(): String =
         """
         You are PantryCraft's Senior Executive Chef & Culinary Reasoning Engine.
@@ -65,7 +64,12 @@ object MealPromptBuilder {
         val builder = StringBuilder()
         builder.append("### INVENTORY\n").append(inventoryContext).append("\n\n")
         builder.append("### CONSTRAINTS\n")
-        builder.append("- Match Mode: ").append(mode.id).append(" (").append(mode.description).append(")\n")
+        builder
+            .append("- Match Mode: ")
+            .append(mode.id)
+            .append(" (")
+            .append(mode.description)
+            .append(")\n")
         builder.append("- Target Portions: ").append(clampedPortions).append(" servings\n")
 
         if (constraints.dietaryPreferences.isNotEmpty()) {
@@ -87,14 +91,17 @@ object MealPromptBuilder {
                 builder.append("2. Must prioritize items marked in [EXPIRY_URGENT].\n")
                 builder.append("3. 'missing_items_for_grocery' MUST be empty.\n")
             }
+
             MealMatchMode.MOSTLY -> {
                 builder.append("1. 85-95% of ingredients must be from active inventory.\n")
                 builder.append("2. Up to 2 missing staple ingredients allowed in 'missing_items_for_grocery'.\n")
             }
+
             MealMatchMode.SHOPPING -> {
                 builder.append("1. Center the recipe around on-hand star ingredients.\n")
                 builder.append("2. Output all missing complementary ingredients in 'missing_items_for_grocery'.\n")
             }
+
             MealMatchMode.EMERGENCY_SALVAGE -> {
                 builder.append("1. 15-Minute Emergency Rescue: Total cook + prep time MUST be <= 20 minutes.\n")
                 builder.append("2. MUST use as many [EXPIRY_URGENT] ingredients as possible.\n")

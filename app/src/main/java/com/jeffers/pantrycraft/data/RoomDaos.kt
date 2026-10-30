@@ -109,4 +109,3 @@ interface GroceryDao {
     @Query("SELECT COUNT(*) FROM grocery_items")
     suspend fun getGroceryItemCount(): Int
 }
-

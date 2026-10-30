@@ -10,7 +10,6 @@ import com.jeffers.pantrycraft.feature.meals.model.RecipeMissingItem
 import com.jeffers.pantrycraft.feature.meals.model.RecipePantryUsage
 
 object FallbackMealSynthesizer {
-
     private const val MILLIS_PER_DAY = 86_400_000L
     private const val URGENT_DAYS_THRESHOLD = 2L
     private const val MAIN_ITEM_PORTION_FRACTION = 0.5f
@@ -36,39 +35,43 @@ object FallbackMealSynthesizer {
         val active = items.filter { !it.isDeleted && it.quantity > 0f }
         if (active.isEmpty()) return emptyList()
 
-        val urgent = active.filter { item ->
-            item.expirationTimestamp?.let { exp ->
-                (exp - nowMillis) <= (URGENT_DAYS_THRESHOLD * MILLIS_PER_DAY)
-            } ?: false
-        }
+        val urgent =
+            active.filter { item ->
+                item.expirationTimestamp?.let { exp ->
+                    (exp - nowMillis) <= (URGENT_DAYS_THRESHOLD * MILLIS_PER_DAY)
+                } ?: false
+            }
 
         val (mainItem, usedStock) = buildPantryUsage(active, urgent)
         val missing = buildMissingItems(mode)
         val title = buildRecipeTitle(mode, mainItem.name)
 
-        val recipe = MealRecipe(
-            recipeId = "local_${System.currentTimeMillis()}_${mainItem.id}",
-            title = title,
-            matchMode = mode,
-            targetPortions = targetPortions.coerceIn(MIN_PORTIONS, MAX_PORTIONS),
-            prepTimeMinutes = if (mode == MealMatchMode.EMERGENCY_SALVAGE) EMERGENCY_PREP_TIME else DEFAULT_PREP_TIME,
-            cookTimeMinutes = if (mode == MealMatchMode.EMERGENCY_SALVAGE) EMERGENCY_COOK_TIME else DEFAULT_COOK_TIME,
-            urgencyScore = if (urgent.isNotEmpty()) HIGH_URGENCY_SCORE else MEDIUM_URGENCY_SCORE,
-            itemsUsedFromStock = usedStock,
-            missingItemsForGrocery = missing,
-            stepByStepInstructions = listOf(
-                "1. Gather and prep ${usedStock.joinToString(", ") { it.name }}.",
-                "2. Heat a pan over medium heat with cooking oil or butter.",
-                "3. Sauté ingredients until cooked through and golden brown.",
-                "4. Season with salt and spices to taste, then serve warm.",
-            ),
-            nutritionalEstimates = NutritionalEstimates(
-                calories = ESTIMATED_CALORIES,
-                proteinGrams = ESTIMATED_PROTEIN,
-                carbsGrams = ESTIMATED_CARBS,
-                fatGrams = ESTIMATED_FAT,
-            ),
-        )
+        val recipe =
+            MealRecipe(
+                recipeId = "local_${System.currentTimeMillis()}_${mainItem.id}",
+                title = title,
+                matchMode = mode,
+                targetPortions = targetPortions.coerceIn(MIN_PORTIONS, MAX_PORTIONS),
+                prepTimeMinutes = if (mode == MealMatchMode.EMERGENCY_SALVAGE) EMERGENCY_PREP_TIME else DEFAULT_PREP_TIME,
+                cookTimeMinutes = if (mode == MealMatchMode.EMERGENCY_SALVAGE) EMERGENCY_COOK_TIME else DEFAULT_COOK_TIME,
+                urgencyScore = if (urgent.isNotEmpty()) HIGH_URGENCY_SCORE else MEDIUM_URGENCY_SCORE,
+                itemsUsedFromStock = usedStock,
+                missingItemsForGrocery = missing,
+                stepByStepInstructions =
+                    listOf(
+                        "1. Gather and prep ${usedStock.joinToString(", ") { it.name }}.",
+                        "2. Heat a pan over medium heat with cooking oil or butter.",
+                        "3. Sauté ingredients until cooked through and golden brown.",
+                        "4. Season with salt and spices to taste, then serve warm.",
+                    ),
+                nutritionalEstimates =
+                    NutritionalEstimates(
+                        calories = ESTIMATED_CALORIES,
+                        proteinGrams = ESTIMATED_PROTEIN,
+                        carbsGrams = ESTIMATED_CARBS,
+                        fatGrams = ESTIMATED_FAT,
+                    ),
+            )
 
         return listOf(recipe.scaleToPortions(targetPortions))
     }
@@ -115,7 +118,10 @@ object FallbackMealSynthesizer {
             emptyList()
         }
 
-    private fun buildRecipeTitle(mode: MealMatchMode, mainName: String): String =
+    private fun buildRecipeTitle(
+        mode: MealMatchMode,
+        mainName: String,
+    ): String =
         when (mode) {
             MealMatchMode.EMERGENCY_SALVAGE -> "15-Min $mainName Emergency Skillet"
             MealMatchMode.STRICT -> "Zero-Waste Farmhouse $mainName Medley"

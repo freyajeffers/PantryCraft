@@ -18,9 +18,7 @@ internal fun fileChecksum(file: java.io.File): String? {
     }.getOrNull()
 }
 
-internal fun dbChecksum(context: Context): String? =
-    fileChecksum(context.getDatabasePath("pantry_grocery_encrypted.db"))
-
+internal fun dbChecksum(context: Context): String? = fileChecksum(context.getDatabasePath("pantry_grocery_encrypted.db"))
 
 internal fun lastDbChecksum(context: Context): String? =
     context

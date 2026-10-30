@@ -51,7 +51,10 @@ internal data class BackupListDialogState(
 )
 
 @Composable
-internal fun SettingsDialogs(context: Context, state: SettingsDialogsState) {
+internal fun SettingsDialogs(
+    context: Context,
+    state: SettingsDialogsState,
+) {
     if (state.showPinDialog) {
         BackupPinDialog(
             pinText = state.pinText,
@@ -142,7 +145,10 @@ internal fun BackupPinDialog(
 }
 
 @Composable
-internal fun SettingsCatalogAlertDialog(dialog: CatalogDialog?, onDismiss: () -> Unit) {
+internal fun SettingsCatalogAlertDialog(
+    dialog: CatalogDialog?,
+    onDismiss: () -> Unit,
+) {
     dialog?.let {
         AlertDialog(
             onDismissRequest = onDismiss,

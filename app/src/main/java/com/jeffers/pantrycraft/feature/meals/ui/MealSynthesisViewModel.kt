@@ -32,9 +32,10 @@ class MealSynthesisViewModel(
     private val groceryRepository: GroceryRepository,
     private val synthesisEngine: MealSynthesisEngine,
 ) : ViewModel() {
-
-    val inventory: StateFlow<List<PantryItem>> = pantryRepository.observePantryItems()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MILLIS), emptyList())
+    val inventory: StateFlow<List<PantryItem>> =
+        pantryRepository
+            .observePantryItems()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT_MILLIS), emptyList())
 
     private val _selectedMode = MutableStateFlow(MealMatchMode.STRICT)
     val selectedMode: StateFlow<MealMatchMode> = _selectedMode.asStateFlow()
@@ -70,9 +71,10 @@ class MealSynthesisViewModel(
             val items = inventory.value
             val mode = _selectedMode.value
             val portions = _portionCount.value
-            val generated = runCatching {
-                synthesisEngine.synthesizeMeals(items, mode, portions)
-            }.getOrDefault(emptyList())
+            val generated =
+                runCatching {
+                    synthesisEngine.synthesizeMeals(items, mode, portions)
+                }.getOrDefault(emptyList())
 
             _recipes.value = generated
             val missingNames = generated.flatMap { r -> r.missingItemsForGrocery.map { it.name } }
@@ -91,11 +93,12 @@ class MealSynthesisViewModel(
 
     fun cookMeal(recipe: MealRecipe) {
         viewModelScope.launch {
-            val result = MealCookHandler.executeCookMeal(
-                recipe = recipe,
-                pantryRepository = pantryRepository,
-                groceryRepository = groceryRepository,
-            )
+            val result =
+                MealCookHandler.executeCookMeal(
+                    recipe = recipe,
+                    pantryRepository = pantryRepository,
+                    groceryRepository = groceryRepository,
+                )
             val msg = "Cooked '${recipe.title}'! Deducted ${result.itemsDeductedCount} items."
             _statusMessage.emit(msg)
         }
@@ -107,6 +110,5 @@ class MealSynthesisViewModelFactory(
     private val engine: MealSynthesisEngine,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        MealSynthesisViewModel(repository, repository, engine) as T
+    override fun <T : ViewModel> create(modelClass: Class<T>): T = MealSynthesisViewModel(repository, repository, engine) as T
 }

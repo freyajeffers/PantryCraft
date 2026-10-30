@@ -49,8 +49,7 @@ private fun groceryExportObject(item: GroceryItem) =
 
 private fun List<JSONObject>.toJsonArray() = JSONArray().also { array -> forEach(array::put) }
 
-internal suspend fun Repository.exportPantryToCsv(): String =
-    exportPantryToCsv(observePantryItems().first())
+internal suspend fun Repository.exportPantryToCsv(): String = exportPantryToCsv(observePantryItems().first())
 
 internal fun exportPantryToCsv(items: List<PantryItem>): String {
     val header = "name,category,storageLocation,quantity,unit,customUnitName,threshold,expirationDate,isOpened,notes"

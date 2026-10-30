@@ -43,7 +43,10 @@ class LiveVisionAnalyzer(
     private val isAnalyzing = AtomicBoolean(false)
     private var lastAnalyzedAt = 0L
 
-    fun safeExecute(command: Runnable, onRejected: () -> Unit = {}) {
+    fun safeExecute(
+        command: Runnable,
+        onRejected: () -> Unit = {},
+    ) {
         if (!executor.isShutdown) {
             try {
                 executor.execute(command)
@@ -83,15 +86,16 @@ class LiveVisionAnalyzer(
         val inputImage = InputImage.fromMediaImage(mediaImage, rotation)
         val barcodeTask = barcodeScanner.process(inputImage)
         val objectTask = objectDetector.process(inputImage)
-        val completeExecutor = Executor { command ->
-            safeExecute(command) {
-                try {
-                    imageProxy.close()
-                } finally {
-                    isAnalyzing.set(false)
+        val completeExecutor =
+            Executor { command ->
+                safeExecute(command) {
+                    try {
+                        imageProxy.close()
+                    } finally {
+                        isAnalyzing.set(false)
+                    }
                 }
             }
-        }
 
         Tasks
             .whenAllComplete(barcodeTask, objectTask)

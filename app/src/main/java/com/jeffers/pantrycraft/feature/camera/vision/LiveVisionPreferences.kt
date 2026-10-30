@@ -11,7 +11,10 @@ object LiveVisionPreferences {
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getBoolean(KEY_GEMINI_LIVE_ENABLED, false)
 
-    fun setGeminiLiveEnabled(context: Context, enabled: Boolean) {
+    fun setGeminiLiveEnabled(
+        context: Context,
+        enabled: Boolean,
+    ) {
         context.applicationContext
             .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()

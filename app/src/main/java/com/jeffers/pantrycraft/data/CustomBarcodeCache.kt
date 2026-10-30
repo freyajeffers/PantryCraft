@@ -31,4 +31,3 @@ interface CustomBarcodeDao {
     @Query("DELETE FROM custom_barcode_cache WHERE barcode LIKE :prefix || '%'")
     suspend fun deleteByBarcodePrefix(prefix: String): Int
 }
-

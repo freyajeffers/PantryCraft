@@ -241,7 +241,10 @@ internal suspend fun performEncryptedBackup(
         )
     }
 
-private fun takePersistablePermissions(context: Context, uri: Uri) {
+private fun takePersistablePermissions(
+    context: Context,
+    uri: Uri,
+) {
     runCatching {
         context.contentResolver.takePersistableUriPermission(
             uri,
@@ -250,7 +253,10 @@ private fun takePersistablePermissions(context: Context, uri: Uri) {
     }
 }
 
-private fun shareBackupFile(context: Context, uri: Uri) {
+private fun shareBackupFile(
+    context: Context,
+    uri: Uri,
+) {
     context.startActivity(
         Intent.createChooser(
             Intent(Intent.ACTION_SEND).apply {

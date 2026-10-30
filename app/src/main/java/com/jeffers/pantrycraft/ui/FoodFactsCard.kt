@@ -139,4 +139,3 @@ internal fun formatFileSize(bytes: Long): String =
         bytes < BYTES_IN_MB -> "%.1f KB".format(bytes / BYTES_IN_KB.toDouble())
         else -> "%.1f MB".format(bytes / BYTES_IN_MB.toDouble())
     }
-

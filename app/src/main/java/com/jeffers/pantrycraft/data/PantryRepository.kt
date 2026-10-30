@@ -7,11 +7,20 @@ import kotlinx.coroutines.flow.Flow
 
 interface PantryRepository : GroceryRepository {
     fun observePantryItems(): Flow<List<PantryItem>>
+
     fun searchPantryItems(query: String): Flow<List<PantryItem>>
+
     suspend fun insertPantry(item: PantryItem): Long
+
     suspend fun updatePantry(item: PantryItem)
-    suspend fun decrementQuantity(item: PantryItem, delta: Float)
+
+    suspend fun decrementQuantity(
+        item: PantryItem,
+        delta: Float,
+    )
+
     suspend fun deletePantry(item: PantryItem)
+
     suspend fun restorePantry(item: PantryItem)
 }
 
@@ -19,7 +28,8 @@ internal class DefaultPantryRepository(
     private val db: AppDatabase,
     private val appContext: Context,
     private val groceryRepo: GroceryRepository = DefaultGroceryRepository(db, appContext),
-) : PantryRepository, GroceryRepository by groceryRepo {
+) : PantryRepository,
+    GroceryRepository by groceryRepo {
     private val pantryDao = db.pantryDao()
 
     override fun observePantryItems(): Flow<List<PantryItem>> = pantryDao.observeAllPantryItems()
@@ -60,12 +70,14 @@ internal class DefaultPantryRepository(
             validate(item).copy(updatedAt = System.currentTimeMillis()),
         )
 
-    override suspend fun decrementQuantity(item: PantryItem, delta: Float) =
-        require(delta > 0f && delta.isFinite()) {
-            "Quantity decrement must be finite and positive"
-        }.let {
-            pantryDao.decrementQuantity(item.id, delta)
-        }
+    override suspend fun decrementQuantity(
+        item: PantryItem,
+        delta: Float,
+    ) = require(delta > 0f && delta.isFinite()) {
+        "Quantity decrement must be finite and positive"
+    }.let {
+        pantryDao.decrementQuantity(item.id, delta)
+    }
 
     override suspend fun deletePantry(item: PantryItem) = pantryDao.softDelete(item.id)
 

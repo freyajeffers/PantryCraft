@@ -48,16 +48,17 @@ fun AiSettingsCard(context: Context) {
             }
             if (selectedAiProvider != AiProvider.OFFLINE_MLKIT) {
                 AiCustomFields(
-                    props = AiCustomFieldsProps(
-                        provider = selectedAiProvider,
-                        modelName = aiModelName,
-                        onModelNameChange = { aiModelName = it },
-                        endpointUrl = aiEndpointUrl,
-                        onEndpointUrlChange = { aiEndpointUrl = it },
-                        apiKey = aiApiKeyInput,
-                        onApiKeyChange = { aiApiKeyInput = it },
-                        hasStoredApiKey = hasStoredApiKey,
-                    ),
+                    props =
+                        AiCustomFieldsProps(
+                            provider = selectedAiProvider,
+                            modelName = aiModelName,
+                            onModelNameChange = { aiModelName = it },
+                            endpointUrl = aiEndpointUrl,
+                            onEndpointUrlChange = { aiEndpointUrl = it },
+                            apiKey = aiApiKeyInput,
+                            onApiKeyChange = { aiApiKeyInput = it },
+                            hasStoredApiKey = hasStoredApiKey,
+                        ),
                 )
             }
             if (selectedAiProvider == AiProvider.GEMINI) {

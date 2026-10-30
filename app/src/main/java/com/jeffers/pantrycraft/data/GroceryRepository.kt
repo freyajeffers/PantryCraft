@@ -7,11 +7,17 @@ import kotlinx.coroutines.flow.first
 
 interface GroceryRepository {
     fun observeGroceryItems(): Flow<List<GroceryItem>>
+
     suspend fun insertGrocery(item: GroceryItem): Long
+
     suspend fun updateGrocery(item: GroceryItem)
+
     suspend fun deleteGrocery(item: GroceryItem)
+
     suspend fun clearCheckedGrocery()
+
     suspend fun restockCheckedGroceryToPantry(): Int
+
     fun reclaimTemporaryMedia(): Int
 }
 

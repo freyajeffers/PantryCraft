@@ -47,11 +47,30 @@ internal fun parsePantryCsvItem(
     if (name.isEmpty()) return null
 
     val extended = cols.size >= EXTENDED_CSV_COLUMN_COUNT
-    val category = cols.getOrNull(1)?.trim()?.uppercase()?.takeIf(String::isNotEmpty) ?: "OTHER"
+    val category =
+        cols
+            .getOrNull(1)
+            ?.trim()
+            ?.uppercase()
+            ?.takeIf(String::isNotEmpty) ?: "OTHER"
     val location =
-        cols.getOrNull(2)?.trim()?.uppercase()?.takeIf { it in PantryTaxonomy.storageLocations } ?: "PANTRY"
-    val quantity = cols.getOrNull(QUANTITY_COLUMN)?.trim()?.toFloatOrNull()?.coerceAtLeast(0f) ?: 1f
-    val unit = cols.getOrNull(UNIT_COLUMN)?.trim()?.uppercase()?.takeIf(String::isNotEmpty) ?: "COUNT"
+        cols
+            .getOrNull(2)
+            ?.trim()
+            ?.uppercase()
+            ?.takeIf { it in PantryTaxonomy.storageLocations } ?: "PANTRY"
+    val quantity =
+        cols
+            .getOrNull(QUANTITY_COLUMN)
+            ?.trim()
+            ?.toFloatOrNull()
+            ?.coerceAtLeast(0f) ?: 1f
+    val unit =
+        cols
+            .getOrNull(UNIT_COLUMN)
+            ?.trim()
+            ?.uppercase()
+            ?.takeIf(String::isNotEmpty) ?: "COUNT"
     val customUnit = optionalCsvValue(cols, CUSTOM_UNIT_COLUMN, extended)
     val threshold = parseThreshold(cols, extended)
     val expiration = parseExpiration(cols, dateFormat, extended)
@@ -76,12 +95,13 @@ internal fun parsePantryCsvItem(
 internal fun parseThreshold(
     cols: List<String>,
     extended: Boolean,
-): Float = if (extended) {
-    val raw = cols.getOrNull(THRESHOLD_COLUMN)?.trim()
-    raw?.toFloatOrNull()?.coerceAtLeast(0f) ?: 0f
-} else {
-    0f
-}
+): Float =
+    if (extended) {
+        val raw = cols.getOrNull(THRESHOLD_COLUMN)?.trim()
+        raw?.toFloatOrNull()?.coerceAtLeast(0f) ?: 0f
+    } else {
+        0f
+    }
 
 private fun parseExpiration(
     cols: List<String>,

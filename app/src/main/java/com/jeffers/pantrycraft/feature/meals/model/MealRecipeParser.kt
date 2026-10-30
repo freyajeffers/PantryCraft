@@ -4,7 +4,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 object MealRecipeParser {
-
     private const val DEFAULT_PORTIONS = 2
     private const val DEFAULT_PREP_TIME_MINUTES = 10
     private const val DEFAULT_COOK_TIME_MINUTES = 15
@@ -34,11 +33,12 @@ object MealRecipeParser {
         }
         val firstBrace = trimmed.indexOf('{')
         val firstBracket = trimmed.indexOf('[')
-        val start = when {
-            firstBrace >= 0 && firstBracket >= 0 -> minOf(firstBrace, firstBracket)
-            firstBrace >= 0 -> firstBrace
-            else -> firstBracket
-        }
+        val start =
+            when {
+                firstBrace >= 0 && firstBracket >= 0 -> minOf(firstBrace, firstBracket)
+                firstBrace >= 0 -> firstBrace
+                else -> firstBracket
+            }
         val end = maxOf(trimmed.lastIndexOf('}'), trimmed.lastIndexOf(']'))
         return if (start >= 0 && end > start) trimmed.substring(start, end + 1) else trimmed
     }
@@ -49,8 +49,9 @@ object MealRecipeParser {
         }
 
     private fun parseRecipeObject(obj: JSONObject): MealRecipe {
-        val recipeId = obj.optString("recipe_id").takeIf { it.isNotBlank() }
-            ?: "recipe_${System.currentTimeMillis()}_${(1..RANDOM_ID_BOUND).random()}"
+        val recipeId =
+            obj.optString("recipe_id").takeIf { it.isNotBlank() }
+                ?: "recipe_${System.currentTimeMillis()}_${(1..RANDOM_ID_BOUND).random()}"
         val title = obj.optString("title", "Untitled Recipe")
         val matchMode = MealMatchMode.fromId(obj.optString("match_mode"))
         val portions = obj.optInt("target_portions", DEFAULT_PORTIONS).coerceIn(MIN_PORTIONS, MAX_PORTIONS)

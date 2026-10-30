@@ -39,7 +39,9 @@ internal data class SettingsDialogActions(
     val requestResetDatabase: () -> Unit,
 )
 
-internal class SettingsDialogStateHolder(private val context: Context) {
+internal class SettingsDialogStateHolder(
+    private val context: Context,
+) {
     var showPinDialog by mutableStateOf(false)
     var pinDialogAction: (CharArray) -> Unit = {}
     var pinText by mutableStateOf("")
@@ -247,11 +249,12 @@ internal fun handleDownloadResult(
     result.fold(
         onSuccess = { file ->
             onSuccess(file.length())
-            Toast.makeText(
-                context,
-                "Food catalog downloaded (${formatFileSize(file.length())})",
-                Toast.LENGTH_SHORT,
-            ).show()
+            Toast
+                .makeText(
+                    context,
+                    "Food catalog downloaded (${formatFileSize(file.length())})",
+                    Toast.LENGTH_SHORT,
+                ).show()
         },
         onFailure = {
             onFailure(

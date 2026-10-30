@@ -39,8 +39,7 @@ enum class MealMatchMode(
     ;
 
     companion object {
-        fun fromId(id: String?): MealMatchMode =
-            entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: STRICT
+        fun fromId(id: String?): MealMatchMode = entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: STRICT
     }
 }
 
@@ -88,25 +87,29 @@ data class MealRecipe(
         require(newPortions in MIN_PORTIONS..MAX_PORTIONS) { "Target portions must be between 1 and 12" }
         if (newPortions == targetPortions) return this
 
-        val scaledStockItems = itemsUsedFromStock.map { item ->
-            val scaledQty = CulinaryScaling.scaleQuantity(
-                baseQuantity = item.quantityUsed,
-                basePortions = targetPortions,
-                targetPortions = newPortions,
-                isAromaticOrSeasoning = item.isAromaticOrSeasoning,
-            )
-            item.copy(quantityUsed = scaledQty)
-        }
+        val scaledStockItems =
+            itemsUsedFromStock.map { item ->
+                val scaledQty =
+                    CulinaryScaling.scaleQuantity(
+                        baseQuantity = item.quantityUsed,
+                        basePortions = targetPortions,
+                        targetPortions = newPortions,
+                        isAromaticOrSeasoning = item.isAromaticOrSeasoning,
+                    )
+                item.copy(quantityUsed = scaledQty)
+            }
 
-        val scaledMissingItems = missingItemsForGrocery.map { item ->
-            val scaledQty = CulinaryScaling.scaleQuantity(
-                baseQuantity = item.quantityNeeded,
-                basePortions = targetPortions,
-                targetPortions = newPortions,
-                isAromaticOrSeasoning = false,
-            )
-            item.copy(quantityNeeded = scaledQty)
-        }
+        val scaledMissingItems =
+            missingItemsForGrocery.map { item ->
+                val scaledQty =
+                    CulinaryScaling.scaleQuantity(
+                        baseQuantity = item.quantityNeeded,
+                        basePortions = targetPortions,
+                        targetPortions = newPortions,
+                        isAromaticOrSeasoning = false,
+                    )
+                item.copy(quantityNeeded = scaledQty)
+            }
 
         return copy(
             targetPortions = newPortions,

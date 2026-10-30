@@ -36,6 +36,7 @@ class PantryViewModel(
     private val repo: PantryRepository,
 ) : ViewModel() {
     constructor(repo: Repository) : this(repo as PantryRepository)
+
     val items: StateFlow<List<PantryItem>> =
         repo.observePantryItems().stateIn(
             scope = viewModelScope,
@@ -166,18 +167,24 @@ fun filterPantryItems(
     now: Long = System.currentTimeMillis(),
 ): List<PantryItem> =
     when (filter) {
-        PantryLocationFilter.ALL -> items
+        PantryLocationFilter.ALL -> {
+            items
+        }
+
         PantryLocationFilter.EXPIRING_SOON -> {
             val cutoff = now + EXPIRING_SOON_DAYS * MILLIS_PER_DAY
             items.filter { item ->
                 item.expirationTimestamp?.let { it <= cutoff } == true
             }
         }
+
         PantryLocationFilter.PANTRY,
         PantryLocationFilter.FRIDGE,
         PantryLocationFilter.FREEZER,
-        PantryLocationFilter.COUNTER ->
+        PantryLocationFilter.COUNTER,
+        -> {
             items.filter { it.storageLocation.equals(filter.storageLocation, ignoreCase = true) }
+        }
     }
 
 fun sortPantryItems(
@@ -185,22 +192,33 @@ fun sortPantryItems(
     sortOrder: PantrySortOrder,
 ): List<PantryItem> =
     when (sortOrder) {
-        PantrySortOrder.NAME_ASC -> items.sortedBy { it.name.lowercase() }
-        PantrySortOrder.EXPIRATION_SOONEST ->
+        PantrySortOrder.NAME_ASC -> {
+            items.sortedBy { it.name.lowercase() }
+        }
+
+        PantrySortOrder.EXPIRATION_SOONEST -> {
             items.sortedWith(
                 compareBy<PantryItem> { it.expirationTimestamp == null }
                     .thenBy { it.expirationTimestamp }
                     .thenBy { it.name.lowercase() },
             )
-        PantrySortOrder.RECENTLY_UPDATED -> items.sortedByDescending { it.updatedAt }
-        PantrySortOrder.CATEGORY ->
+        }
+
+        PantrySortOrder.RECENTLY_UPDATED -> {
+            items.sortedByDescending { it.updatedAt }
+        }
+
+        PantrySortOrder.CATEGORY -> {
             items.sortedWith(
                 compareBy<PantryItem> { it.category }
                     .thenBy { it.name.lowercase() },
             )
-        PantrySortOrder.STORAGE_LOCATION ->
+        }
+
+        PantrySortOrder.STORAGE_LOCATION -> {
             items.sortedWith(
                 compareBy<PantryItem> { it.storageLocation }
                     .thenBy { it.name.lowercase() },
             )
+        }
     }
