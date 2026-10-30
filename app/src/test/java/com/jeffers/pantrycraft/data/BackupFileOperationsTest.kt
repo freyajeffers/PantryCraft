@@ -71,9 +71,10 @@ class BackupFileOperationsTest {
         val realTemp = tempFolder.newFile("temp_fail.db")
         realTemp.writeText("data")
 
-        val undeletableTemp = object : File(realTemp.absolutePath) {
-            override fun delete(): Boolean = false
-        }
+        val undeletableTemp =
+            object : File(realTemp.absolutePath) {
+                override fun delete(): Boolean = false
+            }
 
         assertThrows(IOException::class.java) {
             replaceDatabaseFile(temp = undeletableTemp, dbFile = targetDb)
@@ -86,9 +87,14 @@ class BackupFileOperationsTest {
         val cipherDecrypt = Cipher.getInstance("AES/ECB/PKCS5Padding")
         cipherDecrypt.init(Cipher.DECRYPT_MODE, key)
         val bais = java.io.ByteArrayInputStream(ByteArray(10))
-        val failingInputStream = object : CipherInputStream(bais, cipherDecrypt) {
-            override fun read(b: ByteArray, off: Int, len: Int): Int = throw IOException("Read error")
-        }
+        val failingInputStream =
+            object : CipherInputStream(bais, cipherDecrypt) {
+                override fun read(
+                    b: ByteArray,
+                    off: Int,
+                    len: Int,
+                ): Int = throw IOException("Read error")
+            }
         val targetFile = tempFolder.newFile("failing_output.db")
         assertThrows(IOException::class.java) {
             streamDecryptedDatabase(failingInputStream, targetFile)
