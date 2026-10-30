@@ -10,7 +10,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GeminiLiveVisionClientTest {
-
     @Test
     fun normalizeModelNamePrefixesModelsWhenMissing() {
         assertEquals(
@@ -40,10 +39,11 @@ class GeminiLiveVisionClientTest {
 
     @Test
     fun buildSetupJsonFormatsCorrectStructure() {
-        val json = GeminiLiveVisionClient.buildSetupJson(
-            model = "models/gemini-2.0-flash-exp",
-            systemInstruction = "Identify food ingredients",
-        )
+        val json =
+            GeminiLiveVisionClient.buildSetupJson(
+                model = "models/gemini-2.0-flash-exp",
+                systemInstruction = "Identify food ingredients",
+            )
         val root = JSONObject(json)
         assertTrue(root.has("setup"))
 
@@ -59,10 +59,11 @@ class GeminiLiveVisionClientTest {
 
     @Test
     fun buildRealtimeMediaChunkJsonFormatsMimeAndData() {
-        val json = GeminiLiveVisionClient.buildRealtimeMediaChunkJson(
-            base64Data = "UklGRiQAAABXRUJQVlA=",
-            mimeType = "image/webp",
-        )
+        val json =
+            GeminiLiveVisionClient.buildRealtimeMediaChunkJson(
+                base64Data = "UklGRiQAAABXRUJQVlA=",
+                mimeType = "image/webp",
+            )
         val root = JSONObject(json)
         assertTrue(root.has("realtimeInput"))
 
@@ -87,7 +88,8 @@ class GeminiLiveVisionClientTest {
 
     @Test
     fun extractServerContentTextParsesChunksAndTurnComplete() {
-        val serverJson = """
+        val serverJson =
+            """
             {
               "serverContent": {
                 "modelTurn": {
@@ -99,7 +101,7 @@ class GeminiLiveVisionClientTest {
                 "turnComplete": true
               }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val (text, isComplete) = GeminiLiveVisionClient.extractServerContentText(serverJson)
         assertEquals("{\"detected_items\": []}", text)
@@ -108,7 +110,8 @@ class GeminiLiveVisionClientTest {
 
     @Test
     fun extractServerContentTextHandlesIncompleteTurn() {
-        val serverJson = """
+        val serverJson =
+            """
             {
               "serverContent": {
                 "modelTurn": {
@@ -119,7 +122,7 @@ class GeminiLiveVisionClientTest {
                 "turnComplete": false
               }
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val (text, isComplete) = GeminiLiveVisionClient.extractServerContentText(serverJson)
         assertEquals("partial response", text)
@@ -140,28 +143,59 @@ class GeminiLiveVisionClientTest {
     @Test
     fun liveVisionPreferencesToggleState() {
         val store = mutableMapOf<String, Any?>()
-        val mockPrefs = object : SharedPreferences {
-            override fun getAll(): MutableMap<String, *> = store
-            override fun getString(key: String, defValue: String?): String? = store[key] as? String ?: defValue
-            override fun getStringSet(key: String, defValues: Set<String>?): Set<String>? = defValues
-            override fun getInt(key: String, defValue: Int): Int = (store[key] as? Int) ?: defValue
-            override fun getLong(key: String, defValue: Long): Long = (store[key] as? Long) ?: defValue
-            override fun getFloat(key: String, defValue: Float): Float = (store[key] as? Float) ?: defValue
-            override fun getBoolean(key: String, defValue: Boolean): Boolean = (store[key] as? Boolean) ?: defValue
-            override fun contains(key: String): Boolean = store.containsKey(key)
-            override fun edit(): SharedPreferences.Editor = createEditor(store)
-            override fun registerOnSharedPreferenceChangeListener(
-                listener: SharedPreferences.OnSharedPreferenceChangeListener?,
-            ) = Unit
-            override fun unregisterOnSharedPreferenceChangeListener(
-                listener: SharedPreferences.OnSharedPreferenceChangeListener?,
-            ) = Unit
-        }
+        val mockPrefs =
+            object : SharedPreferences {
+                override fun getAll(): MutableMap<String, *> = store
 
-        val context = object : ContextWrapper(null) {
-            override fun getApplicationContext(): Context = this
-            override fun getSharedPreferences(name: String, mode: Int): SharedPreferences = mockPrefs
-        }
+                override fun getString(
+                    key: String,
+                    defValue: String?,
+                ): String? = store[key] as? String ?: defValue
+
+                override fun getStringSet(
+                    key: String,
+                    defValues: Set<String>?,
+                ): Set<String>? = defValues
+
+                override fun getInt(
+                    key: String,
+                    defValue: Int,
+                ): Int = (store[key] as? Int) ?: defValue
+
+                override fun getLong(
+                    key: String,
+                    defValue: Long,
+                ): Long = (store[key] as? Long) ?: defValue
+
+                override fun getFloat(
+                    key: String,
+                    defValue: Float,
+                ): Float = (store[key] as? Float) ?: defValue
+
+                override fun getBoolean(
+                    key: String,
+                    defValue: Boolean,
+                ): Boolean = (store[key] as? Boolean) ?: defValue
+
+                override fun contains(key: String): Boolean = store.containsKey(key)
+
+                override fun edit(): SharedPreferences.Editor = createEditor(store)
+
+                override fun registerOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) = Unit
+
+                override fun unregisterOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) =
+                    Unit
+            }
+
+        val context =
+            object : ContextWrapper(null) {
+                override fun getApplicationContext(): Context = this
+
+                override fun getSharedPreferences(
+                    name: String,
+                    mode: Int,
+                ): SharedPreferences = mockPrefs
+            }
 
         assertFalse(LiveVisionPreferences.isGeminiLiveEnabled(context))
         LiveVisionPreferences.setGeminiLiveEnabled(context, true)
@@ -172,27 +206,54 @@ class GeminiLiveVisionClientTest {
 
     private fun createEditor(store: MutableMap<String, Any?>): SharedPreferences.Editor =
         object : SharedPreferences.Editor {
-            override fun putString(key: String, value: String?): SharedPreferences.Editor {
+            override fun putString(
+                key: String,
+                value: String?,
+            ): SharedPreferences.Editor {
                 store[key] = value
                 return this
             }
-            override fun putStringSet(key: String, values: Set<String>?): SharedPreferences.Editor = this
-            override fun putInt(key: String, value: Int): SharedPreferences.Editor = this
-            override fun putLong(key: String, value: Long): SharedPreferences.Editor = this
-            override fun putFloat(key: String, value: Float): SharedPreferences.Editor = this
-            override fun putBoolean(key: String, value: Boolean): SharedPreferences.Editor {
+
+            override fun putStringSet(
+                key: String,
+                values: Set<String>?,
+            ): SharedPreferences.Editor = this
+
+            override fun putInt(
+                key: String,
+                value: Int,
+            ): SharedPreferences.Editor = this
+
+            override fun putLong(
+                key: String,
+                value: Long,
+            ): SharedPreferences.Editor = this
+
+            override fun putFloat(
+                key: String,
+                value: Float,
+            ): SharedPreferences.Editor = this
+
+            override fun putBoolean(
+                key: String,
+                value: Boolean,
+            ): SharedPreferences.Editor {
                 store[key] = value
                 return this
             }
+
             override fun remove(key: String): SharedPreferences.Editor {
                 store.remove(key)
                 return this
             }
+
             override fun clear(): SharedPreferences.Editor {
                 store.clear()
                 return this
             }
+
             override fun commit(): Boolean = true
+
             override fun apply() = Unit
         }
 }

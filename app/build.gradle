@@ -8,6 +8,23 @@ plugins {
     id 'jacoco'
 }
 
+// Format only explicitly selected files; the plugin's aggregate format task rewrites every source set.
+tasks.register('ktlintFormatBatch', JavaExec) {
+    group = 'verification'
+    description = 'Format a comma-separated list of Kotlin files without touching other source files.'
+    def selectedFiles = providers.gradleProperty('ktlintFiles')
+    doFirst {
+        if (!selectedFiles.isPresent() || selectedFiles.get().trim().isEmpty()) {
+            throw new GradleException('Pass -PktlintFiles=path/one.kt,path/two.kt')
+        }
+        args('-F', *selectedFiles.get().split(',').collect { it.trim() }.findAll { it })
+    }
+    classpath = configurations.detachedConfiguration(
+        dependencies.create('com.pinterest.ktlint:ktlint-cli:1.8.0'),
+    )
+    mainClass = 'com.pinterest.ktlint.Main'
+}
+
 detekt {
     config.setFrom(files("$rootDir/config/detekt.yml"))
     buildUponDefaultConfig = true
