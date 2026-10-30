@@ -27,13 +27,14 @@ class PantryScreenScaffoldStateTest {
     private lateinit var fakeRepo: TestPantryRepo
     private lateinit var viewModel: PantryViewModel
 
-    private val sampleItem = PantryItem(
-        id = 101L,
-        name = "Sourdough Bread",
-        quantity = 2f,
-        storageLocation = "PANTRY",
-        category = "BAKERY",
-    )
+    private val sampleItem =
+        PantryItem(
+            id = 101L,
+            name = "Sourdough Bread",
+            quantity = 2f,
+            storageLocation = "PANTRY",
+            category = "BAKERY",
+        )
 
     @Before
     fun setUp() {
@@ -51,17 +52,18 @@ class PantryScreenScaffoldStateTest {
     fun buildPantryScaffoldPropsMapsPropertiesDirectly() {
         val hostState = SnackbarHostState()
         val itemsList = listOf(sampleItem)
-        val scaffoldState = PantryScreenScaffoldState(
-            viewModel = viewModel,
-            items = itemsList,
-            selectedLocation = PantryLocationFilter.PANTRY,
-            selectedSortOrder = PantrySortOrder.NAME_ASC,
-            searchQuery = "bread",
-            onOpenEditor = {},
-            onUseItem = {},
-            snackbarHostState = hostState,
-            scope = testScope,
-        )
+        val scaffoldState =
+            PantryScreenScaffoldState(
+                viewModel = viewModel,
+                items = itemsList,
+                selectedLocation = PantryLocationFilter.PANTRY,
+                selectedSortOrder = PantrySortOrder.NAME_ASC,
+                searchQuery = "bread",
+                onOpenEditor = {},
+                onUseItem = {},
+                snackbarHostState = hostState,
+                scope = testScope,
+            )
 
         val props = buildPantryScaffoldProps(scaffoldState)
 
@@ -75,17 +77,18 @@ class PantryScreenScaffoldStateTest {
 
     @Test
     fun buildPantryScaffoldPropsDelegatesSortSearchAndLocation() {
-        val scaffoldState = PantryScreenScaffoldState(
-            viewModel = viewModel,
-            items = emptyList(),
-            selectedLocation = PantryLocationFilter.ALL,
-            selectedSortOrder = PantrySortOrder.NAME_ASC,
-            searchQuery = "",
-            onOpenEditor = {},
-            onUseItem = {},
-            snackbarHostState = SnackbarHostState(),
-            scope = testScope,
-        )
+        val scaffoldState =
+            PantryScreenScaffoldState(
+                viewModel = viewModel,
+                items = emptyList(),
+                selectedLocation = PantryLocationFilter.ALL,
+                selectedSortOrder = PantrySortOrder.NAME_ASC,
+                searchQuery = "",
+                onOpenEditor = {},
+                onUseItem = {},
+                snackbarHostState = SnackbarHostState(),
+                scope = testScope,
+            )
 
         val props = buildPantryScaffoldProps(scaffoldState)
 
@@ -105,20 +108,21 @@ class PantryScreenScaffoldStateTest {
         var editorCallCount = 0
         var usedItem: PantryItem? = null
 
-        val scaffoldState = PantryScreenScaffoldState(
-            viewModel = viewModel,
-            items = emptyList(),
-            selectedLocation = PantryLocationFilter.ALL,
-            selectedSortOrder = PantrySortOrder.NAME_ASC,
-            searchQuery = "",
-            onOpenEditor = {
-                openedEditorItem = it
-                editorCallCount++
-            },
-            onUseItem = { usedItem = it },
-            snackbarHostState = SnackbarHostState(),
-            scope = testScope,
-        )
+        val scaffoldState =
+            PantryScreenScaffoldState(
+                viewModel = viewModel,
+                items = emptyList(),
+                selectedLocation = PantryLocationFilter.ALL,
+                selectedSortOrder = PantrySortOrder.NAME_ASC,
+                searchQuery = "",
+                onOpenEditor = {
+                    openedEditorItem = it
+                    editorCallCount++
+                },
+                onUseItem = { usedItem = it },
+                snackbarHostState = SnackbarHostState(),
+                scope = testScope,
+            )
 
         val props = buildPantryScaffoldProps(scaffoldState)
 
@@ -135,46 +139,48 @@ class PantryScreenScaffoldStateTest {
     }
 
     @Test
-    fun buildPantryScaffoldPropsDelegatesMutations() = runTest(testDispatcher) {
-        val scaffoldState = PantryScreenScaffoldState(
-            viewModel = viewModel,
-            items = emptyList(),
-            selectedLocation = PantryLocationFilter.ALL,
-            selectedSortOrder = PantrySortOrder.NAME_ASC,
-            searchQuery = "",
-            onOpenEditor = {},
-            onUseItem = {},
-            snackbarHostState = SnackbarHostState(),
-            scope = testScope,
-        )
+    fun buildPantryScaffoldPropsDelegatesMutations() =
+        runTest(testDispatcher) {
+            val scaffoldState =
+                PantryScreenScaffoldState(
+                    viewModel = viewModel,
+                    items = emptyList(),
+                    selectedLocation = PantryLocationFilter.ALL,
+                    selectedSortOrder = PantrySortOrder.NAME_ASC,
+                    searchQuery = "",
+                    onOpenEditor = {},
+                    onUseItem = {},
+                    snackbarHostState = SnackbarHostState(),
+                    scope = testScope,
+                )
 
-        val props = buildPantryScaffoldProps(scaffoldState)
+            val props = buildPantryScaffoldProps(scaffoldState)
 
-        props.onDecrement(sampleItem)
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals(1f, fakeRepo.decrementedDelta)
+            props.onDecrement(sampleItem)
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals(1f, fakeRepo.decrementedDelta)
 
-        props.onIncrement(sampleItem)
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals(3f, fakeRepo.updatedItem?.quantity)
+            props.onIncrement(sampleItem)
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals(3f, fakeRepo.updatedItem?.quantity)
 
-        props.onMarkOpened(sampleItem)
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertTrue(fakeRepo.updatedItem?.isOpened == true)
+            props.onMarkOpened(sampleItem)
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertTrue(fakeRepo.updatedItem?.isOpened == true)
 
-        props.onAddToGrocery(sampleItem)
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals("Sourdough Bread", fakeRepo.insertedGrocery?.name)
-        assertEquals(101L, fakeRepo.insertedGrocery?.fromPantryId)
+            props.onAddToGrocery(sampleItem)
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals("Sourdough Bread", fakeRepo.insertedGrocery?.name)
+            assertEquals(101L, fakeRepo.insertedGrocery?.fromPantryId)
 
-        props.onDelete(sampleItem)
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals(sampleItem.id, fakeRepo.deletedItem?.id)
+            props.onDelete(sampleItem)
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals(sampleItem.id, fakeRepo.deletedItem?.id)
 
-        props.onRestore(sampleItem)
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals(sampleItem.id, fakeRepo.restoredItem?.id)
-    }
+            props.onRestore(sampleItem)
+            testDispatcher.scheduler.advanceUntilIdle()
+            assertEquals(sampleItem.id, fakeRepo.restoredItem?.id)
+        }
 
     @Test
     fun formatPantryQuantityFormatsNumbersCleanly() {
@@ -195,27 +201,51 @@ class PantryScreenScaffoldStateTest {
         var insertedGrocery: GroceryItem? = null
 
         override fun observePantryItems(): Flow<List<PantryItem>> = itemsFlow
+
         override fun searchPantryItems(query: String): Flow<List<PantryItem>> = itemsFlow
+
         override suspend fun insertPantry(item: PantryItem): Long = 1L
-        override suspend fun updatePantry(item: PantryItem) { updatedItem = item }
-        override suspend fun decrementQuantity(item: PantryItem, delta: Float) { decrementedDelta = delta }
-        override suspend fun deletePantry(item: PantryItem) { deletedItem = item }
-        override suspend fun restorePantry(item: PantryItem) { restoredItem = item }
+
+        override suspend fun updatePantry(item: PantryItem) {
+            updatedItem = item
+        }
+
+        override suspend fun decrementQuantity(
+            item: PantryItem,
+            delta: Float,
+        ) {
+            decrementedDelta = delta
+        }
+
+        override suspend fun deletePantry(item: PantryItem) {
+            deletedItem = item
+        }
+
+        override suspend fun restorePantry(item: PantryItem) {
+            restoredItem = item
+        }
+
         override fun observeGroceryItems(): Flow<List<GroceryItem>> = groceryFlow
+
         override suspend fun insertGrocery(item: GroceryItem): Long {
             insertedGrocery = item
             return 1L
         }
+
         override suspend fun updateGrocery(item: GroceryItem) {
             // No-op for scaffold state test
         }
+
         override suspend fun deleteGrocery(item: GroceryItem) {
             // No-op for scaffold state test
         }
+
         override suspend fun clearCheckedGrocery() {
             // No-op for scaffold state test
         }
+
         override suspend fun restockCheckedGroceryToPantry(): Int = 0
+
         override fun reclaimTemporaryMedia(): Int = 0
     }
 }

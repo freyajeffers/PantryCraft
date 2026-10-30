@@ -27,13 +27,14 @@ class GroceryViewModelTest {
     private lateinit var fakeRepo: FakeGroceryRepository
     private lateinit var viewModel: GroceryViewModel
 
-    private val sampleItem = GroceryItem(
-        id = 1L,
-        name = "Oat Milk",
-        quantity = 2f,
-        unit = "CARTON",
-        checked = false,
-    )
+    private val sampleItem =
+        GroceryItem(
+            id = 1L,
+            name = "Oat Milk",
+            quantity = 2f,
+            unit = "CARTON",
+            checked = false,
+        )
 
     @Before
     fun setUp() {
@@ -48,237 +49,266 @@ class GroceryViewModelTest {
     }
 
     @Test
-    fun items_observesRepositoryGroceryFlow() = runTest {
-        val observed = mutableListOf<List<GroceryItem>>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.items.collect { observed.add(it) }
+    fun items_observesRepositoryGroceryFlow() =
+        runTest {
+            val observed = mutableListOf<List<GroceryItem>>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.items.collect { observed.add(it) }
+                }
+
+            fakeRepo.itemsFlow.value = listOf(sampleItem)
+            advanceUntilIdle()
+
+            assertEquals(listOf(sampleItem), observed.last())
+            collectJob.cancel()
         }
 
-        fakeRepo.itemsFlow.value = listOf(sampleItem)
-        advanceUntilIdle()
-
-        assertEquals(listOf(sampleItem), observed.last())
-        collectJob.cancel()
-    }
-
     @Test
-    fun add_successfulInsertDoesNotEmitErrors() = runTest {
-        val emittedErrors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { emittedErrors.add(it) }
+    fun add_successfulInsertDoesNotEmitErrors() =
+        runTest {
+            val emittedErrors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { emittedErrors.add(it) }
+                }
+
+            viewModel.add(sampleItem)
+            advanceUntilIdle()
+
+            assertEquals(listOf(sampleItem), fakeRepo.insertedItems)
+            assertTrue(emittedErrors.isEmpty())
+            collectJob.cancel()
         }
 
-        viewModel.add(sampleItem)
-        advanceUntilIdle()
-
-        assertEquals(listOf(sampleItem), fakeRepo.insertedItems)
-        assertTrue(emittedErrors.isEmpty())
-        collectJob.cancel()
-    }
-
     @Test
-    fun update_successfulUpdateCallsRepository() = runTest {
-        viewModel.update(sampleItem)
-        advanceUntilIdle()
+    fun update_successfulUpdateCallsRepository() =
+        runTest {
+            viewModel.update(sampleItem)
+            advanceUntilIdle()
 
-        assertEquals(listOf(sampleItem), fakeRepo.updatedItems)
-    }
-
-    @Test
-    fun delete_successfulDeleteCallsRepository() = runTest {
-        viewModel.delete(sampleItem)
-        advanceUntilIdle()
-
-        assertEquals(listOf(sampleItem), fakeRepo.deletedItems)
-    }
-
-    @Test
-    fun clearChecked_successfulClearCallsRepository() = runTest {
-        viewModel.clearChecked()
-        advanceUntilIdle()
-
-        assertTrue(fakeRepo.clearCheckedCalled)
-    }
-
-    @Test
-    fun add_emitsExpectedErrorMessageOnFailure() = runTest {
-        val emittedErrors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { emittedErrors.add(it) }
+            assertEquals(listOf(sampleItem), fakeRepo.updatedItems)
         }
 
-        fakeRepo.insertException = RuntimeException("Database write failure")
-        viewModel.add(sampleItem)
-        advanceUntilIdle()
-
-        assertEquals(listOf("Unable to add grocery item"), emittedErrors)
-        assertEquals(0, fakeRepo.reclaimTemporaryMediaCalled)
-        collectJob.cancel()
-    }
-
     @Test
-    fun update_emitsExpectedErrorMessageOnFailure() = runTest {
-        val emittedErrors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { emittedErrors.add(it) }
+    fun delete_successfulDeleteCallsRepository() =
+        runTest {
+            viewModel.delete(sampleItem)
+            advanceUntilIdle()
+
+            assertEquals(listOf(sampleItem), fakeRepo.deletedItems)
         }
 
-        fakeRepo.updateException = IllegalStateException("Row not found")
-        viewModel.update(sampleItem)
-        advanceUntilIdle()
-
-        assertEquals(listOf("Unable to update grocery item"), emittedErrors)
-        collectJob.cancel()
-    }
-
     @Test
-    fun delete_emitsExpectedErrorMessageOnFailure() = runTest {
-        val emittedErrors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { emittedErrors.add(it) }
+    fun clearChecked_successfulClearCallsRepository() =
+        runTest {
+            viewModel.clearChecked()
+            advanceUntilIdle()
+
+            assertTrue(fakeRepo.clearCheckedCalled)
         }
 
-        fakeRepo.deleteException = RuntimeException("Foreign key error")
-        viewModel.delete(sampleItem)
-        advanceUntilIdle()
-
-        assertEquals(listOf("Unable to delete grocery item"), emittedErrors)
-        collectJob.cancel()
-    }
-
     @Test
-    fun clearChecked_emitsExpectedErrorMessageOnFailure() = runTest {
-        val emittedErrors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { emittedErrors.add(it) }
+    fun add_emitsExpectedErrorMessageOnFailure() =
+        runTest {
+            val emittedErrors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { emittedErrors.add(it) }
+                }
+
+            fakeRepo.insertException = RuntimeException("Database write failure")
+            viewModel.add(sampleItem)
+            advanceUntilIdle()
+
+            assertEquals(listOf("Unable to add grocery item"), emittedErrors)
+            assertEquals(0, fakeRepo.reclaimTemporaryMediaCalled)
+            collectJob.cancel()
         }
 
-        fakeRepo.clearCheckedException = RuntimeException("Transaction rolled back")
-        viewModel.clearChecked()
-        advanceUntilIdle()
-
-        assertEquals(listOf("Unable to clear checked grocery items"), emittedErrors)
-        collectJob.cancel()
-    }
-
     @Test
-    fun restockChecked_emitsExpectedErrorMessageOnFailure() = runTest {
-        val emittedErrors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { emittedErrors.add(it) }
+    fun update_emitsExpectedErrorMessageOnFailure() =
+        runTest {
+            val emittedErrors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { emittedErrors.add(it) }
+                }
+
+            fakeRepo.updateException = IllegalStateException("Row not found")
+            viewModel.update(sampleItem)
+            advanceUntilIdle()
+
+            assertEquals(listOf("Unable to update grocery item"), emittedErrors)
+            collectJob.cancel()
         }
 
-        fakeRepo.restockException = RuntimeException("Pantry sync failure")
-        viewModel.restockChecked()
-        advanceUntilIdle()
-
-        assertEquals(listOf("Unable to restock checked grocery items"), emittedErrors)
-        collectJob.cancel()
-    }
-
     @Test
-    fun restockChecked_emitsSuccessCountMessageOnSuccess() = runTest {
-        val emittedErrors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { emittedErrors.add(it) }
+    fun delete_emitsExpectedErrorMessageOnFailure() =
+        runTest {
+            val emittedErrors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { emittedErrors.add(it) }
+                }
+
+            fakeRepo.deleteException = RuntimeException("Foreign key error")
+            viewModel.delete(sampleItem)
+            advanceUntilIdle()
+
+            assertEquals(listOf("Unable to delete grocery item"), emittedErrors)
+            collectJob.cancel()
         }
 
-        fakeRepo.restockCheckedResult = 4
-        viewModel.restockChecked()
-        advanceUntilIdle()
-
-        assertEquals(listOf("Restocked 4 items to pantry"), emittedErrors)
-        collectJob.cancel()
-    }
-
     @Test
-    fun add_handlesSQLiteFullExceptionAndReclaimsMedia() = runTest {
-        val emittedErrors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { emittedErrors.add(it) }
+    fun clearChecked_emitsExpectedErrorMessageOnFailure() =
+        runTest {
+            val emittedErrors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { emittedErrors.add(it) }
+                }
+
+            fakeRepo.clearCheckedException = RuntimeException("Transaction rolled back")
+            viewModel.clearChecked()
+            advanceUntilIdle()
+
+            assertEquals(listOf("Unable to clear checked grocery items"), emittedErrors)
+            collectJob.cancel()
         }
 
-        fakeRepo.insertException = SQLiteFullException("Disk space exhausted")
-        viewModel.add(sampleItem)
-        advanceUntilIdle()
-
-        assertEquals(1, fakeRepo.reclaimTemporaryMediaCalled)
-        assertEquals(
-            listOf("Storage is full; temporary media cleared; free space and try again"),
-            emittedErrors,
-        )
-        collectJob.cancel()
-    }
-
     @Test
-    fun update_handlesSQLiteFullExceptionAndReclaimsMedia() = runTest {
-        val emittedErrors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { emittedErrors.add(it) }
+    fun restockChecked_emitsExpectedErrorMessageOnFailure() =
+        runTest {
+            val emittedErrors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { emittedErrors.add(it) }
+                }
+
+            fakeRepo.restockException = RuntimeException("Pantry sync failure")
+            viewModel.restockChecked()
+            advanceUntilIdle()
+
+            assertEquals(listOf("Unable to restock checked grocery items"), emittedErrors)
+            collectJob.cancel()
         }
 
-        fakeRepo.updateException = SQLiteFullException("Disk space exhausted")
-        viewModel.update(sampleItem)
-        advanceUntilIdle()
-
-        assertEquals(1, fakeRepo.reclaimTemporaryMediaCalled)
-        assertEquals(
-            listOf("Storage is full; temporary media cleared; free space and try again"),
-            emittedErrors,
-        )
-        collectJob.cancel()
-    }
-
     @Test
-    fun clearChecked_handlesSQLiteFullExceptionAndReclaimsMedia() = runTest {
-        val emittedErrors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { emittedErrors.add(it) }
+    fun restockChecked_emitsSuccessCountMessageOnSuccess() =
+        runTest {
+            val emittedErrors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { emittedErrors.add(it) }
+                }
+
+            fakeRepo.restockCheckedResult = 4
+            viewModel.restockChecked()
+            advanceUntilIdle()
+
+            assertEquals(listOf("Restocked 4 items to pantry"), emittedErrors)
+            collectJob.cancel()
         }
 
-        fakeRepo.clearCheckedException = SQLiteFullException("Disk space exhausted")
-        viewModel.clearChecked()
-        advanceUntilIdle()
-
-        assertEquals(1, fakeRepo.reclaimTemporaryMediaCalled)
-        assertEquals(
-            listOf("Storage is full; temporary media cleared; free space and try again"),
-            emittedErrors,
-        )
-        collectJob.cancel()
-    }
-
     @Test
-    fun add_rethrowsCancellationExceptionWithoutEmittingError() = runTest {
-        val emittedErrors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { emittedErrors.add(it) }
+    fun add_handlesSQLiteFullExceptionAndReclaimsMedia() =
+        runTest {
+            val emittedErrors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { emittedErrors.add(it) }
+                }
+
+            fakeRepo.insertException = SQLiteFullException("Disk space exhausted")
+            viewModel.add(sampleItem)
+            advanceUntilIdle()
+
+            assertEquals(1, fakeRepo.reclaimTemporaryMediaCalled)
+            assertEquals(
+                listOf("Storage is full; temporary media cleared; free space and try again"),
+                emittedErrors,
+            )
+            collectJob.cancel()
         }
 
-        fakeRepo.insertException = CancellationException("Operation cancelled")
-        val job = viewModel.add(sampleItem)
-        advanceUntilIdle()
-
-        assertTrue(job.isCancelled)
-        assertTrue(emittedErrors.isEmpty())
-        collectJob.cancel()
-    }
-
     @Test
-    fun update_rethrowsCancellationExceptionWithoutEmittingError() = runTest {
-        val emittedErrors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { emittedErrors.add(it) }
+    fun update_handlesSQLiteFullExceptionAndReclaimsMedia() =
+        runTest {
+            val emittedErrors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { emittedErrors.add(it) }
+                }
+
+            fakeRepo.updateException = SQLiteFullException("Disk space exhausted")
+            viewModel.update(sampleItem)
+            advanceUntilIdle()
+
+            assertEquals(1, fakeRepo.reclaimTemporaryMediaCalled)
+            assertEquals(
+                listOf("Storage is full; temporary media cleared; free space and try again"),
+                emittedErrors,
+            )
+            collectJob.cancel()
         }
 
-        fakeRepo.updateException = CancellationException("Operation cancelled")
-        val job = viewModel.update(sampleItem)
-        advanceUntilIdle()
+    @Test
+    fun clearChecked_handlesSQLiteFullExceptionAndReclaimsMedia() =
+        runTest {
+            val emittedErrors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { emittedErrors.add(it) }
+                }
 
-        assertTrue(job.isCancelled)
-        assertTrue(emittedErrors.isEmpty())
-        collectJob.cancel()
-    }
+            fakeRepo.clearCheckedException = SQLiteFullException("Disk space exhausted")
+            viewModel.clearChecked()
+            advanceUntilIdle()
+
+            assertEquals(1, fakeRepo.reclaimTemporaryMediaCalled)
+            assertEquals(
+                listOf("Storage is full; temporary media cleared; free space and try again"),
+                emittedErrors,
+            )
+            collectJob.cancel()
+        }
+
+    @Test
+    fun add_rethrowsCancellationExceptionWithoutEmittingError() =
+        runTest {
+            val emittedErrors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { emittedErrors.add(it) }
+                }
+
+            fakeRepo.insertException = CancellationException("Operation cancelled")
+            val job = viewModel.add(sampleItem)
+            advanceUntilIdle()
+
+            assertTrue(job.isCancelled)
+            assertTrue(emittedErrors.isEmpty())
+            collectJob.cancel()
+        }
+
+    @Test
+    fun update_rethrowsCancellationExceptionWithoutEmittingError() =
+        runTest {
+            val emittedErrors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { emittedErrors.add(it) }
+                }
+
+            fakeRepo.updateException = CancellationException("Operation cancelled")
+            val job = viewModel.update(sampleItem)
+            advanceUntilIdle()
+
+            assertTrue(job.isCancelled)
+            assertTrue(emittedErrors.isEmpty())
+            collectJob.cancel()
+        }
 
     private class FakeGroceryRepository : GroceryRepository {
         val itemsFlow = MutableStateFlow<List<GroceryItem>>(emptyList())

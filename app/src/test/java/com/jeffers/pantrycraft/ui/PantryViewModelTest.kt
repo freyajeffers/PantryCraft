@@ -30,13 +30,14 @@ class PantryViewModelTest {
     private lateinit var fakeRepo: FakePantryRepository
     private lateinit var viewModel: PantryViewModel
 
-    private val sampleItem = PantryItem(
-        id = 10L,
-        name = "Organic Oats",
-        quantity = 2f,
-        storageLocation = "PANTRY",
-        category = "GRAINS",
-    )
+    private val sampleItem =
+        PantryItem(
+            id = 10L,
+            name = "Organic Oats",
+            quantity = 2f,
+            storageLocation = "PANTRY",
+            category = "GRAINS",
+        )
 
     @Before
     fun setUp() {
@@ -71,182 +72,198 @@ class PantryViewModelTest {
     }
 
     @Test
-    fun viewModel_visibleItemsReactsToSearchAndFiltering() = runTest {
-        val apple = PantryItem(id = 1L, name = "Apple", storageLocation = "COUNTER")
-        val avocado = PantryItem(id = 2L, name = "Avocado", storageLocation = "FRIDGE")
-        fakeRepo.searchItemsFlow.value = listOf(apple, avocado)
+    fun viewModel_visibleItemsReactsToSearchAndFiltering() =
+        runTest {
+            val apple = PantryItem(id = 1L, name = "Apple", storageLocation = "COUNTER")
+            val avocado = PantryItem(id = 2L, name = "Avocado", storageLocation = "FRIDGE")
+            fakeRepo.searchItemsFlow.value = listOf(apple, avocado)
 
-        val visible = mutableListOf<List<PantryItem>>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.visibleItems.collect { visible.add(it) }
+            val visible = mutableListOf<List<PantryItem>>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.visibleItems.collect { visible.add(it) }
+                }
+
+            viewModel.setSearchQuery("A")
+            advanceTimeBy(60L)
+            advanceUntilIdle()
+
+            viewModel.selectLocation(PantryLocationFilter.FRIDGE)
+            advanceUntilIdle()
+
+            val last = visible.last()
+            assertEquals(1, last.size)
+            assertEquals("Avocado", last.first().name)
+
+            collectJob.cancel()
         }
-
-        viewModel.setSearchQuery("A")
-        advanceTimeBy(60L)
-        advanceUntilIdle()
-
-        viewModel.selectLocation(PantryLocationFilter.FRIDGE)
-        advanceUntilIdle()
-
-        val last = visible.last()
-        assertEquals(1, last.size)
-        assertEquals("Avocado", last.first().name)
-
-        collectJob.cancel()
-    }
 
     @Test
-    fun viewModel_add_successAndFailure() = runTest {
-        val errors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { errors.add(it) }
+    fun viewModel_add_successAndFailure() =
+        runTest {
+            val errors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { errors.add(it) }
+                }
+
+            viewModel.add(sampleItem)
+            advanceUntilIdle()
+            assertEquals(listOf(sampleItem), fakeRepo.insertedPantry)
+            assertTrue(errors.isEmpty())
+
+            fakeRepo.insertException = RuntimeException("DB write error")
+            viewModel.add(sampleItem)
+            advanceUntilIdle()
+            assertEquals(listOf("Unable to add pantry item"), errors)
+
+            collectJob.cancel()
         }
-
-        viewModel.add(sampleItem)
-        advanceUntilIdle()
-        assertEquals(listOf(sampleItem), fakeRepo.insertedPantry)
-        assertTrue(errors.isEmpty())
-
-        fakeRepo.insertException = RuntimeException("DB write error")
-        viewModel.add(sampleItem)
-        advanceUntilIdle()
-        assertEquals(listOf("Unable to add pantry item"), errors)
-
-        collectJob.cancel()
-    }
 
     @Test
-    fun viewModel_update_successAndFailure() = runTest {
-        val errors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { errors.add(it) }
+    fun viewModel_update_successAndFailure() =
+        runTest {
+            val errors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { errors.add(it) }
+                }
+
+            viewModel.update(sampleItem)
+            advanceUntilIdle()
+            assertEquals(listOf(sampleItem), fakeRepo.updatedPantry)
+            assertTrue(errors.isEmpty())
+
+            fakeRepo.updateException = RuntimeException("Update failed")
+            viewModel.update(sampleItem)
+            advanceUntilIdle()
+            assertEquals(listOf("Unable to update pantry item"), errors)
+
+            collectJob.cancel()
         }
-
-        viewModel.update(sampleItem)
-        advanceUntilIdle()
-        assertEquals(listOf(sampleItem), fakeRepo.updatedPantry)
-        assertTrue(errors.isEmpty())
-
-        fakeRepo.updateException = RuntimeException("Update failed")
-        viewModel.update(sampleItem)
-        advanceUntilIdle()
-        assertEquals(listOf("Unable to update pantry item"), errors)
-
-        collectJob.cancel()
-    }
 
     @Test
-    fun viewModel_decrement_successAndFailure() = runTest {
-        val errors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { errors.add(it) }
+    fun viewModel_decrement_successAndFailure() =
+        runTest {
+            val errors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { errors.add(it) }
+                }
+
+            viewModel.decrement(sampleItem, 1f)
+            advanceUntilIdle()
+            assertEquals(1, fakeRepo.decrementedItems.size)
+            assertEquals(sampleItem to 1f, fakeRepo.decrementedItems.first())
+
+            fakeRepo.decrementException = RuntimeException("Decrement failed")
+            viewModel.decrement(sampleItem, 1f)
+            advanceUntilIdle()
+            assertEquals(listOf("Unable to update pantry quantity"), errors)
+
+            collectJob.cancel()
         }
-
-        viewModel.decrement(sampleItem, 1f)
-        advanceUntilIdle()
-        assertEquals(1, fakeRepo.decrementedItems.size)
-        assertEquals(sampleItem to 1f, fakeRepo.decrementedItems.first())
-
-        fakeRepo.decrementException = RuntimeException("Decrement failed")
-        viewModel.decrement(sampleItem, 1f)
-        advanceUntilIdle()
-        assertEquals(listOf("Unable to update pantry quantity"), errors)
-
-        collectJob.cancel()
-    }
 
     @Test
-    fun viewModel_deleteAndRestore_successAndFailure() = runTest {
-        val errors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { errors.add(it) }
+    fun viewModel_deleteAndRestore_successAndFailure() =
+        runTest {
+            val errors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { errors.add(it) }
+                }
+
+            viewModel.delete(sampleItem)
+            advanceUntilIdle()
+            assertEquals(listOf(sampleItem), fakeRepo.deletedPantry)
+
+            viewModel.restore(sampleItem)
+            advanceUntilIdle()
+            assertEquals(listOf(sampleItem), fakeRepo.restoredPantry)
+            assertTrue(errors.isEmpty())
+
+            fakeRepo.deleteException = RuntimeException("Delete failed")
+            viewModel.delete(sampleItem)
+            advanceUntilIdle()
+            assertEquals(listOf("Unable to delete pantry item"), errors)
+
+            fakeRepo.restoreException = RuntimeException("Restore failed")
+            viewModel.restore(sampleItem)
+            advanceUntilIdle()
+            assertEquals(
+                listOf("Unable to delete pantry item", "Unable to restore pantry item"),
+                errors,
+            )
+
+            collectJob.cancel()
         }
-
-        viewModel.delete(sampleItem)
-        advanceUntilIdle()
-        assertEquals(listOf(sampleItem), fakeRepo.deletedPantry)
-
-        viewModel.restore(sampleItem)
-        advanceUntilIdle()
-        assertEquals(listOf(sampleItem), fakeRepo.restoredPantry)
-        assertTrue(errors.isEmpty())
-
-        fakeRepo.deleteException = RuntimeException("Delete failed")
-        viewModel.delete(sampleItem)
-        advanceUntilIdle()
-        assertEquals(listOf("Unable to delete pantry item"), errors)
-
-        fakeRepo.restoreException = RuntimeException("Restore failed")
-        viewModel.restore(sampleItem)
-        advanceUntilIdle()
-        assertEquals(
-            listOf("Unable to delete pantry item", "Unable to restore pantry item"),
-            errors,
-        )
-
-        collectJob.cancel()
-    }
 
     @Test
-    fun viewModel_addGroceryItem_emitsSuccessNotificationAndHandlesError() = runTest {
-        val errors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { errors.add(it) }
+    fun viewModel_addGroceryItem_emitsSuccessNotificationAndHandlesError() =
+        runTest {
+            val errors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { errors.add(it) }
+                }
+
+            viewModel.addGroceryItem("Olive Oil", 2f, "BOTTLE", fromPantryId = 10L)
+            advanceUntilIdle()
+            assertEquals(1, fakeRepo.insertedGrocery.size)
+            assertEquals("Olive Oil", fakeRepo.insertedGrocery.first().name)
+            assertEquals(listOf("Added Olive Oil to grocery list"), errors)
+
+            fakeRepo.groceryException = RuntimeException("Failed to add grocery")
+            viewModel.addGroceryItem("Salt")
+            advanceUntilIdle()
+            assertEquals(
+                listOf("Added Olive Oil to grocery list", "Unable to add grocery item"),
+                errors,
+            )
+
+            collectJob.cancel()
         }
-
-        viewModel.addGroceryItem("Olive Oil", 2f, "BOTTLE", fromPantryId = 10L)
-        advanceUntilIdle()
-        assertEquals(1, fakeRepo.insertedGrocery.size)
-        assertEquals("Olive Oil", fakeRepo.insertedGrocery.first().name)
-        assertEquals(listOf("Added Olive Oil to grocery list"), errors)
-
-        fakeRepo.groceryException = RuntimeException("Failed to add grocery")
-        viewModel.addGroceryItem("Salt")
-        advanceUntilIdle()
-        assertEquals(
-            listOf("Added Olive Oil to grocery list", "Unable to add grocery item"),
-            errors,
-        )
-
-        collectJob.cancel()
-    }
 
     @Test
-    fun viewModel_handlesSQLiteFullExceptionAndReclaimsMedia() = runTest {
-        val errors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { errors.add(it) }
+    fun viewModel_handlesSQLiteFullExceptionAndReclaimsMedia() =
+        runTest {
+            val errors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { errors.add(it) }
+                }
+
+            fakeRepo.insertException = SQLiteFullException("Disk full")
+            viewModel.add(sampleItem)
+            advanceUntilIdle()
+
+            assertEquals(1, fakeRepo.reclaimMediaCallCount)
+            assertEquals(
+                listOf("Storage is full; temporary media cleared; free space and try again"),
+                errors,
+            )
+
+            collectJob.cancel()
         }
-
-        fakeRepo.insertException = SQLiteFullException("Disk full")
-        viewModel.add(sampleItem)
-        advanceUntilIdle()
-
-        assertEquals(1, fakeRepo.reclaimMediaCallCount)
-        assertEquals(
-            listOf("Storage is full; temporary media cleared; free space and try again"),
-            errors,
-        )
-
-        collectJob.cancel()
-    }
 
     @Test
-    fun viewModel_rethrowsCancellationExceptionWithoutEmittingError() = runTest {
-        val errors = mutableListOf<String>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.operationErrors.collect { errors.add(it) }
+    fun viewModel_rethrowsCancellationExceptionWithoutEmittingError() =
+        runTest {
+            val errors = mutableListOf<String>()
+            val collectJob =
+                launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.operationErrors.collect { errors.add(it) }
+                }
+
+            fakeRepo.insertException = CancellationException("Job cancelled")
+            val job = viewModel.add(sampleItem)
+            advanceUntilIdle()
+
+            assertTrue(job.isCancelled)
+            assertTrue(errors.isEmpty())
+
+            collectJob.cancel()
         }
-
-        fakeRepo.insertException = CancellationException("Job cancelled")
-        val job = viewModel.add(sampleItem)
-        advanceUntilIdle()
-
-        assertTrue(job.isCancelled)
-        assertTrue(errors.isEmpty())
-
-        collectJob.cancel()
-    }
 
     private class FakePantryRepository : PantryRepository {
         val pantryItemsFlow = MutableStateFlow<List<PantryItem>>(emptyList())
@@ -269,49 +286,66 @@ class PantryViewModelTest {
         var groceryException: Throwable? = null
 
         override fun observePantryItems(): Flow<List<PantryItem>> = pantryItemsFlow
+
         override fun searchPantryItems(query: String): Flow<List<PantryItem>> = searchItemsFlow
+
         override suspend fun insertPantry(item: PantryItem): Long {
             insertException?.let { throw it }
             insertedPantry.add(item)
             return item.id
         }
+
         override suspend fun updatePantry(item: PantryItem) {
             updateException?.let { throw it }
             updatedPantry.add(item)
         }
-        override suspend fun decrementQuantity(item: PantryItem, delta: Float) {
+
+        override suspend fun decrementQuantity(
+            item: PantryItem,
+            delta: Float,
+        ) {
             decrementException?.let { throw it }
             decrementedItems.add(item to delta)
         }
+
         override suspend fun deletePantry(item: PantryItem) {
             deleteException?.let { throw it }
             deletedPantry.add(item)
         }
+
         override suspend fun restorePantry(item: PantryItem) {
             restoreException?.let { throw it }
             restoredPantry.add(item)
         }
+
         override fun observeGroceryItems(): Flow<List<GroceryItem>> = groceryItemsFlow
+
         override suspend fun insertGrocery(item: GroceryItem): Long {
             groceryException?.let { throw it }
             insertedGrocery.add(item)
             return item.id
         }
+
         override suspend fun updateGrocery(item: GroceryItem) {
             // No-op for test stub
         }
+
         override suspend fun deleteGrocery(item: GroceryItem) {
             // No-op for test stub
         }
+
         override suspend fun clearCheckedGrocery() {
             // No-op for test stub
         }
+
         override suspend fun restockCheckedGroceryToPantry(): Int = 0
+
         override fun reclaimTemporaryMedia(): Int {
             reclaimMediaCallCount++
             return 1
         }
     }
+
     @Test
     fun filterPantryItems_allLocationsReturnsEveryItem() {
         val items = sampleItems()
@@ -436,10 +470,14 @@ class PantryViewModelTest {
         val byCategory = sortPantryItems(listOf(itemA, itemB), PantrySortOrder.CATEGORY)
         assertEquals(listOf("Artichoke", "Zucchini"), byCategory.map { it.name })
 
-        val byStorageZone = sortPantryItems(listOf(
-            PantryItem(id = 1, name = "Zucchini", storageLocation = "FRIDGE"),
-            PantryItem(id = 2, name = "Artichoke", storageLocation = "FRIDGE"),
-        ), PantrySortOrder.STORAGE_LOCATION)
+        val byStorageZone =
+            sortPantryItems(
+                listOf(
+                    PantryItem(id = 1, name = "Zucchini", storageLocation = "FRIDGE"),
+                    PantryItem(id = 2, name = "Artichoke", storageLocation = "FRIDGE"),
+                ),
+                PantrySortOrder.STORAGE_LOCATION,
+            )
         assertEquals(listOf("Artichoke", "Zucchini"), byStorageZone.map { it.name })
     }
 
@@ -450,19 +488,21 @@ class PantryViewModelTest {
         val exactlyAtCutoff = PantryItem(id = 1, name = "Milk", expirationTimestamp = now + fiveDaysMillis)
         val pastCutoff = PantryItem(id = 2, name = "Canned Soup", expirationTimestamp = now + fiveDaysMillis + 1L)
 
-        val filtered = filterPantryItems(
-            listOf(exactlyAtCutoff, pastCutoff),
-            PantryLocationFilter.EXPIRING_SOON,
-            now = now,
-        )
+        val filtered =
+            filterPantryItems(
+                listOf(exactlyAtCutoff, pastCutoff),
+                PantryLocationFilter.EXPIRING_SOON,
+                now = now,
+            )
 
         assertEquals(1, filtered.size)
         assertEquals("Milk", filtered.first().name)
 
-        val defaultNowFiltered = filterPantryItems(
-            listOf(PantryItem(id = 10, name = "Immediate", expirationTimestamp = System.currentTimeMillis() + 1000L)),
-            PantryLocationFilter.EXPIRING_SOON,
-        )
+        val defaultNowFiltered =
+            filterPantryItems(
+                listOf(PantryItem(id = 10, name = "Immediate", expirationTimestamp = System.currentTimeMillis() + 1000L)),
+                PantryLocationFilter.EXPIRING_SOON,
+            )
         assertEquals(1, defaultNowFiltered.size)
     }
 

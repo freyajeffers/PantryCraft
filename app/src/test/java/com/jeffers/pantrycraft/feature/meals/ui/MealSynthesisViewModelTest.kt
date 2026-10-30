@@ -32,7 +32,6 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MealSynthesisViewModelTest {
-
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private lateinit var fakePantry: TestPantryRepo
@@ -43,13 +42,18 @@ class MealSynthesisViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        fakePantry = TestPantryRepo(
-            listOf(PantryItem(id = 1L, name = "Eggs", quantity = 4f, unit = "count")),
-        )
+        fakePantry =
+            TestPantryRepo(
+                listOf(PantryItem(id = 1L, name = "Eggs", quantity = 4f, unit = "count")),
+            )
         fakeGrocery = TestGroceryRepo()
-        val dummyModel = object : TextGenerationModel {
-            override suspend fun generate(systemPrompt: String, userPrompt: String): String = "{}"
-        }
+        val dummyModel =
+            object : TextGenerationModel {
+                override suspend fun generate(
+                    systemPrompt: String,
+                    userPrompt: String,
+                ): String = "{}"
+            }
         engine = MealSynthesisEngine(ContextWrapper(null), dummyModel)
         viewModel = MealSynthesisViewModel(fakePantry, fakeGrocery, engine)
     }
@@ -84,52 +88,81 @@ class MealSynthesisViewModelTest {
     }
 
     @Test
-    fun cookMealDeductsAndEmitsStatus() = testScope.runTest {
-        val recipe = MealRecipe(
-            recipeId = "rec_test",
-            title = "Scrambled Eggs",
-            itemsUsedFromStock = listOf(
-                RecipePantryUsage(name = "Eggs", pantryItemId = 1L, quantityUsed = 2f),
-            ),
-        )
+    fun cookMealDeductsAndEmitsStatus() =
+        testScope.runTest {
+            val recipe =
+                MealRecipe(
+                    recipeId = "rec_test",
+                    title = "Scrambled Eggs",
+                    itemsUsedFromStock =
+                        listOf(
+                            RecipePantryUsage(name = "Eggs", pantryItemId = 1L, quantityUsed = 2f),
+                        ),
+                )
 
-        var statusMessage: String? = null
-        val job = launch {
-            statusMessage = viewModel.statusMessage.first()
+            var statusMessage: String? = null
+            val job =
+                launch {
+                    statusMessage = viewModel.statusMessage.first()
+                }
+
+            viewModel.cookMeal(recipe)
+            advanceUntilIdle()
+
+            assertTrue(statusMessage?.contains("Cooked 'Scrambled Eggs'") == true)
+            job.cancel()
         }
 
-        viewModel.cookMeal(recipe)
-        advanceUntilIdle()
-
-        assertTrue(statusMessage?.contains("Cooked 'Scrambled Eggs'") == true)
-        job.cancel()
-    }
-
-    private class TestPantryRepo(initial: List<PantryItem>) : PantryRepository {
+    private class TestPantryRepo(
+        initial: List<PantryItem>,
+    ) : PantryRepository {
         val flow = MutableStateFlow(initial)
+
         override fun observePantryItems(): Flow<List<PantryItem>> = flow
+
         override fun searchPantryItems(query: String): Flow<List<PantryItem>> = flow
+
         override suspend fun insertPantry(item: PantryItem): Long = 1L
+
         override suspend fun updatePantry(item: PantryItem) { /* no-op for test */ }
-        override suspend fun decrementQuantity(item: PantryItem, delta: Float) { /* no-op for test */ }
+
+        override suspend fun decrementQuantity(
+            item: PantryItem,
+            delta: Float,
+        ) { /* no-op for test */ }
+
         override suspend fun deletePantry(item: PantryItem) { /* no-op for test */ }
+
         override suspend fun restorePantry(item: PantryItem) { /* no-op for test */ }
+
         override fun observeGroceryItems(): Flow<List<GroceryItem>> = MutableStateFlow(emptyList())
+
         override suspend fun insertGrocery(item: GroceryItem): Long = 1L
+
         override suspend fun updateGrocery(item: GroceryItem) { /* no-op for test */ }
+
         override suspend fun deleteGrocery(item: GroceryItem) { /* no-op for test */ }
+
         override suspend fun clearCheckedGrocery() { /* no-op for test */ }
+
         override suspend fun restockCheckedGroceryToPantry(): Int = 0
+
         override fun reclaimTemporaryMedia(): Int = 0
     }
 
     private class TestGroceryRepo : GroceryRepository {
         override fun observeGroceryItems(): Flow<List<GroceryItem>> = MutableStateFlow(emptyList())
+
         override suspend fun insertGrocery(item: GroceryItem): Long = 1L
+
         override suspend fun updateGrocery(item: GroceryItem) { /* no-op for test */ }
+
         override suspend fun deleteGrocery(item: GroceryItem) { /* no-op for test */ }
+
         override suspend fun clearCheckedGrocery() { /* no-op for test */ }
+
         override suspend fun restockCheckedGroceryToPantry(): Int = 0
+
         override fun reclaimTemporaryMedia(): Int = 0
     }
 }

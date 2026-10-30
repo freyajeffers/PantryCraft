@@ -68,7 +68,8 @@ class VisionOutputParserTest {
 
     @Test
     fun parsesExtendedFieldsAndNormalizesCasing() {
-        val json = """
+        val json =
+            """
             {
                 "detected_items": [
                     {
@@ -88,7 +89,7 @@ class VisionOutputParserTest {
                     }
                 ]
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val item = VisionOutputParser().parse(json).single()
         assertEquals("Organic Honey", item.name)
@@ -113,9 +114,10 @@ class VisionOutputParserTest {
 
     @Test
     fun clampsNegativeQuantitiesAndThresholds() {
-        val json = """
+        val json =
+            """
             {"detected_items":[{"name":"Flour","quantity":-3.0,"threshold":-1.0,"confidence":-0.5}]}
-        """.trimIndent()
+            """.trimIndent()
 
         val item = VisionOutputParser().parse(json).single()
         assertEquals(0f, item.quantity, 0.001f)
@@ -125,9 +127,10 @@ class VisionOutputParserTest {
 
     @Test
     fun parsesAlternateBoundingBoxObjectKeyNames() {
-        val json = """
+        val json =
+            """
             {"detected_items":[{"name":"Pasta","bounding_box":{"ymin":0.1,"xmin":0.2,"ymax":0.8,"xmax":0.9}}]}
-        """.trimIndent()
+            """.trimIndent()
 
         val item = VisionOutputParser().parse(json).single()
         assertEquals(0.1f, item.boundingBox.ymin, 0.001f)
@@ -139,24 +142,27 @@ class VisionOutputParserTest {
     @Test
     fun handlesMalformedBoundingBoxGracefully() {
         // Less than 4 values -> falls back to default 0,0,1,1
-        val jsonShortArray = """
+        val jsonShortArray =
+            """
             {"detected_items":[{"name":"Tea","bounding_box":[0.1, 0.2]}]}
-        """.trimIndent()
+            """.trimIndent()
         val itemShort = VisionOutputParser().parse(jsonShortArray).single()
         assertEquals(0f, itemShort.boundingBox.ymin, 0.001f)
         assertEquals(1f, itemShort.boundingBox.ymax, 0.001f)
 
         // Non-numeric/NaN in array -> falls back to default 0,0,1,1
-        val jsonNan = """
+        val jsonNan =
+            """
             {"detected_items":[{"name":"Coffee","bounding_box":["nan", 0.2, 0.8, 0.9]}]}
-        """.trimIndent()
+            """.trimIndent()
         val itemNan = VisionOutputParser().parse(jsonNan).single()
         assertEquals(0f, itemNan.boundingBox.ymin, 0.001f)
         assertEquals(1f, itemNan.boundingBox.ymax, 0.001f)
 
-        val jsonObjNan = """
+        val jsonObjNan =
+            """
             {"detected_items":[{"name":"Tea","bounding_box":{"y_min":1e999,"x_min":0.1,"y_max":0.9,"x_max":0.8}}]}
-        """.trimIndent()
+            """.trimIndent()
         val itemObjNan = VisionOutputParser().parse(jsonObjNan).single()
         assertEquals(0f, itemObjNan.boundingBox.ymin, 0.001f)
         assertEquals(1f, itemObjNan.boundingBox.ymax, 0.001f)
@@ -173,18 +179,20 @@ class VisionOutputParserTest {
 
     @Test
     fun clampsNegativeEstimatedShelfLifeDaysToZero() {
-        val json = """
+        val json =
+            """
             {"detected_items":[{"name":"Bread","estimated_shelf_life_days":-10}]}
-        """.trimIndent()
+            """.trimIndent()
         val item = VisionOutputParser().parse(json).single()
         assertEquals(0, item.estimatedShelfLifeDays)
     }
 
     @Test
     fun parsesItemsKeyFallbackAndEmptyJson() {
-        val fallbackJson = """
+        val fallbackJson =
+            """
             {"items":[{"name":"Almonds","quantity":2}]}
-        """.trimIndent()
+            """.trimIndent()
         val fallbackResult = VisionOutputParser().parse(fallbackJson)
         assertEquals(1, fallbackResult.size)
         assertEquals("Almonds", fallbackResult.single().name)
@@ -205,9 +213,10 @@ class VisionOutputParserTest {
 
     @Test
     fun skipsNonObjectEntriesInDetectedItems() {
-        val json = """
+        val json =
+            """
             {"detected_items":["invalid-string-entry", null, {"name":"Walnuts"}]}
-        """.trimIndent()
+            """.trimIndent()
         val items = VisionOutputParser().parse(json)
         assertEquals(1, items.size)
         assertEquals("Walnuts", items.single().name)
