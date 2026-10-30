@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -26,7 +27,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class HomeScreenUnitComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -48,10 +48,11 @@ class HomeScreenUnitComposeTest {
         composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.DESTROYED)
     }
 
-    private fun cleanupTestData() = runBlocking {
-        val db = AppDatabase.getDatabase(context)
-        db.pantryDao().deleteByNamePrefix(prefix)
-    }
+    private fun cleanupTestData() =
+        runBlocking {
+            val db = AppDatabase.getDatabase(context)
+            db.pantryDao().deleteByNamePrefix(prefix)
+        }
 
     @Test
     fun homeScreenRendersWithNullRepositoryAndNavigates() {
@@ -70,46 +71,49 @@ class HomeScreenUnitComposeTest {
         composeTestRule.onNodeWithText("PantryCraft").assertIsDisplayed()
         composeTestRule.onNodeWithText("Pantry stock is healthy").assertIsDisplayed()
 
-        composeTestRule.onNodeWithText("Scan Shelf").performClick()
+        composeTestRule.onNodeWithContentDescription("Scan shelf").performClick()
         assertEquals("camera", navigatedTarget)
 
-        composeTestRule.onNodeWithText("In Stock").performClick()
+        composeTestRule.onNodeWithContentDescription("In Stock").performClick()
         assertEquals("pantry", navigatedTarget)
 
-        composeTestRule.onNodeWithText("Expiring").performClick()
+        composeTestRule.onNodeWithContentDescription("Expiring").performClick()
         assertEquals("pantry", navigatedTarget)
 
-        composeTestRule.onNodeWithText("Low Stock").performClick()
+        composeTestRule.onNodeWithContentDescription("Low Stock").performClick()
         assertEquals("grocery", navigatedTarget)
 
-        composeTestRule.onNodeWithText("Add Item").performClick()
+        composeTestRule.onNodeWithContentDescription("Add item").performClick()
         assertEquals("pantry", navigatedTarget)
 
-        composeTestRule.onNodeWithText("View List").performClick()
+        composeTestRule.onNodeWithContentDescription("View grocery list").performClick()
         assertEquals("grocery", navigatedTarget)
     }
 
     @Test
     fun homeScreenDisplaysExpiredAndLowStockMetrics() {
         val now = System.currentTimeMillis()
-        val expiredItem = PantryItem(
-            name = "${prefix}ExpiredMilk",
-            quantity = 1f,
-            unit = "BOTTLE",
-            expirationTimestamp = now - 100_000L,
-        )
-        val expiringItem = PantryItem(
-            name = "${prefix}ExpiringYogurt",
-            quantity = 1f,
-            unit = "CUP",
-            expirationTimestamp = now + 86_400_000L,
-        )
-        val lowStockItem = PantryItem(
-            name = "${prefix}LowFlour",
-            quantity = 1f,
-            unit = "KG",
-            threshold = 2f,
-        )
+        val expiredItem =
+            PantryItem(
+                name = "${prefix}ExpiredMilk",
+                quantity = 1f,
+                unit = "BOTTLE",
+                expirationTimestamp = now - 100_000L,
+            )
+        val expiringItem =
+            PantryItem(
+                name = "${prefix}ExpiringYogurt",
+                quantity = 1f,
+                unit = "CUP",
+                expirationTimestamp = now + 86_400_000L,
+            )
+        val lowStockItem =
+            PantryItem(
+                name = "${prefix}LowFlour",
+                quantity = 1f,
+                unit = "KG",
+                threshold = 2f,
+            )
 
         runBlocking {
             repository.insertPantry(expiredItem)
@@ -129,13 +133,18 @@ class HomeScreenUnitComposeTest {
 
         composeTestRule.waitUntil(15_000L) {
             composeTestRule
-                .onAllNodesWithText("expired", substring = true)
+                .onAllNodesWithText("expired", substring = true, useUnmergedTree = true)
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
-        composeTestRule.onNodeWithText("expired", substring = true).assertIsDisplayed()
-        composeTestRule.onNodeWithText("items are at or below threshold", substring = true).assertIsDisplayed()
-        composeTestRule.onNodeWithText("Ready to scaffold with", substring = true)
+        composeTestRule
+            .onNodeWithText("expired", substring = true, useUnmergedTree = true)
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText("items are at or below threshold", substring = true, useUnmergedTree = true)
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText("Ready to scaffold with", substring = true)
             .performScrollTo()
             .assertIsDisplayed()
     }

@@ -69,7 +69,7 @@ class HomeScreenComposeTest {
         composeTestRule.waitForIdle()
 
         // 5. Click "View List" under Grocery Checklist -> Navigates to Grocery
-        composeTestRule.onNodeWithText("View List").performClick()
+        composeTestRule.onNodeWithContentDescription("View grocery list").performClick()
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("Grocery list").assertIsDisplayed()
     }

@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.Repository
@@ -162,6 +163,10 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                             .clearAndSetSemantics {
                                 contentDescription = "Scan shelf"
                                 role = Role.Button
+                                onClick(label = "Scan shelf") {
+                                    onNavigate("camera")
+                                    true
+                                }
                             },
                 ) {
                     Icon(
@@ -179,6 +184,10 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                             .clearAndSetSemantics {
                                 contentDescription = "Add item"
                                 role = Role.Button
+                                onClick(label = "Add item") {
+                                    onNavigate("pantry")
+                                    true
+                                }
                             },
                 ) {
                     Icon(
@@ -222,6 +231,10 @@ private fun GroceryChecklistCard(
                     Modifier.clearAndSetSemantics {
                         contentDescription = "View grocery list"
                         role = Role.Button
+                        onClick(label = "View grocery list") {
+                            onNavigate("grocery")
+                            true
+                        }
                     },
             ) {
                 Icon(
@@ -281,6 +294,10 @@ private fun MealSynthesisCard(
                         .clearAndSetSemantics {
                             contentDescription = "Synthesize meals"
                             role = Role.Button
+                            onClick(label = "Synthesize meals") {
+                                onNavigate("meals")
+                                true
+                            }
                         },
             ) {
                 Icon(Icons.Filled.AutoAwesome, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
@@ -307,6 +324,10 @@ private fun MetricCard(
                 .clearAndSetSemantics {
                     contentDescription = title
                     role = Role.Button
+                    onClick(label = onClickLabel) {
+                        onClick()
+                        true
+                    }
                 },
         colors =
             if (isWarning) {
