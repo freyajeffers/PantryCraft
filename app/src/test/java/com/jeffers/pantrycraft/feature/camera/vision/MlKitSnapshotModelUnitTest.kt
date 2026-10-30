@@ -4,19 +4,18 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MlKitSnapshotModelUnitTest {
-
     private val companionClass = MlKitSnapshotModel.Companion::class.java
     private val companionInstance = MlKitSnapshotModel.Companion
 
     @Test
     fun mapLabelToCategoryClassifiesKeywords() {
-        val method = companionClass.getDeclaredMethod("mapLabelToCategory", String::class.java).apply {
-            isAccessible = true
-        }
+        val method =
+            companionClass.getDeclaredMethod("mapLabelToCategory", String::class.java).apply {
+                isAccessible = true
+            }
 
         @Suppress("UNCHECKED_CAST")
-        fun invoke(label: String): Pair<String, String> =
-            method.invoke(companionInstance, label) as Pair<String, String>
+        fun invoke(label: String): Pair<String, String> = method.invoke(companionInstance, label) as Pair<String, String>
 
         assertEquals("Fresh Fruit" to "PRODUCE", invoke("Fresh Fruit"))
         assertEquals("Whole Milk" to "DAIRY", invoke("Whole Milk"))
@@ -33,9 +32,10 @@ class MlKitSnapshotModelUnitTest {
 
     @Test
     fun defaultStorageForCategoryReturnsExpectedLocations() {
-        val method = companionClass.getDeclaredMethod("defaultStorageForCategory", String::class.java).apply {
-            isAccessible = true
-        }
+        val method =
+            companionClass.getDeclaredMethod("defaultStorageForCategory", String::class.java).apply {
+                isAccessible = true
+            }
 
         fun invoke(cat: String): String = method.invoke(companionInstance, cat) as String
 
@@ -51,9 +51,10 @@ class MlKitSnapshotModelUnitTest {
 
     @Test
     fun defaultShelfLifeForCategoryReturnsExpectedDurations() {
-        val method = companionClass.getDeclaredMethod("defaultShelfLifeForCategory", String::class.java).apply {
-            isAccessible = true
-        }
+        val method =
+            companionClass.getDeclaredMethod("defaultShelfLifeForCategory", String::class.java).apply {
+                isAccessible = true
+            }
 
         fun invoke(cat: String): Int = method.invoke(companionInstance, cat) as Int
 

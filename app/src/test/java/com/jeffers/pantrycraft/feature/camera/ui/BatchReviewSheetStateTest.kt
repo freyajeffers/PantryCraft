@@ -12,11 +12,12 @@ import org.junit.Test
 class BatchReviewSheetStateTest {
     @Test
     fun initialization_wrapsItemsAndDefaultsQuantities() {
-        val rawItems = listOf(
-            createItem(name = "Apples", quantity = 3f),
-            createItem(name = "Salt", quantity = 0f),
-            createItem(name = "Pepper", quantity = -2f),
-        )
+        val rawItems =
+            listOf(
+                createItem(name = "Apples", quantity = 3f),
+                createItem(name = "Salt", quantity = 0f),
+                createItem(name = "Pepper", quantity = -2f),
+            )
 
         val state = BatchReviewSheetState(rawItems)
 
@@ -30,12 +31,13 @@ class BatchReviewSheetStateTest {
 
     @Test
     fun toggleIncluded_togglesInclusionAndFiltersSelectedItems() {
-        val state = BatchReviewSheetState(
-            listOf(
-                createItem("Milk", 1f),
-                createItem("Butter", 2f),
-            ),
-        )
+        val state =
+            BatchReviewSheetState(
+                listOf(
+                    createItem("Milk", 1f),
+                    createItem("Butter", 2f),
+                ),
+            )
 
         state.toggleIncluded(0)
         assertFalse(state.reviewItems[0].included)
@@ -89,17 +91,18 @@ class BatchReviewSheetStateTest {
 
     @Test
     fun loadForEditing_populatesEditorFields() {
-        val item = createItem("Extra Virgin Olive Oil", 2f).copy(
-            category = "OILS",
-            storageLocation = "PANTRY",
-            unit = "BOTTLE",
-            estimatedShelfLifeDays = 365,
-            conditionNotes = "Cold pressed",
-            isAromaticOrSeasoning = true,
-            isOpened = true,
-            threshold = 1f,
-            barcode = "012345678901",
-        )
+        val item =
+            createItem("Extra Virgin Olive Oil", 2f).copy(
+                category = "OILS",
+                storageLocation = "PANTRY",
+                unit = "BOTTLE",
+                estimatedShelfLifeDays = 365,
+                conditionNotes = "Cold pressed",
+                isAromaticOrSeasoning = true,
+                isOpened = true,
+                threshold = 1f,
+                barcode = "012345678901",
+            )
 
         val state = BatchReviewSheetState(listOf(item))
         state.loadForEditing(0)
@@ -236,13 +239,14 @@ class BatchReviewSheetStateTest {
         state.showEmbeddedBarcodeScanner = true
         state.editName = ""
 
-        val match = BarcodeMatch(
-            barcode = "011110038364",
-            name = "Great Value Milk",
-            category = "DAIRY",
-            unit = "BOTTLE",
-            estimatedShelfLifeDays = 14,
-        )
+        val match =
+            BarcodeMatch(
+                barcode = "011110038364",
+                name = "Great Value Milk",
+                category = "DAIRY",
+                unit = "BOTTLE",
+                estimatedShelfLifeDays = 14,
+            )
 
         applyScannedBarcodeToState(state, "011110038364", match)
 
@@ -262,13 +266,14 @@ class BatchReviewSheetStateTest {
         state.showEmbeddedBarcodeScanner = true
         state.editName = "My Organic Mayo"
 
-        val match = BarcodeMatch(
-            barcode = "048000000000",
-            name = "Commercial Mayonnaise",
-            category = "CONDIMENTS",
-            unit = "JAR",
-            estimatedShelfLifeDays = 60,
-        )
+        val match =
+            BarcodeMatch(
+                barcode = "048000000000",
+                name = "Commercial Mayonnaise",
+                category = "CONDIMENTS",
+                unit = "JAR",
+                estimatedShelfLifeDays = 60,
+            )
 
         applyScannedBarcodeToState(state, "048000000000", match)
 
@@ -287,13 +292,14 @@ class BatchReviewSheetStateTest {
         state.loadForEditing(0)
         state.editIsAromatic = false
 
-        val match = BarcodeMatch(
-            barcode = "052000000000",
-            name = "Ground Black Pepper",
-            category = "SPICES",
-            unit = "COUNT",
-            estimatedShelfLifeDays = 365,
-        )
+        val match =
+            BarcodeMatch(
+                barcode = "052000000000",
+                name = "Ground Black Pepper",
+                category = "SPICES",
+                unit = "COUNT",
+                estimatedShelfLifeDays = 365,
+            )
 
         applyScannedBarcodeToState(state, "052000000000", match)
 

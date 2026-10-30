@@ -11,22 +11,23 @@ import org.junit.Test
 class BatchReviewEditorStateTest {
     @Test
     fun loadFromPopulatesAllFieldsAndDetectsAromaticCategory() {
-        val item = ParsedVisionItem(
-            name = "Cinnamon Sticks",
-            category = "SPICES",
-            storageLocation = "PANTRY",
-            quantity = 2f,
-            unit = "BOTTLE",
-            confidence = 0.95f,
-            estimatedShelfLifeDays = 730,
-            isAromaticOrSeasoning = false, // Category SPICES will auto-detect as aromatic
-            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-            conditionNotes = "Sealed glass jar",
-            customUnitName = null,
-            barcode = "012345678901",
-            threshold = 1.5f,
-            isOpened = true,
-        )
+        val item =
+            ParsedVisionItem(
+                name = "Cinnamon Sticks",
+                category = "SPICES",
+                storageLocation = "PANTRY",
+                quantity = 2f,
+                unit = "BOTTLE",
+                confidence = 0.95f,
+                estimatedShelfLifeDays = 730,
+                isAromaticOrSeasoning = false, // Category SPICES will auto-detect as aromatic
+                boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+                conditionNotes = "Sealed glass jar",
+                customUnitName = null,
+                barcode = "012345678901",
+                threshold = 1.5f,
+                isOpened = true,
+            )
 
         val editor = BatchReviewEditorState()
         editor.loadFrom(item)
@@ -46,18 +47,19 @@ class BatchReviewEditorStateTest {
 
     @Test
     fun applyToTrimsFieldsAndAppliesSensibleFallbacks() {
-        val baseItem = ParsedVisionItem(
-            name = "Raw",
-            category = "OTHER",
-            storageLocation = "PANTRY",
-            quantity = 1f,
-            unit = "COUNT",
-            confidence = 1f,
-            estimatedShelfLifeDays = 0,
-            isAromaticOrSeasoning = false,
-            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-            conditionNotes = null,
-        )
+        val baseItem =
+            ParsedVisionItem(
+                name = "Raw",
+                category = "OTHER",
+                storageLocation = "PANTRY",
+                quantity = 1f,
+                unit = "COUNT",
+                confidence = 1f,
+                estimatedShelfLifeDays = 0,
+                isAromaticOrSeasoning = false,
+                boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+                conditionNotes = null,
+            )
 
         val editor = BatchReviewEditorState()
         editor.name = "  Organic Strawberries  "
@@ -88,18 +90,19 @@ class BatchReviewEditorStateTest {
 
     @Test
     fun applyToHandlesCustomUnitNameCorrectly() {
-        val baseItem = ParsedVisionItem(
-            name = "Rosemary",
-            category = "SPICES",
-            storageLocation = "PANTRY",
-            quantity = 3f,
-            unit = "CUSTOM",
-            confidence = 1f,
-            estimatedShelfLifeDays = 14,
-            isAromaticOrSeasoning = true,
-            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-            conditionNotes = null,
-        )
+        val baseItem =
+            ParsedVisionItem(
+                name = "Rosemary",
+                category = "SPICES",
+                storageLocation = "PANTRY",
+                quantity = 3f,
+                unit = "CUSTOM",
+                confidence = 1f,
+                estimatedShelfLifeDays = 14,
+                isAromaticOrSeasoning = true,
+                boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+                conditionNotes = null,
+            )
 
         val editor = BatchReviewEditorState()
         editor.name = "Rosemary"
@@ -123,18 +126,19 @@ class BatchReviewEditorStateTest {
 
     @Test
     fun applyToHandlesNonNumericAndInvalidThresholdText() {
-        val baseItem = ParsedVisionItem(
-            name = "Flour",
-            category = "BAKING",
-            storageLocation = "PANTRY",
-            quantity = 5f,
-            unit = "BAG",
-            confidence = 1f,
-            estimatedShelfLifeDays = 180,
-            isAromaticOrSeasoning = false,
-            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-            conditionNotes = null,
-        )
+        val baseItem =
+            ParsedVisionItem(
+                name = "Flour",
+                category = "BAKING",
+                storageLocation = "PANTRY",
+                quantity = 5f,
+                unit = "BAG",
+                confidence = 1f,
+                estimatedShelfLifeDays = 180,
+                isAromaticOrSeasoning = false,
+                boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+                conditionNotes = null,
+            )
 
         val editor = BatchReviewEditorState()
         editor.loadFrom(baseItem)
@@ -154,18 +158,19 @@ class BatchReviewEditorStateTest {
 
     @Test
     fun applyToWithCustomUnitAndBlankCustomUnitNameSetsNull() {
-        val baseItem = ParsedVisionItem(
-            name = "Thyme",
-            category = "SPICES",
-            storageLocation = "PANTRY",
-            quantity = 1f,
-            unit = "CUSTOM",
-            confidence = 1f,
-            estimatedShelfLifeDays = 7,
-            isAromaticOrSeasoning = true,
-            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-            conditionNotes = null,
-        )
+        val baseItem =
+            ParsedVisionItem(
+                name = "Thyme",
+                category = "SPICES",
+                storageLocation = "PANTRY",
+                quantity = 1f,
+                unit = "CUSTOM",
+                confidence = 1f,
+                estimatedShelfLifeDays = 7,
+                isAromaticOrSeasoning = true,
+                boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+                conditionNotes = null,
+            )
 
         val editor = BatchReviewEditorState()
         editor.loadFrom(baseItem)
@@ -179,19 +184,20 @@ class BatchReviewEditorStateTest {
 
     @Test
     fun applyToPreservesOrUpdatesBarcode() {
-        val baseItem = ParsedVisionItem(
-            name = "Olive Oil",
-            category = "OILS",
-            storageLocation = "PANTRY",
-            quantity = 1f,
-            unit = "BOTTLE",
-            confidence = 1f,
-            estimatedShelfLifeDays = 365,
-            isAromaticOrSeasoning = false,
-            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-            conditionNotes = null,
-            barcode = "111222333444",
-        )
+        val baseItem =
+            ParsedVisionItem(
+                name = "Olive Oil",
+                category = "OILS",
+                storageLocation = "PANTRY",
+                quantity = 1f,
+                unit = "BOTTLE",
+                confidence = 1f,
+                estimatedShelfLifeDays = 365,
+                isAromaticOrSeasoning = false,
+                boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+                conditionNotes = null,
+                barcode = "111222333444",
+            )
 
         val editor = BatchReviewEditorState()
         editor.loadFrom(baseItem)
