@@ -35,6 +35,5 @@ internal object TestDatabaseCleanup {
             database.customBarcodeDao().deleteByBarcodePrefix("barcode-repository-")
             database.customBarcodeDao().deleteByBarcodePrefix("9988776655")
         }
-        AppDatabase.closeDatabase()
     }
 }
