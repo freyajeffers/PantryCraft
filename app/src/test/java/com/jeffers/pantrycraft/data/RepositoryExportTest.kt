@@ -11,33 +11,35 @@ class RepositoryExportTest {
     @Test
     fun exportInventoryToJsonSerializesPantryAndGrocery() {
         val now = 1_700_000_000_000L
-        val pantry = listOf(
-            PantryItem(
-                id = 1L,
-                name = "Rosemary",
-                quantity = 2.5f,
-                unit = "CUSTOM",
-                customUnitName = "sprigs",
-                threshold = 1f,
-                barcode = "123456789012",
-                storageLocation = "PANTRY",
-                category = "SPICES",
-                expirationTimestamp = now + 86_400_000L,
-                isOpened = true,
-                openedTimestamp = now,
-                isAromaticOrSeasoning = true,
-                notes = "Fresh from garden",
-            ),
-        )
-        val grocery = listOf(
-            GroceryItem(
-                id = 10L,
-                name = "Milk",
-                quantity = 1f,
-                unit = "GALLON",
-                checked = true,
-            ),
-        )
+        val pantry =
+            listOf(
+                PantryItem(
+                    id = 1L,
+                    name = "Rosemary",
+                    quantity = 2.5f,
+                    unit = "CUSTOM",
+                    customUnitName = "sprigs",
+                    threshold = 1f,
+                    barcode = "123456789012",
+                    storageLocation = "PANTRY",
+                    category = "SPICES",
+                    expirationTimestamp = now + 86_400_000L,
+                    isOpened = true,
+                    openedTimestamp = now,
+                    isAromaticOrSeasoning = true,
+                    notes = "Fresh from garden",
+                ),
+            )
+        val grocery =
+            listOf(
+                GroceryItem(
+                    id = 10L,
+                    name = "Milk",
+                    quantity = 1f,
+                    unit = "GALLON",
+                    checked = true,
+                ),
+            )
 
         val jsonString = exportInventoryToJson(pantry, grocery, now)
         val root = JSONObject(jsonString)
@@ -82,20 +84,21 @@ class RepositoryExportTest {
 
     @Test
     fun exportPantryToCsvFormatsHeadersAndEscapesValues() {
-        val items = listOf(
-            PantryItem(
-                name = "Dijon \"French\" Mustard",
-                category = "CONDIMENTS",
-                storageLocation = "FRIDGE",
-                quantity = 1f,
-                unit = "JAR",
-                customUnitName = null,
-                threshold = 0.5f,
-                expirationTimestamp = 1_700_000_000_000L,
-                isOpened = false,
-                notes = "Contains seeds, whole grain",
-            ),
-        )
+        val items =
+            listOf(
+                PantryItem(
+                    name = "Dijon \"French\" Mustard",
+                    category = "CONDIMENTS",
+                    storageLocation = "FRIDGE",
+                    quantity = 1f,
+                    unit = "JAR",
+                    customUnitName = null,
+                    threshold = 0.5f,
+                    expirationTimestamp = 1_700_000_000_000L,
+                    isOpened = false,
+                    notes = "Contains seeds, whole grain",
+                ),
+            )
 
         val csv = exportPantryToCsv(items)
         val lines = csv.lines().filter { it.isNotBlank() }
@@ -122,23 +125,25 @@ class RepositoryExportTest {
 
     @Test
     fun exportInventoryToJsonAndCsvWithNullFieldsUsesFallbacks() {
-        val pantry = listOf(
-            PantryItem(
-                name = "Apple",
-                unit = null,
-                customUnitName = null,
-                barcode = null,
-                expirationTimestamp = null,
-                openedTimestamp = null,
-                notes = null,
-            ),
-        )
-        val grocery = listOf(
-            GroceryItem(
-                name = "Bread",
-                unit = null,
-            ),
-        )
+        val pantry =
+            listOf(
+                PantryItem(
+                    name = "Apple",
+                    unit = null,
+                    customUnitName = null,
+                    barcode = null,
+                    expirationTimestamp = null,
+                    openedTimestamp = null,
+                    notes = null,
+                ),
+            )
+        val grocery =
+            listOf(
+                GroceryItem(
+                    name = "Bread",
+                    unit = null,
+                ),
+            )
 
         val json = exportInventoryToJson(pantry, grocery)
         val root = JSONObject(json)
@@ -160,41 +165,44 @@ class RepositoryExportTest {
     }
 
     @Test
-    fun repositoryExportExtensionsReturnValidJsonAndCsv() = runBlocking {
-        val pantry = listOf(
-            PantryItem(
-                id = 1L,
-                name = "Rosemary",
-                quantity = 2.5f,
-                unit = "CUSTOM",
-                customUnitName = "sprigs",
-                threshold = 1f,
-                barcode = "123456789012",
-                storageLocation = "PANTRY",
-                category = "SPICES",
-                isOpened = true,
-                isAromaticOrSeasoning = true,
-                notes = "Fresh from garden",
-            ),
-        )
-        val grocery = listOf(
-            GroceryItem(
-                id = 10L,
-                name = "Milk",
-                quantity = 1f,
-                unit = "GALLON",
-                checked = true,
-            ),
-        )
-        val repo = createTestRepository(pantry, grocery)
-        val json = repo.exportInventoryToJson()
-        assertTrue(json.contains("\"name\": \"Rosemary\""))
-        assertTrue(json.contains("\"name\": \"Milk\""))
+    fun repositoryExportExtensionsReturnValidJsonAndCsv() =
+        runBlocking {
+            val pantry =
+                listOf(
+                    PantryItem(
+                        id = 1L,
+                        name = "Rosemary",
+                        quantity = 2.5f,
+                        unit = "CUSTOM",
+                        customUnitName = "sprigs",
+                        threshold = 1f,
+                        barcode = "123456789012",
+                        storageLocation = "PANTRY",
+                        category = "SPICES",
+                        isOpened = true,
+                        isAromaticOrSeasoning = true,
+                        notes = "Fresh from garden",
+                    ),
+                )
+            val grocery =
+                listOf(
+                    GroceryItem(
+                        id = 10L,
+                        name = "Milk",
+                        quantity = 1f,
+                        unit = "GALLON",
+                        checked = true,
+                    ),
+                )
+            val repo = createTestRepository(pantry, grocery)
+            val json = repo.exportInventoryToJson()
+            assertTrue(json.contains("\"name\": \"Rosemary\""))
+            assertTrue(json.contains("\"name\": \"Milk\""))
 
-        val csv = repo.exportPantryToCsv()
-        assertTrue(csv.contains("name,category,storageLocation,quantity"))
-        assertTrue(csv.contains("\"Rosemary\""))
-    }
+            val csv = repo.exportPantryToCsv()
+            assertTrue(csv.contains("name,category,storageLocation,quantity"))
+            assertTrue(csv.contains("\"Rosemary\""))
+        }
 
     private fun createTestRepository(
         pantryItems: List<PantryItem> = emptyList(),
@@ -205,36 +213,53 @@ class RepositoryExportTest {
         val allocateInstance = unsafeClass.getMethod("allocateInstance", Class::class.java)
         val repo = allocateInstance.invoke(unsafe, Repository::class.java) as Repository
         val delegateField = Repository::class.java.getDeclaredField("\$\$delegate_0").apply { isAccessible = true }
-        val fakeRepo = object : PantryRepository {
-            override fun observePantryItems() = flowOf(pantryItems)
-            override fun observeGroceryItems() = flowOf(groceryItems)
-            override fun searchPantryItems(query: String) = flowOf(pantryItems)
-            override suspend fun insertPantry(item: PantryItem): Long = 1L
-            override suspend fun updatePantry(item: PantryItem) {
-                // Mock no-op
+        val fakeRepo =
+            object : PantryRepository {
+                override fun observePantryItems() = flowOf(pantryItems)
+
+                override fun observeGroceryItems() = flowOf(groceryItems)
+
+                override fun searchPantryItems(query: String) = flowOf(pantryItems)
+
+                override suspend fun insertPantry(item: PantryItem): Long = 1L
+
+                override suspend fun updatePantry(item: PantryItem) {
+                    // Mock no-op
+                }
+
+                override suspend fun decrementQuantity(
+                    item: PantryItem,
+                    delta: Float,
+                ) {
+                    // Mock no-op
+                }
+
+                override suspend fun deletePantry(item: PantryItem) {
+                    // Mock no-op
+                }
+
+                override suspend fun restorePantry(item: PantryItem) {
+                    // Mock no-op
+                }
+
+                override suspend fun insertGrocery(item: GroceryItem): Long = 1L
+
+                override suspend fun updateGrocery(item: GroceryItem) {
+                    // Mock no-op
+                }
+
+                override suspend fun deleteGrocery(item: GroceryItem) {
+                    // Mock no-op
+                }
+
+                override suspend fun clearCheckedGrocery() {
+                    // Mock no-op
+                }
+
+                override suspend fun restockCheckedGroceryToPantry(): Int = 0
+
+                override fun reclaimTemporaryMedia(): Int = 0
             }
-            override suspend fun decrementQuantity(item: PantryItem, delta: Float) {
-                // Mock no-op
-            }
-            override suspend fun deletePantry(item: PantryItem) {
-                // Mock no-op
-            }
-            override suspend fun restorePantry(item: PantryItem) {
-                // Mock no-op
-            }
-            override suspend fun insertGrocery(item: GroceryItem): Long = 1L
-            override suspend fun updateGrocery(item: GroceryItem) {
-                // Mock no-op
-            }
-            override suspend fun deleteGrocery(item: GroceryItem) {
-                // Mock no-op
-            }
-            override suspend fun clearCheckedGrocery() {
-                // Mock no-op
-            }
-            override suspend fun restockCheckedGroceryToPantry(): Int = 0
-            override fun reclaimTemporaryMedia(): Int = 0
-        }
         delegateField.set(repo, fakeRepo)
         return repo
     }
