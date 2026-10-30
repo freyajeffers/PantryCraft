@@ -9,7 +9,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReviewComponentsModelTest {
-
     private fun createParsedVisionItem(name: String = "Apples"): ParsedVisionItem =
         ParsedVisionItem(
             name = name,
@@ -34,22 +33,23 @@ class ReviewComponentsModelTest {
         var notesChanged = ""
         var aromaticChanged = false
 
-        val props = ReviewEditorProps(
-            name = "Apples",
-            onNameChange = { nameChanged = it },
-            category = "PRODUCE",
-            onCategoryChange = { categoryChanged = it },
-            unit = "COUNT",
-            onUnitChange = { unitChanged = it },
-            storageLocation = "PANTRY",
-            onStorageLocationChange = { storageChanged = it },
-            shelfLifeDays = 7,
-            onShelfLifeChange = { shelfLifeChanged = it },
-            notes = "Crisp",
-            onNotesChange = { notesChanged = it },
-            isAromatic = false,
-            onAromaticChange = { aromaticChanged = it },
-        )
+        val props =
+            ReviewEditorProps(
+                name = "Apples",
+                onNameChange = { nameChanged = it },
+                category = "PRODUCE",
+                onCategoryChange = { categoryChanged = it },
+                unit = "COUNT",
+                onUnitChange = { unitChanged = it },
+                storageLocation = "PANTRY",
+                onStorageLocationChange = { storageChanged = it },
+                shelfLifeDays = 7,
+                onShelfLifeChange = { shelfLifeChanged = it },
+                notes = "Crisp",
+                onNotesChange = { notesChanged = it },
+                isAromatic = false,
+                onAromaticChange = { aromaticChanged = it },
+            )
 
         assertEquals("Apples", props.name)
         assertEquals("PRODUCE", props.category)
@@ -92,33 +92,35 @@ class ReviewComponentsModelTest {
         var openedChanged = false
         var scanBarcodeClicked = false
 
-        val props = ReviewEditorProps(
-            name = "Apples",
-            onNameChange = {},
-            category = "PRODUCE",
-            onCategoryChange = {},
-            unit = "COUNT",
-            onUnitChange = {},
-            storageLocation = "PANTRY",
-            onStorageLocationChange = {},
-            shelfLifeDays = 7,
-            onShelfLifeChange = {},
-            notes = "Crisp",
-            onNotesChange = {},
-            isAromatic = false,
-            onAromaticChange = {},
-        )
+        val props =
+            ReviewEditorProps(
+                name = "Apples",
+                onNameChange = {},
+                category = "PRODUCE",
+                onCategoryChange = {},
+                unit = "COUNT",
+                onUnitChange = {},
+                storageLocation = "PANTRY",
+                onStorageLocationChange = {},
+                shelfLifeDays = 7,
+                onShelfLifeChange = {},
+                notes = "Crisp",
+                onNotesChange = {},
+                isAromatic = false,
+                onAromaticChange = {},
+            )
 
-        val fullProps = props.copy(
-            customUnitName = "crate",
-            onCustomUnitNameChange = { customUnitChanged = it },
-            thresholdText = "2",
-            onThresholdTextChange = { thresholdChanged = it },
-            isOpened = true,
-            onOpenedChange = { openedChanged = it },
-            barcode = "012345678901",
-            onScanBarcodeClick = { scanBarcodeClicked = true },
-        )
+        val fullProps =
+            props.copy(
+                customUnitName = "crate",
+                onCustomUnitNameChange = { customUnitChanged = it },
+                thresholdText = "2",
+                onThresholdTextChange = { thresholdChanged = it },
+                isOpened = true,
+                onOpenedChange = { openedChanged = it },
+                barcode = "012345678901",
+                onScanBarcodeClick = { scanBarcodeClicked = true },
+            )
         fullProps.onCustomUnitNameChange("box")
         fullProps.onThresholdTextChange("5")
         fullProps.onOpenedChange(false)
@@ -141,23 +143,24 @@ class ReviewComponentsModelTest {
         var increased = false
         var quantitySet = ""
 
-        val cardState = ReviewItemCardState(
-            index = 0,
-            itemsCount = 1,
-            reviewItem = reviewItem,
-            displayedName = "Honeycrisp Apples",
-            displayedCategory = "PRODUCE",
-            displayedUnit = "COUNT",
-            displayedStorage = "PANTRY",
-            displayedShelfLife = 7,
-            rawUnit = "COUNT",
-            quantityText = "2",
-            onEdit = { edited = true },
-            onToggleIncluded = { toggled = true },
-            onDecrease = { decreased = true },
-            onIncrease = { increased = true },
-            onSetQuantityText = { quantitySet = it },
-        )
+        val cardState =
+            ReviewItemCardState(
+                index = 0,
+                itemsCount = 1,
+                reviewItem = reviewItem,
+                displayedName = "Honeycrisp Apples",
+                displayedCategory = "PRODUCE",
+                displayedUnit = "COUNT",
+                displayedStorage = "PANTRY",
+                displayedShelfLife = 7,
+                rawUnit = "COUNT",
+                quantityText = "2",
+                onEdit = { edited = true },
+                onToggleIncluded = { toggled = true },
+                onDecrease = { decreased = true },
+                onIncrease = { increased = true },
+                onSetQuantityText = { quantitySet = it },
+            )
 
         assertEquals(0, cardState.index)
         assertEquals(1, cardState.itemsCount)
@@ -194,25 +197,26 @@ class ReviewComponentsModelTest {
         var setIndex = -1
         var setText = ""
 
-        val listState = ReviewListState(
-            reviewItems = reviewItems,
-            itemsSize = 1,
-            quantityTextByIndex = mapOf(0 to "2"),
-            singleName = "Apples",
-            singleCategory = "PRODUCE",
-            singleUnit = "COUNT",
-            singleCustomUnitName = "",
-            singleStorage = "PANTRY",
-            singleShelfLifeDays = 7,
-            onEdit = { editedIndex = it },
-            onToggleIncluded = { toggledIndex = it },
-            onDecrease = { decreasedIndex = it },
-            onIncrease = { increasedIndex = it },
-            onSetQuantityText = { idx, text ->
-                setIndex = idx
-                setText = text
-            },
-        )
+        val listState =
+            ReviewListState(
+                reviewItems = reviewItems,
+                itemsSize = 1,
+                quantityTextByIndex = mapOf(0 to "2"),
+                singleName = "Apples",
+                singleCategory = "PRODUCE",
+                singleUnit = "COUNT",
+                singleCustomUnitName = "",
+                singleStorage = "PANTRY",
+                singleShelfLifeDays = 7,
+                onEdit = { editedIndex = it },
+                onToggleIncluded = { toggledIndex = it },
+                onDecrease = { decreasedIndex = it },
+                onIncrease = { increasedIndex = it },
+                onSetQuantityText = { idx, text ->
+                    setIndex = idx
+                    setText = text
+                },
+            )
 
         assertEquals(reviewItems, listState.reviewItems)
         assertEquals(1, listState.itemsSize)

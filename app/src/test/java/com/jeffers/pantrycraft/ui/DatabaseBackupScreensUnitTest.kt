@@ -2,9 +2,6 @@ package com.jeffers.pantrycraft.ui
 
 import android.app.Activity
 import android.content.ContextWrapper
-import java.io.IOException
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -15,68 +12,74 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.IOException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DatabaseBackupScreensUnitTest {
-
     private class DummyContext : ContextWrapper(null)
 
     private class DummyActivity : Activity() {
         var recreated = false
+
         override fun recreate() {
             recreated = true
         }
     }
 
     @Test
-    fun launchRestoreSuccessRecreatesActivity() = runTest {
-        val activity = DummyActivity()
-        val latch = CountDownLatch(1)
-        launchRestore(
-            context = activity,
-            scope = CoroutineScope(Dispatchers.Default),
-            restore = { /* success */ },
-            onResult = { latch.countDown() },
-        )
-        assertTrue(latch.await(5, TimeUnit.SECONDS))
-        assertTrue(activity.recreated)
-    }
+    fun launchRestoreSuccessRecreatesActivity() =
+        runTest {
+            val activity = DummyActivity()
+            val latch = CountDownLatch(1)
+            launchRestore(
+                context = activity,
+                scope = CoroutineScope(Dispatchers.Default),
+                restore = { /* success */ },
+                onResult = { latch.countDown() },
+            )
+            assertTrue(latch.await(5, TimeUnit.SECONDS))
+            assertTrue(activity.recreated)
+        }
 
     @Test
-    fun launchRestoreSuccessNotifiesNullResult() = runTest {
-        var callbackResult: String? = "initial"
-        val latch = CountDownLatch(1)
-        val context = DummyContext()
-        launchRestore(
-            context = context,
-            scope = CoroutineScope(Dispatchers.Default),
-            restore = { /* success */ },
-            onResult = {
-                callbackResult = it
-                latch.countDown()
-            },
-        )
-        assertTrue(latch.await(5, TimeUnit.SECONDS))
-        assertNull(callbackResult)
-    }
+    fun launchRestoreSuccessNotifiesNullResult() =
+        runTest {
+            var callbackResult: String? = "initial"
+            val latch = CountDownLatch(1)
+            val context = DummyContext()
+            launchRestore(
+                context = context,
+                scope = CoroutineScope(Dispatchers.Default),
+                restore = { /* success */ },
+                onResult = {
+                    callbackResult = it
+                    latch.countDown()
+                },
+            )
+            assertTrue(latch.await(5, TimeUnit.SECONDS))
+            assertNull(callbackResult)
+        }
 
     @Test
-    fun launchRestoreFailureNotifiesErrorMessage() = runTest {
-        var callbackResult: String? = null
-        val latch = CountDownLatch(1)
-        val context = DummyContext()
-        launchRestore(
-            context = context,
-            scope = CoroutineScope(Dispatchers.Default),
-            restore = { throw IOException("Restore corrupted") },
-            onResult = {
-                callbackResult = it
-                latch.countDown()
-            },
-        )
-        assertTrue(latch.await(5, TimeUnit.SECONDS))
-        assertEquals("Restore corrupted", callbackResult)
-    }
+    fun launchRestoreFailureNotifiesErrorMessage() =
+        runTest {
+            var callbackResult: String? = null
+            val latch = CountDownLatch(1)
+            val context = DummyContext()
+            launchRestore(
+                context = context,
+                scope = CoroutineScope(Dispatchers.Default),
+                restore = { throw IOException("Restore corrupted") },
+                onResult = {
+                    callbackResult = it
+                    latch.countDown()
+                },
+            )
+            assertTrue(latch.await(5, TimeUnit.SECONDS))
+            assertEquals("Restore corrupted", callbackResult)
+        }
 
     @Test
     fun recoveryContentStateDataClassContract() {
@@ -86,17 +89,18 @@ class DatabaseBackupScreensUnitTest {
         val onRest: () -> Unit = {}
         val onRes: () -> Unit = {}
 
-        val state1 = RecoveryContentState(
-            backups = listOf("backup1.db"),
-            selectedBackup = "backup1.db",
-            pin = "1234",
-            error = null,
-            onSelectBackup = onSelect,
-            onPinChange = onPin,
-            onOpenBackup = onOpen,
-            onRestore = onRest,
-            onReset = onRes,
-        )
+        val state1 =
+            RecoveryContentState(
+                backups = listOf("backup1.db"),
+                selectedBackup = "backup1.db",
+                pin = "1234",
+                error = null,
+                onSelectBackup = onSelect,
+                onPinChange = onPin,
+                onOpenBackup = onOpen,
+                onRestore = onRest,
+                onReset = onRes,
+            )
 
         val state2 = state1.copy(pin = "5678")
 

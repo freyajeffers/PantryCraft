@@ -6,10 +6,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MealRecipeParserTest {
-
     @Test
     fun parseRecipesExtractsFromRootObject() {
-        val json = """
+        val json =
+            """
             {
               "recipes": [
                 {
@@ -37,7 +37,7 @@ class MealRecipeParserTest {
                 }
               ]
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val parsed = MealRecipeParser.parseRecipes(json)
         assertEquals(1, parsed.size)
@@ -57,7 +57,8 @@ class MealRecipeParserTest {
 
     @Test
     fun parseRecipesExtractsFromDirectJsonArray() {
-        val json = """
+        val json =
+            """
             [
               {
                 "recipe_id": "salad_1",
@@ -65,7 +66,7 @@ class MealRecipeParserTest {
                 "match_mode": "MOSTLY"
               }
             ]
-        """.trimIndent()
+            """.trimIndent()
 
         val parsed = MealRecipeParser.parseRecipes(json)
         assertEquals(1, parsed.size)
@@ -75,7 +76,8 @@ class MealRecipeParserTest {
 
     @Test
     fun parseRecipesHandlesMarkdownCodeFences() {
-        val markdown = """
+        val markdown =
+            """
             Here is your recipe:
             ```json
             {
@@ -88,7 +90,7 @@ class MealRecipeParserTest {
             }
             ```
             Enjoy cooking!
-        """.trimIndent()
+            """.trimIndent()
 
         val parsed = MealRecipeParser.parseRecipes(markdown)
         assertEquals(1, parsed.size)
