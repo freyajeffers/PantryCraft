@@ -16,6 +16,9 @@ interface PantryQueryDao {
     @Query("SELECT * FROM pantry_items WHERE isDeleted = 0 ORDER BY name COLLATE NOCASE")
     fun observeAllPantryItems(): Flow<List<PantryItem>>
 
+    @Query("SELECT * FROM pantry_items WHERE isDeleted = 0 ORDER BY name COLLATE NOCASE")
+    suspend fun getAllPantryItems(): List<PantryItem>
+
     @RawQuery(observedEntities = [PantryItem::class])
     fun search(query: SupportSQLiteQuery): Flow<List<PantryItem>>
 

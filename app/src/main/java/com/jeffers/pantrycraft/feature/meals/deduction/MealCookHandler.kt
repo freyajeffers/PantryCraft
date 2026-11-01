@@ -3,8 +3,10 @@ package com.jeffers.pantrycraft.feature.meals.deduction
 import androidx.room.withTransaction
 import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.CulinaryScaling
+import com.jeffers.pantrycraft.data.GroceryDao
 import com.jeffers.pantrycraft.data.GroceryItem
 import com.jeffers.pantrycraft.data.GroceryRepository
+import com.jeffers.pantrycraft.data.PantryDao
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.PantryRepository
 import com.jeffers.pantrycraft.data.Repository
@@ -40,6 +42,8 @@ object MealCookHandler {
                     pantryRepository = pantryRepository,
                     groceryRepository = groceryRepository,
                     addMissingToGrocery = addMissingToGrocery,
+                    pantryDao = database.pantryDao(),
+                    groceryDao = database.groceryDao(),
                 )
             }
         }
@@ -77,18 +81,21 @@ object MealCookHandler {
         pantryRepository: PantryRepository,
         groceryRepository: GroceryRepository,
         addMissingToGrocery: Boolean,
+        pantryDao: PantryDao? = null,
+        groceryDao: GroceryDao? = null,
     ): CookMealResult {
-        val currentPantry = pantryRepository.observePantryItems().first()
+        val currentPantry = pantryDao?.getAllPantryItems() ?: pantryRepository.observePantryItems().first()
         val (deductedCount, wastePreventedCount) =
             deductStockItems(
                 currentPantry = currentPantry,
                 itemsUsed = recipe.itemsUsedFromStock,
                 pantryRepository = pantryRepository,
+                pantryDao = pantryDao,
             )
 
         val groceryAddedCount =
             if (addMissingToGrocery && recipe.missingItemsForGrocery.isNotEmpty()) {
-                insertMissingGroceryItems(recipe.missingItemsForGrocery, groceryRepository)
+                insertMissingGroceryItems(recipe.missingItemsForGrocery, groceryRepository, groceryDao)
             } else {
                 0
             }
@@ -104,12 +111,13 @@ object MealCookHandler {
         currentPantry: List<PantryItem>,
         itemsUsed: List<RecipePantryUsage>,
         pantryRepository: PantryRepository,
+        pantryDao: PantryDao? = null,
     ): Pair<Int, Int> {
         var deductedCount = 0
         var wastePreventedCount = 0
 
         for (usage in itemsUsed) {
-            val deducted = deductSingleUsage(currentPantry, usage, pantryRepository)
+            val deducted = deductSingleUsage(currentPantry, usage, pantryRepository, pantryDao)
             if (deducted) {
                 deductedCount++
                 if (usage.preventsWaste) {
@@ -124,12 +132,13 @@ object MealCookHandler {
         pantry: List<PantryItem>,
         usage: RecipePantryUsage,
         pantryRepository: PantryRepository,
+        pantryDao: PantryDao? = null,
     ): Boolean {
         val validUsage = isDeltaValid(usage.quantityUsed)
         val matchedItem = if (validUsage) resolveMatchedItem(pantry, usage) else null
         val delta = matchedItem?.let { calculateDeductionDelta(usage, it) }
         return if (matchedItem != null && delta != null && isDeltaValid(delta)) {
-            pantryRepository.decrementQuantity(matchedItem, delta)
+            pantryDao?.decrementQuantity(matchedItem.id, delta) ?: pantryRepository.decrementQuantity(matchedItem, delta)
             true
         } else {
             false
@@ -172,19 +181,20 @@ object MealCookHandler {
     private suspend fun insertMissingGroceryItems(
         missingItems: List<RecipeMissingItem>,
         groceryRepository: GroceryRepository,
+        groceryDao: GroceryDao? = null,
     ): Int {
         var addedCount = 0
         for (missing in missingItems) {
             val name = missing.name.trim()
             if (name.isEmpty()) continue
-            groceryRepository.insertGrocery(
+            val item =
                 GroceryItem(
                     name = name,
                     quantity = missing.quantityNeeded,
                     unit = missing.unit?.trim(),
                     checked = false,
-                ),
-            )
+                )
+            groceryDao?.insert(item) ?: groceryRepository.insertGrocery(item)
             addedCount++
         }
         return addedCount
