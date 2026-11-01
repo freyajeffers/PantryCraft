@@ -43,7 +43,7 @@ class AutomaticBackupWorker(
         }
     }
 
-    private suspend fun backupIfChanged(pin: CharArray) {
+    private fun backupIfChanged(pin: CharArray) {
         AppDatabase.checkpointForBackup(applicationContext)
         val checksum = dbChecksum(applicationContext)
         if (checksum == null || checksum != lastDbChecksum(applicationContext)) {

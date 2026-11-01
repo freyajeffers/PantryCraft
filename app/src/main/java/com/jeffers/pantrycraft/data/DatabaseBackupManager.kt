@@ -222,7 +222,7 @@ object DatabaseBackupManager {
                     put("name", it.backupName)
                     put("createdAt", it.createdAt)
                     put("createdAtLabel", formatBackupTimestamp(it.createdAt))
-                    put("uri", it.exportedUri ?: "")
+                    put("uri", it.exportedUri.orEmpty())
                 },
             )
         }
