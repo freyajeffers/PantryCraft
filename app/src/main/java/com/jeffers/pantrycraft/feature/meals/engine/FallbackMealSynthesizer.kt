@@ -52,8 +52,10 @@ object FallbackMealSynthesizer {
                 title = title,
                 matchMode = mode,
                 targetPortions = targetPortions.coerceIn(MIN_PORTIONS, MAX_PORTIONS),
-                prepTimeMinutes = if (mode == MealMatchMode.EMERGENCY_SALVAGE) EMERGENCY_PREP_TIME else DEFAULT_PREP_TIME,
-                cookTimeMinutes = if (mode == MealMatchMode.EMERGENCY_SALVAGE) EMERGENCY_COOK_TIME else DEFAULT_COOK_TIME,
+                prepTimeMinutes =
+                    if (mode == MealMatchMode.EMERGENCY_SALVAGE) EMERGENCY_PREP_TIME else DEFAULT_PREP_TIME,
+                cookTimeMinutes =
+                    if (mode == MealMatchMode.EMERGENCY_SALVAGE) EMERGENCY_COOK_TIME else DEFAULT_COOK_TIME,
                 urgencyScore = if (urgent.isNotEmpty()) HIGH_URGENCY_SCORE else MEDIUM_URGENCY_SCORE,
                 itemsUsedFromStock = usedStock,
                 missingItemsForGrocery = missing,
