@@ -351,52 +351,57 @@ class EndToEndMealJourneyTest {
             assertEquals(3f, updatedStock.quantity, 0.01f)
         }
 
+    private suspend fun setupScalingPantryItems(): Pair<Long, Long> {
+        val garlicPowder =
+            PantryItem(
+                name = "${marker}Garlic Powder",
+                quantity = 10f,
+                unit = "g",
+                isAromaticOrSeasoning = true,
+                storageLocation = "PANTRY",
+            )
+        val flour =
+            PantryItem(
+                name = "${marker}Flour",
+                quantity = 1000f,
+                unit = "g",
+                isAromaticOrSeasoning = false,
+                storageLocation = "PANTRY",
+            )
+        val garlicId = repository.insertPantry(garlicPowder)
+        val flourId = repository.insertPantry(flour)
+        return Pair(garlicId, flourId)
+    }
+
+    private fun createScalingRecipe(garlicId: Long, flourId: Long): MealRecipe =
+        MealRecipe(
+            recipeId = "${marker}recipe_scaling",
+            title = "Seasoned Bread",
+            targetPortions = 2,
+            itemsUsedFromStock =
+                listOf(
+                    RecipePantryUsage(
+                        name = "${marker}Garlic Powder",
+                        pantryItemId = garlicId,
+                        quantityUsed = 2f,
+                        unit = "g",
+                        isAromaticOrSeasoning = true,
+                    ),
+                    RecipePantryUsage(
+                        name = "${marker}Flour",
+                        pantryItemId = flourId,
+                        quantityUsed = 200f,
+                        unit = "g",
+                        isAromaticOrSeasoning = false,
+                    ),
+                ),
+        )
+
     @Test
     fun testSeasoningPowerCurveNonLinearDeduction() =
         runBlocking {
-            val garlicPowder =
-                PantryItem(
-                    name = "${marker}Garlic Powder",
-                    quantity = 10f,
-                    unit = "g",
-                    isAromaticOrSeasoning = true,
-                    storageLocation = "PANTRY",
-                )
-            val flour =
-                PantryItem(
-                    name = "${marker}Flour",
-                    quantity = 1000f,
-                    unit = "g",
-                    isAromaticOrSeasoning = false,
-                    storageLocation = "PANTRY",
-                )
-            val garlicId = repository.insertPantry(garlicPowder)
-            val flourId = repository.insertPantry(flour)
-
-            // Base recipe for 2 portions
-            val baseRecipe =
-                MealRecipe(
-                    recipeId = "${marker}recipe_scaling",
-                    title = "Seasoned Bread",
-                    targetPortions = 2,
-                    itemsUsedFromStock =
-                        listOf(
-                            RecipePantryUsage(
-                                name = "${marker}Garlic Powder",
-                                pantryItemId = garlicId,
-                                quantityUsed = 2f,
-                                unit = "g",
-                                isAromaticOrSeasoning = true,
-                            ),
-                            RecipePantryUsage(
-                                name = "${marker}Flour",
-                                pantryItemId = flourId,
-                                quantityUsed = 200f,
-                                unit = "g",
-                                isAromaticOrSeasoning = false,
-                            ),
-                        ),
-                )
+            val (garlicId, flourId) = setupScalingPantryItems()
+            val baseRecipe = createScalingRecipe(garlicId, flourId)
 
             // Scale to 4 portions (ratio = 2.0)
             val scaledRecipe = baseRecipe.scaleToPortions(4)
