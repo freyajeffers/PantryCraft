@@ -23,6 +23,29 @@ import org.junit.Test
  * Camera intake -> Ledger storage -> Meal synthesis -> Cooking deduction -> Grocery restock -> Replenishment.
  */
 class Tier3CrossFeatureCombinationsTest {
+    private suspend fun seedIntakeBarcodes(
+        customDao: InMemoryCustomBarcodeDao,
+        pastaBarcode: String,
+        sauceBarcode: String,
+    ) {
+        customDao.upsert(
+            CustomBarcodeItem(
+                barcode = pastaBarcode,
+                name = "Fusilli Pasta",
+                category = "GRAINS",
+                defaultUnit = "G",
+            ),
+        )
+        customDao.upsert(
+            CustomBarcodeItem(
+                barcode = sauceBarcode,
+                name = "Tomato Puree",
+                category = "CANNED",
+                defaultUnit = "G",
+            ),
+        )
+    }
+
     @Test
     fun testCameraIntakeToInventoryToSynthesisFlow() =
         runBlocking {
@@ -33,12 +56,7 @@ class Tier3CrossFeatureCombinationsTest {
             // 1. Camera intake resolves 2 barcodes
             val pastaBarcode = "0123456789012"
             val sauceBarcode = "9876543210987"
-            customDao.upsert(
-                CustomBarcodeItem(barcode = pastaBarcode, name = "Fusilli Pasta", category = "GRAINS", defaultUnit = "G"),
-            )
-            customDao.upsert(
-                CustomBarcodeItem(barcode = sauceBarcode, name = "Tomato Puree", category = "CANNED", defaultUnit = "G"),
-            )
+            seedIntakeBarcodes(customDao, pastaBarcode, sauceBarcode)
 
             val pastaMatch = resolver.resolveBarcode(pastaBarcode)
             val sauceMatch = resolver.resolveBarcode(sauceBarcode)
@@ -110,7 +128,11 @@ class Tier3CrossFeatureCombinationsTest {
                     itemsUsedFromStock =
                         listOf(
                             RecipePantryUsage(name = "Jasmine Rice", pantryItemId = 1L, quantityUsed = 200f),
-                            RecipePantryUsage(name = "Chicken Thighs", pantryItemId = 2L, quantityUsed = 250f), // > stock
+                            RecipePantryUsage(
+                                name = "Chicken Thighs",
+                                pantryItemId = 2L,
+                                quantityUsed = 250f,
+                            ), // > stock
                         ),
                 )
 
@@ -254,8 +276,18 @@ class Tier3CrossFeatureCombinationsTest {
                     targetPortions = 2,
                     itemsUsedFromStock =
                         listOf(
-                            RecipePantryUsage(name = "Whole Milk", pantryItemId = milkId, quantityUsed = 250f, unit = "ML"),
-                            RecipePantryUsage(name = "All Purpose Flour", pantryItemId = flourId, quantityUsed = 200f, unit = "G"),
+                            RecipePantryUsage(
+                                name = "Whole Milk",
+                                pantryItemId = milkId,
+                                quantityUsed = 250f,
+                                unit = "ML",
+                            ),
+                            RecipePantryUsage(
+                                name = "All Purpose Flour",
+                                pantryItemId = flourId,
+                                quantityUsed = 200f,
+                                unit = "G",
+                            ),
                         ),
                     missingItemsForGrocery =
                         listOf(
