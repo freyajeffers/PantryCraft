@@ -331,16 +331,12 @@ internal fun PantryItemRow(
                 actions.onDecrement()
                 dismissState.reset()
             }
-
             SwipeToDismissBoxValue.EndToStart -> {
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 actions.onDelete()
                 dismissState.reset()
             }
-
-            SwipeToDismissBoxValue.Settled -> {
-                Unit
-            }
+            SwipeToDismissBoxValue.Settled -> Unit
         }
     }
     SwipeToDismissBox(

@@ -29,14 +29,14 @@ private fun pantryExportObject(item: PantryItem) =
         put("unit", item.unit ?: "COUNT")
         put("customUnitName", item.customUnitName ?: JSONObject.NULL)
         put("threshold", item.threshold.toDouble())
-        put("barcode", item.barcode.orEmpty())
+        put("barcode", item.barcode ?: "")
         put("storageLocation", item.storageLocation)
         put("category", item.category)
         put("expirationTimestamp", item.expirationTimestamp ?: JSONObject.NULL)
         put("isOpened", item.isOpened)
         put("openedTimestamp", item.openedTimestamp ?: JSONObject.NULL)
         put("isAromaticOrSeasoning", item.isAromaticOrSeasoning)
-        put("notes", item.notes.orEmpty())
+        put("notes", item.notes ?: "")
     }
 
 private fun groceryExportObject(item: GroceryItem) =

@@ -138,8 +138,7 @@ object MealCookHandler {
         val matchedItem = if (validUsage) resolveMatchedItem(pantry, usage) else null
         val delta = matchedItem?.let { calculateDeductionDelta(usage, it) }
         return if (matchedItem != null && delta != null && isDeltaValid(delta)) {
-            pantryDao?.decrementQuantity(matchedItem.id, delta)
-                ?: pantryRepository.decrementQuantity(matchedItem, delta)
+            pantryDao?.decrementQuantity(matchedItem.id, delta) ?: pantryRepository.decrementQuantity(matchedItem, delta)
             true
         } else {
             false

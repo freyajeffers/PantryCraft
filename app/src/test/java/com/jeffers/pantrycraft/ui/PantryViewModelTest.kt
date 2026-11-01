@@ -499,13 +499,7 @@ class PantryViewModelTest {
 
         val defaultNowFiltered =
             filterPantryItems(
-                listOf(
-                    PantryItem(
-                        id = 10,
-                        name = "Immediate",
-                        expirationTimestamp = System.currentTimeMillis() + 1000L,
-                    ),
-                ),
+                listOf(PantryItem(id = 10, name = "Immediate", expirationTimestamp = System.currentTimeMillis() + 1000L)),
                 PantryLocationFilter.EXPIRING_SOON,
             )
         assertEquals(1, defaultNowFiltered.size)

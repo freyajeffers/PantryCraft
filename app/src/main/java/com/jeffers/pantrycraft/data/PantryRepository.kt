@@ -60,16 +60,10 @@ internal class DefaultPantryRepository(
         }
     }
 
-    override suspend fun insertPantry(item: PantryItem): Long {
-        val validated = validate(item)
-        return if (validated.barcode.isNullOrBlank()) {
-            pantryDao.insert(validated)
-        } else {
-            db.withTransaction {
-                handlePantryInsertOrUpdate(validated)
-            }
+    override suspend fun insertPantry(item: PantryItem): Long =
+        db.withTransaction {
+            handlePantryInsertOrUpdate(validate(item))
         }
-    }
 
     override suspend fun updatePantry(item: PantryItem) =
         pantryDao.update(

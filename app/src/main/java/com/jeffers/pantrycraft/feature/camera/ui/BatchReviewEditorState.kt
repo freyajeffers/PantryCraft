@@ -23,10 +23,10 @@ internal class BatchReviewEditorState {
         name = item.name
         category = item.category
         unit = item.unit
-        customUnitName = item.customUnitName.orEmpty()
+        customUnitName = item.customUnitName ?: ""
         storageLocation = item.storageLocation
         shelfLifeDays = item.estimatedShelfLifeDays
-        notes = item.conditionNotes.orEmpty()
+        notes = item.conditionNotes ?: ""
         isAromatic = item.isAromaticOrSeasoning || PantryTaxonomy.isAromaticOrSeasoningCategory(item.category)
         isOpened = item.isOpened
         thresholdText = formatQuantity(item.threshold)

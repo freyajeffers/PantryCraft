@@ -464,18 +464,8 @@ class Tier1FeatureCoverageTest {
                 targetPortions = 2,
                 itemsUsedFromStock =
                     listOf(
-                        RecipePantryUsage(
-                            name = "Pasta",
-                            quantityUsed = 200f,
-                            unit = "G",
-                            isAromaticOrSeasoning = false,
-                        ),
-                        RecipePantryUsage(
-                            name = "Garlic",
-                            quantityUsed = 2f,
-                            unit = "CLOVE",
-                            isAromaticOrSeasoning = true,
-                        ),
+                        RecipePantryUsage(name = "Pasta", quantityUsed = 200f, unit = "G", isAromaticOrSeasoning = false),
+                        RecipePantryUsage(name = "Garlic", quantityUsed = 2f, unit = "CLOVE", isAromaticOrSeasoning = true),
                     ),
                 missingItemsForGrocery =
                     listOf(
@@ -606,14 +596,7 @@ class Tier1FeatureCoverageTest {
 
             // Add 2 grocery items: 1 linked to existing flour, 1 brand new
             repo.insertGrocery(
-                GroceryItem(
-                    id = 201L,
-                    name = "Flour",
-                    quantity = 500f,
-                    unit = "G",
-                    checked = true,
-                    fromPantryId = 101L,
-                ),
+                GroceryItem(id = 201L, name = "Flour", quantity = 500f, unit = "G", checked = true, fromPantryId = 101L),
             )
             repo.insertGrocery(
                 GroceryItem(id = 202L, name = "Yeast", quantity = 3f, unit = "PACKET", checked = true),

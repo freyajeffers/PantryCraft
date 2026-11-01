@@ -204,14 +204,7 @@ class MealCookHandlerEmpiricalChallengerTest {
             val harness = TransactionalHarness(listOf(pepper))
             val recipe =
                 createRecipe(
-                    itemsUsed =
-                        listOf(
-                            RecipePantryUsage(
-                                name = "Black Pepper",
-                                pantryItemId = 1L,
-                                quantityUsed = 1_000_000f,
-                            ),
-                        ),
+                    itemsUsed = listOf(RecipePantryUsage(name = "Black Pepper", pantryItemId = 1L, quantityUsed = 1_000_000f)),
                 )
 
             harness.runInTransaction { pantry, grocery ->
@@ -279,11 +272,7 @@ class MealCookHandlerEmpiricalChallengerTest {
                             RecipePantryUsage(name = "Olive Oil", pantryItemId = 1L, quantityUsed = 0f),
                             RecipePantryUsage(name = "Olive Oil", pantryItemId = 1L, quantityUsed = -15f),
                             RecipePantryUsage(name = "Olive Oil", pantryItemId = 1L, quantityUsed = Float.NaN),
-                            RecipePantryUsage(
-                                name = "Olive Oil",
-                                pantryItemId = 1L,
-                                quantityUsed = Float.POSITIVE_INFINITY,
-                            ),
+                            RecipePantryUsage(name = "Olive Oil", pantryItemId = 1L, quantityUsed = Float.POSITIVE_INFINITY),
                         ),
                 )
 
