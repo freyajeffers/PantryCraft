@@ -184,7 +184,8 @@ internal fun CameraPreviewOverlay(
                 style = Stroke(width = BOX_STROKE_WIDTH),
             )
             box.label?.let { label ->
-                val confidence = box.confidence?.let { " ${(it * CONFIDENCE_PERCENT_SCALE).toInt()}%" } ?: ""
+                val confidence =
+                    box.confidence?.let { " ${(it * CONFIDENCE_PERCENT_SCALE).toInt()}%" }.orEmpty()
                 val text = "$label$confidence"
                 val textWidth = labelPaint.measureText(text)
                 val badgeTop = (top - BADGE_TOP_OFFSET).coerceAtLeast(MIN_BADGE_TOP)
