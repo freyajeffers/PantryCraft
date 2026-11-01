@@ -489,9 +489,24 @@ class MealCookHandlerTest {
                 createRecipe(
                     itemsUsed =
                         listOf(
-                            RecipePantryUsage(name = "Carrot", pantryItemId = 1L, quantityUsed = 2f, preventsWaste = true),
-                            RecipePantryUsage(name = "Celery", pantryItemId = 2L, quantityUsed = 1f, preventsWaste = true),
-                            RecipePantryUsage(name = "Onion", pantryItemId = 3L, quantityUsed = 1f, preventsWaste = false),
+                            RecipePantryUsage(
+                                name = "Carrot",
+                                pantryItemId = 1L,
+                                quantityUsed = 2f,
+                                preventsWaste = true,
+                            ),
+                            RecipePantryUsage(
+                                name = "Celery",
+                                pantryItemId = 2L,
+                                quantityUsed = 1f,
+                                preventsWaste = true,
+                            ),
+                            RecipePantryUsage(
+                                name = "Onion",
+                                pantryItemId = 3L,
+                                quantityUsed = 1f,
+                                preventsWaste = false,
+                            ),
                         ),
                 )
 

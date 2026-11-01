@@ -44,13 +44,7 @@ class LiteRtModelEngine(
             val extractedPortions = extractTargetPortions(userPrompt)
 
             if (!isAvailable) {
-                val fallback =
-                    FallbackMealSynthesizer.synthesize(
-                        items = onHandItems,
-                        mode = extractedMode,
-                        targetPortions = extractedPortions,
-                    )
-                return@withContext Result.success(fallback)
+                return@withContext synthesizeFallback(onHandItems, extractedMode, extractedPortions)
             }
 
             // Memory hygiene: allocate byte buffer and guarantee wipe in finally
@@ -68,44 +62,48 @@ class LiteRtModelEngine(
                 }
 
             if (rawCompletion.isNullOrBlank()) {
-                val fallback =
-                    FallbackMealSynthesizer.synthesize(
-                        items = onHandItems,
-                        mode = extractedMode,
-                        targetPortions = extractedPortions,
-                    )
-                return@withContext Result.success(fallback)
+                return@withContext synthesizeFallback(onHandItems, extractedMode, extractedPortions)
             }
 
-            val outputBytes = rawCompletion.toByteArray(StandardCharsets.UTF_8)
-            try {
-                val recipes = MealRecipeParser.parseRecipes(rawCompletion)
-                if (recipes.isNotEmpty()) {
-                    Result.success(recipes)
-                } else {
-                    val fallback =
-                        FallbackMealSynthesizer.synthesize(
-                            items = onHandItems,
-                            mode = extractedMode,
-                            targetPortions = extractedPortions,
-                        )
-                    Result.success(fallback)
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                val fallback =
-                    FallbackMealSynthesizer.synthesize(
-                        items = onHandItems,
-                        mode = extractedMode,
-                        targetPortions = extractedPortions,
-                    )
-                Result.success(fallback)
-            } finally {
-                outputBytes.fill(0)
-                onBufferScrubbed?.invoke(outputBytes)
-            }
+            parseInferenceRecipes(rawCompletion, onHandItems, extractedMode, extractedPortions)
         }
+
+    private fun synthesizeFallback(
+        items: List<PantryItem>,
+        mode: MealMatchMode,
+        portions: Int,
+    ): Result<List<MealRecipe>> =
+        Result.success(
+            FallbackMealSynthesizer.synthesize(
+                items = items,
+                mode = mode,
+                targetPortions = portions,
+            ),
+        )
+
+    private fun parseInferenceRecipes(
+        rawCompletion: String,
+        onHandItems: List<PantryItem>,
+        extractedMode: MealMatchMode,
+        extractedPortions: Int,
+    ): Result<List<MealRecipe>> {
+        val outputBytes = rawCompletion.toByteArray(StandardCharsets.UTF_8)
+        return try {
+            val recipes = MealRecipeParser.parseRecipes(rawCompletion)
+            if (recipes.isNotEmpty()) {
+                Result.success(recipes)
+            } else {
+                synthesizeFallback(onHandItems, extractedMode, extractedPortions)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            synthesizeFallback(onHandItems, extractedMode, extractedPortions)
+        } finally {
+            outputBytes.fill(0)
+            onBufferScrubbed?.invoke(outputBytes)
+        }
+    }
 
     private fun runInference(
         systemPrompt: String,

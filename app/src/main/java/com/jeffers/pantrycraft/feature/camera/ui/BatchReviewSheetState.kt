@@ -36,10 +36,10 @@ internal class BatchReviewSheetState(
         editName = item.name
         editCategory = item.category
         editUnit = item.unit
-        editCustomUnitName = item.customUnitName ?: ""
+        editCustomUnitName = item.customUnitName.orEmpty()
         editStorageLocation = item.storageLocation
         editShelfLifeDays = item.estimatedShelfLifeDays
-        editNotes = item.conditionNotes ?: ""
+        editNotes = item.conditionNotes.orEmpty()
         editIsAromatic = item.isAromaticOrSeasoning || PantryTaxonomy.isAromaticOrSeasoningCategory(item.category)
         editIsOpened = item.isOpened
         editThresholdText = formatQuantity(item.threshold)

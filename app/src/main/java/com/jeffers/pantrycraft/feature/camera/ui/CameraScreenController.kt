@@ -24,7 +24,7 @@ internal fun CameraScreenController() {
     var latestFrameTime by remember { mutableStateOf<Long?>(null) }
     var isTorchOn by remember { mutableStateOf(false) }
     val focusState = rememberCameraFocusPoint()
-    var focusPoint by focusState::value
+    val focusPoint by focusState::value
     val labelPaint = rememberLabelPaint()
     val badgePaint = rememberBadgePaint()
     val runtime =

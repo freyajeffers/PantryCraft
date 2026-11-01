@@ -142,30 +142,55 @@ class Tier4RealWorldScenariosTest {
         assertTrue((nutrition?.proteinGrams ?: 0) > 0)
     }
 
+    private fun createDay1Meal(): MealRecipe =
+        MealRecipe(
+            recipeId = "meal_day1",
+            title = "Penne Bolognese",
+            targetPortions = 4,
+            itemsUsedFromStock =
+                listOf(
+                    RecipePantryUsage(name = "Penne Pasta", pantryItemId = 1L, quantityUsed = 400f, unit = "G"),
+                    RecipePantryUsage(name = "Ground Beef", pantryItemId = 2L, quantityUsed = 400f, unit = "G"),
+                ),
+        )
+
+    private fun createDay2Meal(): MealRecipe =
+        MealRecipe(
+            recipeId = "meal_day2",
+            title = "Tofu Stir Fry",
+            targetPortions = 2,
+            itemsUsedFromStock =
+                listOf(
+                    RecipePantryUsage(name = "Firm Tofu", pantryItemId = 4L, quantityUsed = 300f, unit = "G"),
+                    RecipePantryUsage(name = "Soy Sauce", pantryItemId = 3L, quantityUsed = 100f, unit = "ML"),
+                ),
+            missingItemsForGrocery =
+                listOf(
+                    RecipeMissingItem(name = "Soy Sauce", quantityNeeded = 250f, unit = "ML"),
+                    RecipeMissingItem(name = "Firm Tofu", quantityNeeded = 300f, unit = "G"),
+                ),
+        )
+
     @Test
     fun testScenarioWeeklyMealPlanningMultiMealDeduction() =
         runBlocking {
             // Initial Monday stock
             val pasta = PantryItem(id = 1L, name = "Penne Pasta", quantity = 1000f, unit = "G")
             val beef = PantryItem(id = 2L, name = "Ground Beef", quantity = 800f, unit = "G")
-            val soySauce = PantryItem(id = 3L, name = "Soy Sauce", quantity = 100f, unit = "ML", category = "CONDIMENTS")
+            val soySauce =
+                PantryItem(id = 3L, name = "Soy Sauce", quantity = 100f, unit = "ML", category = "CONDIMENTS")
             val tofu = PantryItem(id = 4L, name = "Firm Tofu", quantity = 300f, unit = "G")
 
             val repo = InMemoryPantryRepository(listOf(pasta, beef, soySauce, tofu))
 
             // DAY 1 (Tuesday): Cook Pasta Bolognese
-            val meal1 =
-                MealRecipe(
-                    recipeId = "meal_day1",
-                    title = "Penne Bolognese",
-                    targetPortions = 4,
-                    itemsUsedFromStock =
-                        listOf(
-                            RecipePantryUsage(name = "Penne Pasta", pantryItemId = 1L, quantityUsed = 400f, unit = "G"),
-                            RecipePantryUsage(name = "Ground Beef", pantryItemId = 2L, quantityUsed = 400f, unit = "G"),
-                        ),
+            val meal1 = createDay1Meal()
+            val result1 =
+                MealCookHandler.executeCookMeal(
+                    recipe = meal1,
+                    pantryRepository = repo,
+                    groceryRepository = repo,
                 )
-            val result1 = MealCookHandler.executeCookMeal(recipe = meal1, pantryRepository = repo, groceryRepository = repo)
             assertEquals(2, result1.itemsDeductedCount)
 
             var currentPantry = repo.observePantryItems().first()
@@ -173,23 +198,13 @@ class Tier4RealWorldScenariosTest {
             assertEquals(400f, currentPantry.first { it.id == 2L }.quantity, 0.01f)
 
             // DAY 2 (Wednesday): Cook Tofu Stir Fry (Depletes Soy Sauce and Tofu)
-            val meal2 =
-                MealRecipe(
-                    recipeId = "meal_day2",
-                    title = "Tofu Stir Fry",
-                    targetPortions = 2,
-                    itemsUsedFromStock =
-                        listOf(
-                            RecipePantryUsage(name = "Firm Tofu", pantryItemId = 4L, quantityUsed = 300f, unit = "G"),
-                            RecipePantryUsage(name = "Soy Sauce", pantryItemId = 3L, quantityUsed = 100f, unit = "ML"),
-                        ),
-                    missingItemsForGrocery =
-                        listOf(
-                            RecipeMissingItem(name = "Soy Sauce", quantityNeeded = 250f, unit = "ML"),
-                            RecipeMissingItem(name = "Firm Tofu", quantityNeeded = 300f, unit = "G"),
-                        ),
+            val meal2 = createDay2Meal()
+            val result2 =
+                MealCookHandler.executeCookMeal(
+                    recipe = meal2,
+                    pantryRepository = repo,
+                    groceryRepository = repo,
                 )
-            val result2 = MealCookHandler.executeCookMeal(recipe = meal2, pantryRepository = repo, groceryRepository = repo)
             assertEquals(2, result2.itemsDeductedCount)
             assertEquals(2, result2.groceryItemsAddedCount)
 
