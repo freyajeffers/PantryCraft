@@ -170,7 +170,7 @@ dependencies {
     kapt 'androidx.room:room-compiler:2.8.5'
 
     // Optional - lifecycle and coroutines
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0'
 
     // Networking
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
@@ -189,7 +189,7 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.json:json:20260814'
-    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0'
     androidTestImplementation 'androidx.room:room-testing:2.8.5'
     androidTestImplementation 'net.zetetic:sqlcipher-android:4.19.1'
     androidTestImplementation 'androidx.work:work-testing:2.12.0'
