@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Hardened the exported launcher activity against task-hijacking by isolating it in a single-instance task with an empty task affinity.
+- Added monotonic date-based debug version codes (`YYYYMMDDNN`) for F-Droid archive builds.
+- F-Droid publication now archives APKs as package/versionCode files instead of replacing the previous version.
 - Added the Detekt Kotlin static-analysis plugin and Gradle task for app quality checks.
 - Added project Detekt configuration for the standard PascalCase naming convention used by Compose functions.
 - Completed scoped KtLint formatting across the remaining production Kotlin sources; main and test source-set checks now pass.

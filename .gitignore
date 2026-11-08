@@ -14,3 +14,4 @@
 signing.properties
 app/src/main/assets/foodfacts.db
 *.zip
+.gradle/fdroid-debug-version-code

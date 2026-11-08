@@ -35,9 +35,17 @@ tasks.named('detekt') {
 }
 
 def signingProperties = new Properties()
-def gitCommit = 'git rev-parse --short HEAD'.execute([], project.rootDir).text.trim()
+def gitCommit = 'git rev-parse --short=12 HEAD'.execute([], project.rootDir).text.trim()
 if (!gitCommit) {
     gitCommit = 'unknown'
+}
+def gitTag = 'git describe --tags --abbrev=0'.execute([], project.rootDir).text.trim()
+if (!gitTag) {
+    gitTag = 'untagged'
+}
+def pantryVersionName = "${gitTag}+${gitCommit}"
+if ('git status --porcelain'.execute([], project.rootDir).text.trim()) {
+    pantryVersionName += '-dirty'
 }
 def signingPropertiesFile = file(
     System.getenv('PANTRYCRAFT_SIGNING_PROPERTIES') ?: "${System.getProperty('user.home')}/.config/pantrycraft/signing.properties",
@@ -45,6 +53,27 @@ def signingPropertiesFile = file(
 if (signingPropertiesFile.isFile()) {
     signingPropertiesFile.withInputStream { signingProperties.load(it) }
 }
+
+def fdroidDebugBuildRequested = gradle.startParameter.taskNames.any {
+    it ==~ /.*(assemble|bundle|install)Debug.*/
+}
+// Date-based versionCode: YYYYMMDDNN (NN = two-digit per-day sequence)
+def datePrefix = new Date().format('yyyyMMdd')
+def counterFile = file("${rootDir}/.gradle/fdroid-debug-version-code")
+counterFile.parentFile.mkdirs()
+def current = counterFile.isFile() ? counterFile.text.trim() : ''
+def seq = 0
+if (current.startsWith(datePrefix)) {
+    seq = Integer.parseInt(current.substring(8))
+} else {
+    seq = 0
+}
+if (fdroidDebugBuildRequested) {
+    seq = seq + 1
+    counterFile.text = String.format("%s%02d\n", datePrefix, seq)
+}
+def fdroidDebugVersionCode = datePrefix.toInteger() * 100 + seq
+
 
 android {
     namespace = 'com.jeffers.pantrycraft'
@@ -54,8 +83,8 @@ android {
         applicationId = 'com.jeffers.pantrycraft'
         minSdk = 34
         targetSdk = 36
-        versionCode = 1
-        versionName = '0.1'
+        versionCode = fdroidDebugBuildRequested ? fdroidDebugVersionCode : 1
+        versionName = pantryVersionName
 
         testInstrumentationRunner = 'com.jeffers.pantrycraft.PantryCraftTestRunner'
     }
@@ -81,7 +110,6 @@ android {
     buildTypes {
         debug {
             testCoverageEnabled = true
-            versionNameSuffix = "-${gitCommit}"
         }
         release {
             minifyEnabled = false
