@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Configured GitHub Actions CodeQL analysis for Android (Java/Kotlin) with weekly scheduled scanning and dynamic matrix language mapping.
+- Updated Kapt plugin to match Kotlin 2.4.21 and forced `kotlin-metadata-jvm:2.4.21` resolution to resolve Room annotation processor metadata version incompatibility during CodeQL build.
 - Hardened the exported launcher activity against task-hijacking by isolating it in a single-instance task with an empty task affinity.
 - Added monotonic date-based debug version codes (`YYYYMMDDNN`) for F-Droid archive builds.
 - F-Droid publication now archives APKs as package/versionCode files instead of replacing the previous version.
