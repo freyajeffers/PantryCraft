@@ -166,7 +166,7 @@ dependencies {
     implementation 'androidx.room:room-runtime:2.8.5'
     implementation 'androidx.work:work-runtime-ktx:2.12.0'
     implementation 'androidx.documentfile:documentfile:1.1.0'
-    implementation 'net.zetetic:sqlcipher-android:4.19.1'
+    implementation 'net.zetetic:sqlcipher-android:4.20.0'
     kapt 'androidx.room:room-compiler:2.8.5'
 
     // Optional - lifecycle and coroutines
@@ -191,7 +191,7 @@ dependencies {
     testImplementation 'org.json:json:20260814'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0'
     androidTestImplementation 'androidx.room:room-testing:2.8.5'
-    androidTestImplementation 'net.zetetic:sqlcipher-android:4.19.1'
+    androidTestImplementation 'net.zetetic:sqlcipher-android:4.20.0'
     androidTestImplementation 'androidx.work:work-testing:2.12.0'
     androidTestImplementation 'androidx.test:core:1.7.0'
     androidTestImplementation 'androidx.test:runner:1.7.0'
