@@ -23,7 +23,7 @@ buildscript {
             force 'ch.qos.logback:logback-classic:1.6.6'
             force 'org.apache.commons:commons-lang3:3.21.0'
             force 'org.apache.httpcomponents:httpclient:4.5.14'
-            force 'com.google.guava:guava:33.7.2-jre'
+            force 'com.google.guava:guava:33.8.0-android'
         }
     }
 }
@@ -59,7 +59,7 @@ allprojects {
             force 'com.squareup.okio:okio:3.18.2'
             force 'org.apache.commons:commons-lang3:3.21.0'
             force 'org.apache.httpcomponents:httpclient:4.5.14'
-            force 'com.google.guava:guava:33.7.2-android'
+            force 'com.google.guava:guava:33.8.0-android'
             force 'org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.21'
         }
     }
