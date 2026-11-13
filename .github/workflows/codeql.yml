@@ -5,6 +5,8 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  schedule:
+    - cron: '25 18 * * 4'
   workflow_dispatch:
 
 permissions:
@@ -47,7 +49,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: java-kotlin
+          languages: ${{ matrix.language }}
           build-mode: manual
           config-file: ./.github/codeql-config.yml
 
@@ -57,4 +59,4 @@ jobs:
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:java-kotlin"
+          category: "/language:${{ matrix.language }}"
