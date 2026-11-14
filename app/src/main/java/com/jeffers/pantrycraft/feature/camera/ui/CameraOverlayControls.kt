@@ -12,15 +12,11 @@ internal fun BoxScope.CameraOverlayControls(args: CameraOverlayArgs) {
     val scope = args.scope
     val barcodeMatch = args.barcodeMatch
     val unresolvedBarcode = args.unresolvedBarcode
-    val associateDialogBarcode = args.associateDialogBarcode
-    val parsedItems = args.parsedItems
     val snapshotVisionService = args.snapshotVisionService
-    val barcodeResolver = args.barcodeResolver
     val isTorchOn = args.isTorchOn
     val onToggleTorch = args.onToggleTorch
     val onClearBarcodeMatch = args.onClearBarcodeMatch
     val onParsedItemsChange = args.onParsedItemsChange
-    val onUnresolvedBarcodeChange = args.onUnresolvedBarcodeChange
     val onAssociateDialogBarcodeChange = args.onAssociateDialogBarcodeChange
     val onSnapshotStatusChange = args.onSnapshotStatusChange
     val view = args.view

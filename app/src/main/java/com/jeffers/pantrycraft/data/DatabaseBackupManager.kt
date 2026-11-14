@@ -121,8 +121,9 @@ object DatabaseBackupManager {
         val dest = File(dir, "${DB_NAME}.$stamp.pcbk")
         val temp = File(dir, ".$stamp.pcbk.tmp")
 
-        val salt = ByteArray(SALT_LEN).also { SecureRandom().nextBytes(it) }
-        val iv = ByteArray(IV_LEN).also { SecureRandom().nextBytes(it) }
+        val secureRandom = SecureRandom()
+        val salt = ByteArray(SALT_LEN).also { secureRandom.nextBytes(it) }
+        val iv = ByteArray(IV_LEN).also { secureRandom.nextBytes(it) }
 
         var derived: ByteArray? = null
         var passphrase: ByteArray? = null

@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -25,12 +26,19 @@ private const val DEFAULT_LIVE_MODEL = "models/gemini-2.0-flash-exp"
 private const val LIVE_WS_BASE_URL =
     "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha." +
         "GenerativeService.BidiGenerateContent"
+private const val GOOGLE_API_HOST = "generativelanguage.googleapis.com"
+private const val GOOGLE_API_LEAF_PIN = "sha256/pKUswmsFFcpKtaeEnEPUymNTYIK8T8lCmCrm5mwK1N8="
 
 class GeminiLiveVisionClient(
     private val context: Context,
     private val okHttpClient: OkHttpClient =
         OkHttpClient
             .Builder()
+            .certificatePinner(
+                CertificatePinner.Builder()
+                    .add(GOOGLE_API_HOST, GOOGLE_API_LEAF_PIN)
+                    .build(),
+            )
             .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build(),

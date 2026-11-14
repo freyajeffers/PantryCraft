@@ -106,9 +106,6 @@ fun PantryCraftTheme(content: @Composable () -> Unit) {
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            val barColor = if (isDarkTheme) android.graphics.Color.BLACK else android.graphics.Color.WHITE
-            window.statusBarColor = barColor
-            window.navigationBarColor = barColor
             WindowCompat.getInsetsController(window, view).apply {
                 isAppearanceLightStatusBars = !isDarkTheme
                 isAppearanceLightNavigationBars = !isDarkTheme

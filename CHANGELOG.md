@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Resolved CodeQL findings by reusing one `SecureRandom`, removing unread Compose locals, removing deprecated system-bar color calls, and pinning Gemini Live Vision WebSocket certificates.
 - Configured GitHub Actions CodeQL analysis for Android (Java/Kotlin) with weekly scheduled scanning and dynamic matrix language mapping.
 - Updated Kapt plugin to match Kotlin 2.4.21 and forced `kotlin-metadata-jvm:2.4.21` resolution to resolve Room annotation processor metadata version incompatibility during CodeQL build.
 - Hardened the exported launcher activity against task-hijacking by isolating it in a single-instance task with an empty task affinity.
