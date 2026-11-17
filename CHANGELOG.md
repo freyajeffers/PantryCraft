@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added a dedicated bold pantry-basket/leaf monochrome notification icon so expiration alerts remain recognizable at status-bar size.
 - Updated compile SDK/CodeQL SDK setup to Android 37 for the patched OkHttp 5.5.1 dependency requirement.
 - Added an explicit post-mutation failure hook for transaction rollback tests and removed the test's nested Room transaction, preventing instrumentation deadlocks while preserving production dispatcher behavior.
 - Formatted the complete Android instrumentation test source set and removed stale imports; Android-test KtLint and debug Android-test compilation now pass.
