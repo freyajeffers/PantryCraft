@@ -81,7 +81,7 @@ def fdroidDebugVersionCode = datePrefix.toInteger() * 100 + seq
 
 android {
     namespace = 'com.jeffers.pantrycraft'
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = 'com.jeffers.pantrycraft'

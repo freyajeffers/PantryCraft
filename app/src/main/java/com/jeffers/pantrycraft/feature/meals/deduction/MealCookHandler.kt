@@ -1,8 +1,6 @@
 package com.jeffers.pantrycraft.feature.meals.deduction
 
 import androidx.room.withTransaction
-import com.jeffers.pantrycraft.DefaultDispatcherProvider
-import com.jeffers.pantrycraft.DispatcherProvider
 import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.CulinaryScaling
 import com.jeffers.pantrycraft.data.GroceryDao
@@ -16,7 +14,6 @@ import com.jeffers.pantrycraft.feature.meals.model.MealRecipe
 import com.jeffers.pantrycraft.feature.meals.model.RecipeMissingItem
 import com.jeffers.pantrycraft.feature.meals.model.RecipePantryUsage
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
 
 data class CookMealResult(
     val itemsDeductedCount: Int,
@@ -29,26 +26,22 @@ object MealCookHandler {
      * Executes atomic stock deduction and grocery insertion within a Room transaction.
      * Complies strictly with PROJECT.md Interface Contract 1.
      */
-    @Suppress("LongParameterList")
     suspend fun executeCookMealTransactional(
         database: AppDatabase,
         recipe: MealRecipe,
         pantryRepository: PantryRepository,
         groceryRepository: GroceryRepository,
         addMissingToGrocery: Boolean = true,
-        dispatchers: DispatcherProvider = DefaultDispatcherProvider,
     ): CookMealResult =
-        withContext(dispatchers.io) {
-            database.withTransaction {
-                executeDeductionLogic(
-                    recipe = recipe,
-                    pantryRepository = pantryRepository,
-                    groceryRepository = groceryRepository,
-                    addMissingToGrocery = addMissingToGrocery,
-                    pantryDao = database.pantryDao(),
-                    groceryDao = database.groceryDao(),
-                )
-            }
+        database.withTransaction {
+            executeDeductionLogic(
+                recipe = recipe,
+                pantryRepository = pantryRepository,
+                groceryRepository = groceryRepository,
+                addMissingToGrocery = addMissingToGrocery,
+                pantryDao = database.pantryDao(),
+                groceryDao = database.groceryDao(),
+            )
         }
 
     /**

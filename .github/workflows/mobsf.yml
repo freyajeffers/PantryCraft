@@ -32,10 +32,11 @@ jobs:
         with:
           python-version: 3.15
 
+      - name: Install mobsfscan
+        run: python -m pip install --disable-pip-version-check mobsfscan==1.0.1
+
       - name: Run mobsfscan
-        uses: MobSF/mobsfscan@18cce72c077cbac1925439c3158363fd3bb361aa # 1.1.0
-        with:
-          args: app --sarif --output results.sarif
+        run: mobsfscan app --sarif --output results.sarif
 
       - name: Upload mobsfscan report
         uses: github/codeql-action/upload-sarif@v4.39.1
