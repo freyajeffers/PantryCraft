@@ -237,8 +237,8 @@ private const val MIN_BACKUP_PIN_LENGTH = 4
 internal suspend fun performEncryptedBackup(
     context: Context,
     pin: CharArray,
-    onSuccess: (String) -> Unit,
     dispatchers: DispatcherProvider = DefaultDispatcherProvider,
+    onSuccess: (String) -> Unit,
 ): String =
     withContext(dispatchers.io) {
         runCatching {
