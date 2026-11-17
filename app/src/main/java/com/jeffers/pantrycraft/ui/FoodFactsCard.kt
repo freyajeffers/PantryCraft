@@ -15,10 +15,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.jeffers.pantrycraft.DefaultDispatcherProvider
+import com.jeffers.pantrycraft.DispatcherProvider
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.downloadOfflineCatalog
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -27,6 +28,7 @@ fun FoodFactsCard(
     repository: Repository,
     scope: CoroutineScope,
     props: FoodFactsProps,
+    dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -35,7 +37,7 @@ fun FoodFactsCard(
         Column(modifier = Modifier.padding(16.dp)) {
             FoodFactsSummary(props)
             FoodFactsProgress(props)
-            FoodFactsActions(repository, scope, props)
+            FoodFactsActions(repository, scope, props, dispatchers)
         }
     }
 }
@@ -100,6 +102,7 @@ private fun FoodFactsActions(
     repository: Repository,
     scope: CoroutineScope,
     props: FoodFactsProps,
+    dispatchers: DispatcherProvider,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
@@ -112,7 +115,7 @@ private fun FoodFactsActions(
                     props.onStartDownload()
                     scope.launch {
                         val result =
-                            withContext(Dispatchers.IO) {
+                            withContext(dispatchers.io) {
                                 runCatching { repository.downloadOfflineCatalog(props.onProgress) }
                             }
                         props.onDownloadResult(result)

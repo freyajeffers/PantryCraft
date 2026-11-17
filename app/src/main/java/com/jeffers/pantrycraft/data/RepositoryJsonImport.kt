@@ -15,16 +15,17 @@ internal suspend fun Repository.importInventoryFromJson(jsonString: String): Int
     }
 
 internal fun parsePantryItemsFromJson(jsonString: String): List<PantryItem> {
-    val pantry =
-        runCatching { JSONObject(jsonString) }.getOrNull()?.optJSONArray("pantry")
-            ?: return emptyList()
+    val root = runCatching { JSONObject(jsonString) }.getOrNull()
+    val pantry = root?.optJSONArray("pantry")
+    if (pantry == null) return emptyList()
     return (0 until pantry.length()).mapNotNull { index ->
         pantry.optJSONObject(index)?.toPantryItem()
     }
 }
 
 internal fun JSONObject.toPantryItem(): PantryItem? {
-    val name = optString("name").trim().takeIf(String::isNotEmpty) ?: return null
+    val name = optString("name").trim()
+    if (name.isEmpty()) return null
     return PantryItem(
         name = name,
         quantity = optDouble("quantity", 1.0).toFloat().coerceAtLeast(0f),

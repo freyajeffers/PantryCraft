@@ -110,5 +110,8 @@ class MealSynthesisViewModelFactory(
     private val engine: MealSynthesisEngine,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T = MealSynthesisViewModel(repository, repository, engine) as T
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        val viewModel = MealSynthesisViewModel(repository, repository, engine)
+        return viewModel as T
+    }
 }

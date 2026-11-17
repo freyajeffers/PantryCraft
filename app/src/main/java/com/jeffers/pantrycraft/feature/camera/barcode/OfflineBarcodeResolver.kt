@@ -1,8 +1,9 @@
 package com.jeffers.pantrycraft.feature.camera.barcode
 
+import com.jeffers.pantrycraft.DefaultDispatcherProvider
+import com.jeffers.pantrycraft.DispatcherProvider
 import com.jeffers.pantrycraft.data.CustomBarcodeDao
 import com.jeffers.pantrycraft.data.CustomBarcodeItem
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 data class BarcodeMatch(
@@ -17,6 +18,7 @@ class OfflineBarcodeResolver(
     private val customBarcodeDao: CustomBarcodeDao,
     private var assetBarcodeDatabase: BarcodeCatalogDatabase? = null,
     private val assetBarcodeDatabaseProvider: () -> BarcodeCatalogDatabase? = { null },
+    private val dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ) : AutoCloseable {
     private var lastScannedBarcode: String? = null
     private var lastScannedAt = 0L
@@ -28,15 +30,23 @@ class OfflineBarcodeResolver(
         if (barcode == lastScannedBarcode && now - lastScannedAt < DEBOUNCE_MS) return null
         lastScannedBarcode = barcode
         lastScannedAt = now
-        return withContext(Dispatchers.IO) {
+        return withContext(dispatchers.io) {
             customBarcodeDao.findByBarcode(barcode)?.toMatch(barcode)
                 ?: activeAssetDatabase()?.findByBarcode(barcode)?.toMatch()
-                ?: EmbeddedBarcodeCatalog.products[barcode]?.toMatch(barcode)
+                ?: EmbeddedBarcodeCatalog.products[barcode]?.let { product ->
+                    BarcodeMatch(
+                        barcode = barcode,
+                        name = product.name,
+                        category = product.category,
+                        unit = product.unit,
+                        estimatedShelfLifeDays = product.shelfLifeDays,
+                    )
+                }
         }
     }
 
     suspend fun remember(item: CustomBarcodeItem) =
-        withContext(Dispatchers.IO) {
+        withContext(dispatchers.io) {
             require(item.barcode.matches(Regex("\\d{8,14}"))) { "Unsupported barcode format" }
             customBarcodeDao.upsert(item)
         }
@@ -90,8 +100,6 @@ class OfflineBarcodeResolver(
             defaultUnit,
             estimatedShelfLifeDays,
         )
-
-    private fun EmbeddedProduct.toMatch(barcode: String) = BarcodeMatch(barcode, name, category, unit, shelfLifeDays)
 
     private fun EmbeddedBarcodeMatch.toMatch() =
         BarcodeMatch(

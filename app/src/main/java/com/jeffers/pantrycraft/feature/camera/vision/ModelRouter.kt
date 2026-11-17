@@ -2,9 +2,10 @@ package com.jeffers.pantrycraft.feature.camera.vision
 
 import android.content.Context
 import android.util.Base64
+import com.jeffers.pantrycraft.DefaultDispatcherProvider
+import com.jeffers.pantrycraft.DispatcherProvider
 import com.jeffers.pantrycraft.data.AiProvider
 import com.jeffers.pantrycraft.data.ByokPreferences
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -42,12 +43,13 @@ class ModelRouter(
 class ByokCloudVisionModel(
     private val context: Context,
     private val geminiLiveClient: LocalVisionModel = GeminiLiveVisionClient(context.applicationContext),
+    private val dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ) : LocalVisionModel {
     override suspend fun analyze(
         webpBytes: ByteArray,
         prompt: String,
     ): String =
-        withContext(Dispatchers.IO) {
+        withContext(dispatchers.io) {
             val provider = ByokPreferences.selectedProvider(context)
             val model = ByokPreferences.selectedModel(context)
             val endpoint = ByokPreferences.selectedEndpoint(context)

@@ -11,6 +11,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.jeffers.pantrycraft.DefaultDispatcherProvider
+import com.jeffers.pantrycraft.DispatcherProvider
 import com.jeffers.pantrycraft.data.AutomaticBackupPreferences
 import com.jeffers.pantrycraft.data.AutomaticBackupScheduler
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
@@ -18,7 +20,6 @@ import com.jeffers.pantrycraft.data.persistAutoBackupTreeUri
 import com.jeffers.pantrycraft.data.persistedAutoBackupTreeUri
 import com.jeffers.pantrycraft.data.persistedBackupUri
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.jeffers.pantrycraft.data.backupRecords as loadBackupRecords
@@ -54,11 +55,13 @@ internal data class BackupStateProps(
 )
 
 @Composable
+@Suppress("LongMethod")
 internal fun rememberEncryptedBackupCardProps(
     context: Context,
     scope: CoroutineScope,
     databaseHasUserData: Boolean,
     callbacks: BackupCallbacks,
+    dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ): EncryptedBackupCardProps {
     var lastExportedUri by remember { mutableStateOf(persistedBackupUri(context)) }
     var backupRecords by remember { mutableStateOf(loadBackupRecords(context)) }
@@ -86,10 +89,15 @@ internal fun rememberEncryptedBackupCardProps(
                     onPerformBackup = { suppliedPin ->
                         scope.launch {
                             backupResult =
-                                performEncryptedBackup(context, suppliedPin) { createdName ->
-                                    backupRecords = loadBackupRecords(context)
-                                    launchers.launchCreateBackup(createdName)
-                                }
+                                performEncryptedBackup(
+                                    context = context,
+                                    pin = suppliedPin,
+                                    onSuccess = { createdName ->
+                                        backupRecords = loadBackupRecords(context)
+                                        launchers.launchCreateBackup(createdName)
+                                    },
+                                    dispatchers = dispatchers,
+                                )
                         }
                     },
                 ),
@@ -98,6 +106,7 @@ internal fun rememberEncryptedBackupCardProps(
         rememberBackupLaunchers(
             context = context,
             scope = scope,
+            dispatchers = dispatchers,
             callbacks =
                 BackupLauncherCallbacks(
                     onBackupSaved = { uri ->
@@ -144,6 +153,7 @@ internal fun assembleEncryptedBackupProps(
 private fun rememberBackupLaunchers(
     context: Context,
     scope: CoroutineScope,
+    dispatchers: DispatcherProvider,
     callbacks: BackupLauncherCallbacks,
 ): BackupLaunchers {
     var pendingBackupName by remember { mutableStateOf<String?>(null) }
@@ -155,7 +165,7 @@ private fun rememberBackupLaunchers(
                 takePersistablePermissions(context, uri)
                 scope.launch {
                     runCatching {
-                        withContext(Dispatchers.IO) { DatabaseBackupManager.exportBackup(context, backupName, uri) }
+                        withContext(dispatchers.io) { DatabaseBackupManager.exportBackup(context, backupName, uri) }
                     }.onSuccess {
                         callbacks.onBackupSaved(uri)
                     }.onFailure {
@@ -223,12 +233,14 @@ internal fun buildAutoBackupProps(
 
 private const val MIN_BACKUP_PIN_LENGTH = 4
 
+@Suppress("RedundantSuspendModifier")
 internal suspend fun performEncryptedBackup(
     context: Context,
     pin: CharArray,
     onSuccess: (String) -> Unit,
+    dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ): String =
-    withContext(Dispatchers.IO) {
+    withContext(dispatchers.io) {
         runCatching {
             require(pin.size >= MIN_BACKUP_PIN_LENGTH) { "PIN must be at least 4 digits" }
             DatabaseBackupManager.createEncryptedBackup(context, pin)

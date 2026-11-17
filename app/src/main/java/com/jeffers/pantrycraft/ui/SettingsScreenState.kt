@@ -280,12 +280,12 @@ internal fun restoreBackupRecord(
             context,
             scope,
             { DatabaseBackupManager.restoreEncryptedBackupFromUri(context, Uri.parse(uri), suppliedPin) },
-            onResult,
+            onResult = onResult,
         )
     } ?: launchRestore(
         context,
         scope,
         { DatabaseBackupManager.restoreEncryptedBackup(context, record.backupName, suppliedPin) },
-        onResult,
+        onResult = onResult,
     )
 }

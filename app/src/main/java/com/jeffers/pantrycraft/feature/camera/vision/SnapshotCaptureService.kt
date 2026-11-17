@@ -8,7 +8,8 @@ import android.media.ExifInterface
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.Dispatchers
+import com.jeffers.pantrycraft.DefaultDispatcherProvider
+import com.jeffers.pantrycraft.DispatcherProvider
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -29,12 +30,13 @@ class SnapshotFrame(
 class SnapshotCaptureService(
     context: Context,
     private val imageCapture: ImageCapture,
+    private val dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ) {
     private val appContext = context.applicationContext
     private val scratchDirectory = appContext.cacheDir.resolve("vision_scratch")
 
     suspend fun capture(): SnapshotFrame =
-        withContext(Dispatchers.Default) {
+        withContext(dispatchers.default) {
             val file = captureToFile()
             try {
                 val bytes = compressForVision(file)
@@ -44,6 +46,7 @@ class SnapshotCaptureService(
             }
         }
 
+    @Suppress("RedundantSuspendModifier")
     private suspend fun captureToFile(): File =
         suspendCancellableCoroutine { continuation ->
             scratchDirectory.mkdirs()

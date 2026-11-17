@@ -133,6 +133,7 @@ private fun InventoryMetrics(
 }
 
 @Composable
+@Suppress("LongMethod")
 private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -308,6 +309,7 @@ private fun MealSynthesisCard(
 }
 
 @Composable
+@Suppress("LongParameterList")
 private fun MetricCard(
     title: String,
     value: String,

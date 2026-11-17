@@ -1,9 +1,10 @@
 package com.jeffers.pantrycraft.feature.meals.engine
 
 import android.content.Context
+import com.jeffers.pantrycraft.DefaultDispatcherProvider
+import com.jeffers.pantrycraft.DispatcherProvider
 import com.jeffers.pantrycraft.data.AiProvider
 import com.jeffers.pantrycraft.data.ByokPreferences
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -25,12 +26,13 @@ interface TextGenerationModel {
 
 class ByokTextModel(
     private val context: Context,
+    private val dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ) : TextGenerationModel {
     override suspend fun generate(
         systemPrompt: String,
         userPrompt: String,
     ): String =
-        withContext(Dispatchers.IO) {
+        withContext(dispatchers.io) {
             val provider = ByokPreferences.selectedProvider(context)
             val model = ByokPreferences.selectedModel(context)
             val endpoint = ByokPreferences.selectedEndpoint(context)

@@ -3,7 +3,8 @@ package com.jeffers.pantrycraft.feature.camera.vision
 import android.graphics.BitmapFactory
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.objects.ObjectDetector
-import kotlinx.coroutines.Dispatchers
+import com.jeffers.pantrycraft.DefaultDispatcherProvider
+import com.jeffers.pantrycraft.DispatcherProvider
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -15,13 +16,14 @@ import kotlin.coroutines.resumeWithException
 /** Offline fallback model that converts ML Kit object labels into the shared JSON contract. */
 class MlKitSnapshotModel(
     private val objectDetector: ObjectDetector,
+    private val dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ) : LocalVisionModel,
     AutoCloseable {
     override suspend fun analyze(
         webpBytes: ByteArray,
         prompt: String,
     ): String =
-        withContext(Dispatchers.Default) {
+        withContext(dispatchers.default) {
             suspendCancellableCoroutine { continuation ->
                 val bitmap = BitmapFactory.decodeByteArray(webpBytes, 0, webpBytes.size)
                 if (bitmap == null) {

@@ -17,13 +17,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.jeffers.pantrycraft.DefaultDispatcherProvider
+import com.jeffers.pantrycraft.DispatcherProvider
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.exportInventoryToJson
 import com.jeffers.pantrycraft.data.exportPantryToCsv
 import com.jeffers.pantrycraft.data.importInventoryFromJson
 import com.jeffers.pantrycraft.data.importPantryFromCsv
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -163,9 +164,10 @@ internal suspend fun performExportJson(
     context: Context,
     repository: Repository,
     uri: Uri,
+    dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ): Result<Unit> =
     runCatching {
-        val json = withContext(Dispatchers.IO) { repository.exportInventoryToJson() }
+        val json = withContext(dispatchers.io) { repository.exportInventoryToJson() }
         context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
             ?: error("Unable to open output stream")
     }
@@ -174,9 +176,10 @@ internal suspend fun performExportCsv(
     context: Context,
     repository: Repository,
     uri: Uri,
+    dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ): Result<Unit> =
     runCatching {
-        val csv = withContext(Dispatchers.IO) { repository.exportPantryToCsv() }
+        val csv = withContext(dispatchers.io) { repository.exportPantryToCsv() }
         context.contentResolver.openOutputStream(uri)?.use { it.write(csv.toByteArray()) }
             ?: error("Unable to open output stream")
     }
@@ -185,22 +188,24 @@ internal suspend fun performImportJson(
     context: Context,
     repository: Repository,
     uri: Uri,
+    dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ): Result<Int> =
     runCatching {
         val content =
             context.contentResolver.openInputStream(uri)?.use { it.reader().readText() }
                 ?: error("Unable to read selected JSON file")
-        withContext(Dispatchers.IO) { repository.importInventoryFromJson(content) }
+        withContext(dispatchers.io) { repository.importInventoryFromJson(content) }
     }
 
 internal suspend fun performImportCsv(
     context: Context,
     repository: Repository,
     uri: Uri,
+    dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ): Result<Int> =
     runCatching {
         val csvText =
             context.contentResolver.openInputStream(uri)?.use { it.reader().readText() }
                 ?: error("Unable to read selected CSV file")
-        withContext(Dispatchers.IO) { repository.importPantryFromCsv(csvText) }
+        withContext(dispatchers.io) { repository.importPantryFromCsv(csvText) }
     }

@@ -29,11 +29,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.jeffers.pantrycraft.DefaultDispatcherProvider
+import com.jeffers.pantrycraft.DispatcherProvider
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.listBackupFiles
 import com.jeffers.pantrycraft.data.persistedBackupUri
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -191,10 +192,11 @@ internal fun launchRestore(
     context: android.content.Context,
     scope: CoroutineScope,
     restore: suspend () -> Unit,
+    dispatchers: DispatcherProvider = DefaultDispatcherProvider,
     onResult: (String?) -> Unit,
 ) {
     scope.launch {
-        val result = withContext(Dispatchers.IO) { runCatching { restore() }.exceptionOrNull()?.message }
+        val result = withContext(dispatchers.io) { runCatching { restore() }.exceptionOrNull()?.message }
         if (result == null) (context as? android.app.Activity)?.recreate()
         onResult(result)
     }
@@ -205,6 +207,7 @@ fun DatabaseRecoveryScreen(
     context: android.content.Context,
     onRestore: (String, CharArray) -> Unit,
     onReset: () -> Unit,
+    dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ) {
     val scope = rememberCoroutineScope()
     val backups =
@@ -224,7 +227,7 @@ fun DatabaseRecoveryScreen(
             if (uri != null && suppliedPin != null) {
                 scope.launch {
                     error =
-                        withContext(Dispatchers.IO) {
+                        withContext(dispatchers.io) {
                             runCatching { onRestore(uri.toString(), suppliedPin) }.exceptionOrNull()?.message
                         }
                 }
@@ -253,7 +256,7 @@ fun DatabaseRecoveryScreen(
                     pin = ""
                     scope.launch {
                         error =
-                            withContext(Dispatchers.IO) {
+                            withContext(dispatchers.io) {
                                 runCatching { onRestore(backup, suppliedPin) }.exceptionOrNull()?.message
                             }
                     }

@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.first
 import org.json.JSONArray
 import org.json.JSONObject
 
+@Suppress("RedundantSuspendModifier")
 internal suspend fun Repository.exportInventoryToJson(): String =
     exportInventoryToJson(observePantryItems().first(), observeGroceryItems().first())
 
@@ -49,6 +50,7 @@ private fun groceryExportObject(item: GroceryItem) =
 
 private fun List<JSONObject>.toJsonArray() = JSONArray().also { array -> forEach(array::put) }
 
+@Suppress("RedundantSuspendModifier")
 internal suspend fun Repository.exportPantryToCsv(): String = exportPantryToCsv(observePantryItems().first())
 
 internal fun exportPantryToCsv(items: List<PantryItem>): String {

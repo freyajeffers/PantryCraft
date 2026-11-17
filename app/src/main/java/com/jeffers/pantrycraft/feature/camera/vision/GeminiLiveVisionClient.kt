@@ -2,8 +2,9 @@ package com.jeffers.pantrycraft.feature.camera.vision
 
 import android.content.Context
 import android.util.Base64
+import com.jeffers.pantrycraft.DefaultDispatcherProvider
+import com.jeffers.pantrycraft.DispatcherProvider
 import com.jeffers.pantrycraft.data.ByokPreferences
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -35,19 +36,20 @@ class GeminiLiveVisionClient(
         OkHttpClient
             .Builder()
             .certificatePinner(
-                CertificatePinner.Builder()
+                CertificatePinner
+                    .Builder()
                     .add(GOOGLE_API_HOST, GOOGLE_API_LEAF_PIN)
                     .build(),
-            )
-            .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            ).connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build(),
+    private val dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ) : LocalVisionModel {
     override suspend fun analyze(
         webpBytes: ByteArray,
         prompt: String,
     ): String =
-        withContext(Dispatchers.IO) {
+        withContext(dispatchers.io) {
             val apiKey =
                 ByokPreferences.loadApiKey(context)
                     ?: error("Gemini API Key is required for Live Vision API")
@@ -60,6 +62,7 @@ class GeminiLiveVisionClient(
             }
         }
 
+    @Suppress("RedundantSuspendModifier")
     private suspend fun executeLiveSession(
         apiKey: String,
         base64Image: String,
@@ -203,7 +206,8 @@ class GeminiLiveVisionClient(
 
         fun extractServerContentText(serverJson: String): Pair<String, Boolean> {
             val root = runCatching { JSONObject(serverJson) }.getOrNull()
-            val serverContent = root?.optJSONObject("serverContent") ?: return Pair("", false)
+            val serverContent = root?.optJSONObject("serverContent")
+            if (serverContent == null) return Pair("", false)
             val isTurnComplete = serverContent.optBoolean("turnComplete", false)
             val parts = serverContent.optJSONObject("modelTurn")?.optJSONArray("parts")
 

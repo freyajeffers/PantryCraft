@@ -2,7 +2,8 @@ package com.jeffers.pantrycraft.feature.camera.barcode
 
 import android.content.Context
 import android.os.Build
-import kotlinx.coroutines.Dispatchers
+import com.jeffers.pantrycraft.DefaultDispatcherProvider
+import com.jeffers.pantrycraft.DispatcherProvider
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.HttpURLConnection
@@ -11,13 +12,15 @@ import java.security.MessageDigest
 
 class CatalogDownloadService(
     private val context: Context,
+    private val dispatchers: DispatcherProvider = DefaultDispatcherProvider,
 ) {
+    @Suppress("RedundantSuspendModifier")
     suspend fun downloadIfNeeded(
         url: String = DEFAULT_URL,
         expectedSha256: String = DEFAULT_SHA256,
         onProgress: (downloadedBytes: Long, totalBytes: Long) -> Unit = { _, _ -> },
     ): File =
-        withContext(Dispatchers.IO) {
+        withContext(dispatchers.io) {
             val destination = File(context.noBackupFilesDir, CATALOG_FILE_NAME)
             if (destination.isFile && CatalogDownloadVerifier.sha256(destination) == expectedSha256) {
                 return@withContext destination

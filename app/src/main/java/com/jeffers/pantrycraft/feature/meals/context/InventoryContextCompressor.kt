@@ -76,7 +76,15 @@ object InventoryContextCompressor {
         return "$safeName($qtyDisplay$unitPart$expInfo)"
     }
 
-    private fun formatQuantity(quantity: Float): String = if (quantity % 1f == 0f) quantity.toInt().toString() else "%.1f".format(quantity)
+    private fun formatQuantity(quantity: Float): String =
+        if (quantity % 1f == 0f) {
+            quantity.toInt().toString()
+        } else {
+            "%.1f".format(quantity)
+        }
 
-    fun estimateTokenCount(text: String): Int = (text.length + CHARACTERS_PER_TOKEN_ESTIMATE - 1) / CHARACTERS_PER_TOKEN_ESTIMATE
+    fun estimateTokenCount(text: String): Int {
+        val numerator = text.length + CHARACTERS_PER_TOKEN_ESTIMATE - 1
+        return numerator / CHARACTERS_PER_TOKEN_ESTIMATE
+    }
 }

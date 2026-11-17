@@ -186,6 +186,7 @@ private fun PantrySwipeBackground(state: androidx.compose.material3.SwipeToDismi
 }
 
 @Composable
+@Suppress("LongMethod")
 private fun PantryItemContent(
     item: PantryItem,
     expiration: ExpirationStatus,
@@ -339,7 +340,7 @@ internal fun PantryItemRow(
             }
 
             SwipeToDismissBoxValue.Settled -> {
-                Unit
+                // No action when the swipe settles without crossing a threshold.
             }
         }
     }
@@ -352,7 +353,10 @@ internal fun PantryItemRow(
     )
 }
 
-internal fun formatPantryQuantity(quantity: Float) = BigDecimal(quantity.toString()).stripTrailingZeros().toPlainString()
+internal fun formatPantryQuantity(quantity: Float): String {
+    val decimal = BigDecimal(quantity.toString())
+    return decimal.stripTrailingZeros().toPlainString()
+}
 
 @Composable
 fun StorageDiagnosticDialog(

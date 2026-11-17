@@ -45,6 +45,8 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.jeffers.pantrycraft.DefaultDispatcherProvider
+import com.jeffers.pantrycraft.DispatcherProvider
 import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.DatabaseBackupManager
 import com.jeffers.pantrycraft.data.DatabaseKeyInvalidatedException
@@ -53,18 +55,17 @@ import com.jeffers.pantrycraft.feature.camera.ui.CameraScreen
 import com.jeffers.pantrycraft.feature.meals.engine.MealSynthesisEngine
 import com.jeffers.pantrycraft.feature.meals.ui.MealSynthesisScreen
 import com.jeffers.pantrycraft.feature.meals.ui.MealSynthesisViewModelFactory
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
-fun AppNavigator() {
+fun AppNavigator(dispatchers: DispatcherProvider = DefaultDispatcherProvider) {
     val context = LocalContext.current
     // Load Repository lazily off the UI thread so composition and first-draw are fast.
     val repositoryResultState = remember { mutableStateOf<Result<Repository>?>(null) }
     val loadAttempt = remember { mutableStateOf(0) }
     LaunchedEffect(loadAttempt.value) {
         repositoryResultState.value =
-            withContext(Dispatchers.IO) {
+            withContext(dispatchers.io) {
                 runCatching { Repository.getInstance(context.applicationContext) }
             }
     }
@@ -180,12 +181,27 @@ private fun DestinationContent(
 ) {
     Box(modifier = Modifier.padding(contentPadding)) {
         when (destination) {
-            "home" -> HomeScreen(repository, onNavigate)
-            "pantry" -> PantryScreen(viewModel(factory = PantryViewModelFactory(repository)))
-            "grocery" -> GroceryScreen(viewModel(factory = GroceryViewModelFactory(repository)))
-            "camera" -> CameraScreen()
-            "settings" -> SettingsScreen(context, repository)
-            "meals" ->
+            "home" -> {
+                HomeScreen(repository, onNavigate)
+            }
+
+            "pantry" -> {
+                PantryScreen(viewModel(factory = PantryViewModelFactory(repository)))
+            }
+
+            "grocery" -> {
+                GroceryScreen(viewModel(factory = GroceryViewModelFactory(repository)))
+            }
+
+            "camera" -> {
+                CameraScreen()
+            }
+
+            "settings" -> {
+                SettingsScreen(context, repository)
+            }
+
+            "meals" -> {
                 MealSynthesisScreen(
                     viewModel(
                         factory =
@@ -195,6 +211,7 @@ private fun DestinationContent(
                             ),
                     ),
                 )
+            }
         }
     }
 }
