@@ -1,7 +1,6 @@
 package com.jeffers.pantrycraft
 
 import android.content.Context
-import androidx.room.withTransaction
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeffers.pantrycraft.data.AppDatabase
@@ -259,16 +258,14 @@ class EndToEndMealJourneyEmpiricalChallengeTest {
 
             var caughtException = false
             try {
-                db.withTransaction {
-                    MealCookHandler.executeCookMealTransactional(
-                        database = db,
-                        recipe = recipe,
-                        pantryRepository = repository,
-                        groceryRepository = repository,
-                        addMissingToGrocery = true,
-                    )
-                    error("Simulated catastrophic crash mid-transaction")
-                }
+                MealCookHandler.executeCookMealTransactional(
+                    database = db,
+                    recipe = recipe,
+                    pantryRepository = repository,
+                    groceryRepository = repository,
+                    addMissingToGrocery = true,
+                    afterMutation = { error("Simulated catastrophic crash mid-transaction") },
+                )
             } catch (_: IllegalStateException) {
                 caughtException = true
             }

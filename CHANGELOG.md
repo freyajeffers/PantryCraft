@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Updated compile SDK/CodeQL SDK setup to Android 37 for the patched OkHttp 5.5.1 dependency requirement.
-- Removed the nested Room transaction from meal cooking so rollback instrumentation does not deadlock, and replaced the failing MobSF action wrapper with the verified CLI invocation.
+- Added an explicit post-mutation failure hook for transaction rollback tests and removed the test's nested Room transaction, preventing instrumentation deadlocks while preserving production dispatcher behavior.
 - Formatted the complete Android instrumentation test source set and removed stale imports; Android-test KtLint and debug Android-test compilation now pass.
 - Completed an extensive repository/security inventory and fixed Detekt findings: injected dispatcher boundaries, corrected JSON/control-flow analysis issues, removed an unused barcode helper, and verified Detekt, production/test KtLint, unit tests, debug Android-test compilation, and debug assembly under JDK 17.
 - Resolved CodeQL findings by reusing one `SecureRandom`, removing unread Compose locals, removing deprecated system-bar color calls, and pinning Gemini Live Vision WebSocket certificates.
