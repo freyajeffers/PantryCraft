@@ -42,83 +42,89 @@ class CameraBatchReviewTest {
     }
 
     @Test
-    fun confirmBatchReviewItemsInsertsPantryBatchAndUpdatesState() = runBlocking {
-        var statusMessage: String? = null
-        var dismissed = false
+    fun confirmBatchReviewItemsInsertsPantryBatchAndUpdatesState() =
+        runBlocking {
+            var statusMessage: String? = null
+            var dismissed = false
 
-        val item1 = ParsedVisionItem(
-            name = "${prefix}Paprika",
-            category = "SPICES",
-            storageLocation = "PANTRY",
-            quantity = 2f,
-            unit = "JAR",
-            confidence = 0.95f,
-            estimatedShelfLifeDays = 180,
-            isAromaticOrSeasoning = true,
-            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-            conditionNotes = null,
-        )
+            val item1 =
+                ParsedVisionItem(
+                    name = "${prefix}Paprika",
+                    category = "SPICES",
+                    storageLocation = "PANTRY",
+                    quantity = 2f,
+                    unit = "JAR",
+                    confidence = 0.95f,
+                    estimatedShelfLifeDays = 180,
+                    isAromaticOrSeasoning = true,
+                    boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+                    conditionNotes = null,
+                )
 
-        val item2 = ParsedVisionItem(
-            name = "${prefix}Oat Milk",
-            category = "BEVERAGES",
-            storageLocation = "FRIDGE",
-            quantity = 1f,
-            unit = "CARTON",
-            confidence = 0.90f,
-            estimatedShelfLifeDays = 14,
-            isAromaticOrSeasoning = false,
-            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-            conditionNotes = null,
-        )
+            val item2 =
+                ParsedVisionItem(
+                    name = "${prefix}Oat Milk",
+                    category = "BEVERAGES",
+                    storageLocation = "FRIDGE",
+                    quantity = 1f,
+                    unit = "CARTON",
+                    confidence = 0.90f,
+                    estimatedShelfLifeDays = 14,
+                    isAromaticOrSeasoning = false,
+                    boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+                    conditionNotes = null,
+                )
 
-        val state = CameraBatchReviewState(
-            items = listOf(item1, item2),
-            repository = repository,
-            scope = CoroutineScope(Dispatchers.Main.immediate),
-            view = View(context),
-            onDismiss = { dismissed = true },
-            onStatus = { statusMessage = it },
-        )
+            val state =
+                CameraBatchReviewState(
+                    items = listOf(item1, item2),
+                    repository = repository,
+                    scope = CoroutineScope(Dispatchers.Main.immediate),
+                    view = View(context),
+                    onDismiss = { dismissed = true },
+                    onStatus = { statusMessage = it },
+                )
 
-        confirmBatchReviewItems(state, listOf(item1, item2))
+            confirmBatchReviewItems(state, listOf(item1, item2))
 
-        assertTrue(dismissed)
-        assertEquals("Added 2 items to your pantry", statusMessage)
+            assertTrue(dismissed)
+            assertEquals("Added 2 items to your pantry", statusMessage)
 
-        val insertedItems = repository.observePantryItems().first().filter { it.name.startsWith(prefix) }
-        assertEquals(2, insertedItems.size)
+            val insertedItems = repository.observePantryItems().first().filter { it.name.startsWith(prefix) }
+            assertEquals(2, insertedItems.size)
 
-        val paprika = insertedItems.first { it.name == "${prefix}Paprika" }
-        assertEquals(2f, paprika.quantity)
-        assertEquals("JAR", paprika.unit)
-        assertEquals("SPICES", paprika.category)
-        assertTrue(paprika.isAromaticOrSeasoning)
+            val paprika = insertedItems.first { it.name == "${prefix}Paprika" }
+            assertEquals(2f, paprika.quantity)
+            assertEquals("JAR", paprika.unit)
+            assertEquals("SPICES", paprika.category)
+            assertTrue(paprika.isAromaticOrSeasoning)
 
-        val oatMilk = insertedItems.first { it.name == "${prefix}Oat Milk" }
-        assertEquals(1f, oatMilk.quantity)
-        assertEquals("CARTON", oatMilk.unit)
-        assertEquals("BEVERAGES", oatMilk.category)
-        assertEquals(false, oatMilk.isAromaticOrSeasoning)
-    }
+            val oatMilk = insertedItems.first { it.name == "${prefix}Oat Milk" }
+            assertEquals(1f, oatMilk.quantity)
+            assertEquals("CARTON", oatMilk.unit)
+            assertEquals("BEVERAGES", oatMilk.category)
+            assertEquals(false, oatMilk.isAromaticOrSeasoning)
+        }
 
     @Test
-    fun confirmBatchReviewItemsWithEmptyList() = runBlocking {
-        var statusMessage: String? = null
-        var dismissed = false
+    fun confirmBatchReviewItemsWithEmptyList() =
+        runBlocking {
+            var statusMessage: String? = null
+            var dismissed = false
 
-        val state = CameraBatchReviewState(
-            items = emptyList(),
-            repository = repository,
-            scope = CoroutineScope(Dispatchers.Main.immediate),
-            view = View(context),
-            onDismiss = { dismissed = true },
-            onStatus = { statusMessage = it },
-        )
+            val state =
+                CameraBatchReviewState(
+                    items = emptyList(),
+                    repository = repository,
+                    scope = CoroutineScope(Dispatchers.Main.immediate),
+                    view = View(context),
+                    onDismiss = { dismissed = true },
+                    onStatus = { statusMessage = it },
+                )
 
-        confirmBatchReviewItems(state, emptyList())
+            confirmBatchReviewItems(state, emptyList())
 
-        assertTrue(dismissed)
-        assertEquals("Added 0 items to your pantry", statusMessage)
-    }
+            assertTrue(dismissed)
+            assertEquals("Added 0 items to your pantry", statusMessage)
+        }
 }

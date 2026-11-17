@@ -24,7 +24,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class DatabaseRecoveryScreenComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -173,7 +172,9 @@ class DatabaseRecoveryScreenComposeTest {
 
     @Test
     fun settingsScreenRendersDirectly() {
-        val repo = com.jeffers.pantrycraft.data.Repository.getInstance(context)
+        val repo =
+            com.jeffers.pantrycraft.data.Repository
+                .getInstance(context)
         composeTestRule.setContent {
             PantryCraftTheme {
                 SettingsScreen(context = context, repository = repo)

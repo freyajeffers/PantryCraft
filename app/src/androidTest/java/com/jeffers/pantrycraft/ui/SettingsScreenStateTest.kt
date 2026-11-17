@@ -23,8 +23,10 @@ class SettingsScreenStateTest {
 
     @org.junit.After
     fun tearDown() {
-        com.jeffers.pantrycraft.data.AppDatabase.getDatabase(context)
-        com.jeffers.pantrycraft.data.Repository.getInstance(context)
+        com.jeffers.pantrycraft.data.AppDatabase
+            .getDatabase(context)
+        com.jeffers.pantrycraft.data.Repository
+            .getInstance(context)
     }
 
     @Test
@@ -127,33 +129,36 @@ class SettingsScreenStateTest {
     }
 
     @Test
-    fun restoreBackupRecordHandlesExportedUriAndDirectName() = kotlinx.coroutines.runBlocking {
-        val recordWithUri = com.jeffers.pantrycraft.data.DatabaseBackupManager.BackupRecord(
-            backupName = "backup_with_uri.pcbk",
-            createdAt = 1000L,
-            createdAtLabel = "2026-01-01",
-            exportedUri = "content://com.test/backup.pcbk",
-        )
-        restoreBackupRecord(
-            context = context,
-            scope = this,
-            record = recordWithUri,
-            suppliedPin = "1234".toCharArray(),
-            onResult = {},
-        )
+    fun restoreBackupRecordHandlesExportedUriAndDirectName() =
+        kotlinx.coroutines.runBlocking {
+            val recordWithUri =
+                com.jeffers.pantrycraft.data.DatabaseBackupManager.BackupRecord(
+                    backupName = "backup_with_uri.pcbk",
+                    createdAt = 1000L,
+                    createdAtLabel = "2026-01-01",
+                    exportedUri = "content://com.test/backup.pcbk",
+                )
+            restoreBackupRecord(
+                context = context,
+                scope = this,
+                record = recordWithUri,
+                suppliedPin = "1234".toCharArray(),
+                onResult = {},
+            )
 
-        val recordWithoutUri = com.jeffers.pantrycraft.data.DatabaseBackupManager.BackupRecord(
-            backupName = "backup_direct.pcbk",
-            createdAt = 2000L,
-            createdAtLabel = "2026-01-02",
-            exportedUri = null,
-        )
-        restoreBackupRecord(
-            context = context,
-            scope = this,
-            record = recordWithoutUri,
-            suppliedPin = "1234".toCharArray(),
-            onResult = {},
-        )
-    }
+            val recordWithoutUri =
+                com.jeffers.pantrycraft.data.DatabaseBackupManager.BackupRecord(
+                    backupName = "backup_direct.pcbk",
+                    createdAt = 2000L,
+                    createdAtLabel = "2026-01-02",
+                    exportedUri = null,
+                )
+            restoreBackupRecord(
+                context = context,
+                scope = this,
+                record = recordWithoutUri,
+                suppliedPin = "1234".toCharArray(),
+                onResult = {},
+            )
+        }
 }

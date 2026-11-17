@@ -12,42 +12,45 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EncryptedBackupPropsAssembleTest {
-
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     @Test
     fun assembleEncryptedBackupPropsWiresStateAndCallbacks() {
         val uri = Uri.parse("content://test/backup.bin")
-        val autoProps = AutomaticBackupProps(
-            enabled = true,
-            intervalMinutes = 60L,
-            databaseHasUserData = true,
-            onDisable = {},
-            onEnableRequested = {},
-            onIntervalSelected = {},
-            onBackupNow = {},
-        )
-        val state = BackupStateProps(
-            lastExportedUri = uri,
-            hasBackupRecords = true,
-            autoBackupTreeUri = uri,
-            backupResult = "Success",
-        )
+        val autoProps =
+            AutomaticBackupProps(
+                enabled = true,
+                intervalMinutes = 60L,
+                databaseHasUserData = true,
+                onDisable = {},
+                onEnableRequested = {},
+                onIntervalSelected = {},
+                onBackupNow = {},
+            )
+        val state =
+            BackupStateProps(
+                lastExportedUri = uri,
+                hasBackupRecords = true,
+                autoBackupTreeUri = uri,
+                backupResult = "Success",
+            )
         var treeLaunched = false
         var restoreLaunched = false
-        val launchers = BackupLaunchers(
-            launchCreateBackup = {},
-            launchTree = { treeLaunched = true },
-            launchRestore = { restoreLaunched = true },
-        )
+        val launchers =
+            BackupLaunchers(
+                launchCreateBackup = {},
+                launchTree = { treeLaunched = true },
+                launchRestore = { restoreLaunched = true },
+            )
         var showBackupListCalled = false
         var resetDatabaseCalled = false
-        val callbacks = BackupCallbacks(
-            onShowBackupList = { showBackupListCalled = true },
-            onResetDatabase = { resetDatabaseCalled = true },
-            onRequirePin = {},
-            onRequireRestore = {},
-        )
+        val callbacks =
+            BackupCallbacks(
+                onShowBackupList = { showBackupListCalled = true },
+                onResetDatabase = { resetDatabaseCalled = true },
+                onRequirePin = {},
+                onRequireRestore = {},
+            )
 
         val assembled = assembleEncryptedBackupProps(context, autoProps, state, launchers, callbacks)
 
@@ -70,30 +73,34 @@ class EncryptedBackupPropsAssembleTest {
     }
 
     @Test
-    fun performEncryptedBackupHandlesShortPinFailure() = runBlocking {
-        var successBackupName: String? = null
-        val shortPin = "12".toCharArray()
+    fun performEncryptedBackupHandlesShortPinFailure() =
+        runBlocking {
+            var successBackupName: String? = null
+            val shortPin = "12".toCharArray()
 
-        val resultMessage = performEncryptedBackup(context, shortPin) { createdName ->
-            successBackupName = createdName
+            val resultMessage =
+                performEncryptedBackup(context, shortPin) { createdName ->
+                    successBackupName = createdName
+                }
+
+            assertTrue(resultMessage.startsWith("Backup failed:"))
+            assertEquals(null, successBackupName)
         }
-
-        assertTrue(resultMessage.startsWith("Backup failed:"))
-        assertEquals(null, successBackupName)
-    }
 
     @Test
-    fun performEncryptedBackupSucceedsWithValidPin(): Unit = runBlocking {
-        var successBackupName: String? = null
-        val validPin = "123456".toCharArray()
+    fun performEncryptedBackupSucceedsWithValidPin(): Unit =
+        runBlocking {
+            var successBackupName: String? = null
+            val validPin = "123456".toCharArray()
 
-        val resultMessage = performEncryptedBackup(context, validPin) { createdName ->
-            successBackupName = createdName
+            val resultMessage =
+                performEncryptedBackup(context, validPin) { createdName ->
+                    successBackupName = createdName
+                }
+
+            assertTrue(resultMessage.startsWith("Backup created"))
+            assertTrue(successBackupName != null)
         }
-
-        assertTrue(resultMessage.startsWith("Backup created"))
-        assertTrue(successBackupName != null)
-    }
 
     @Test
     fun buildAutoBackupPropsWiresAllActions() {
@@ -103,22 +110,23 @@ class EncryptedBackupPropsAssembleTest {
         var requiredPinForBackup: ((CharArray) -> Unit)? = null
         var performedBackupPin: CharArray? = null
 
-        val args = AutoBackupScheduleArgs(
-            enabled = true,
-            intervalMinutes = 120L,
-            databaseHasUserData = true,
-            onScheduleChange = { enabled, minutes ->
-                scheduleChangedEnabled = enabled
-                scheduleChangedMinutes = minutes
-            },
-            onRequirePin = { action ->
-                requiredPinForEnable = action
-                requiredPinForBackup = action
-            },
-            onPerformBackup = { pin ->
-                performedBackupPin = pin
-            },
-        )
+        val args =
+            AutoBackupScheduleArgs(
+                enabled = true,
+                intervalMinutes = 120L,
+                databaseHasUserData = true,
+                onScheduleChange = { enabled, minutes ->
+                    scheduleChangedEnabled = enabled
+                    scheduleChangedMinutes = minutes
+                },
+                onRequirePin = { action ->
+                    requiredPinForEnable = action
+                    requiredPinForBackup = action
+                },
+                onPerformBackup = { pin ->
+                    performedBackupPin = pin
+                },
+            )
 
         val props = buildAutoBackupProps(context, args)
         assertTrue(props.enabled)

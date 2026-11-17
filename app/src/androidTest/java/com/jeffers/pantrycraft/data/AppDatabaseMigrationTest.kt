@@ -1,14 +1,14 @@
 package com.jeffers.pantrycraft.data
 
+import android.content.Context
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import android.content.Context
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -37,7 +37,6 @@ class AppDatabaseMigrationTest {
         context.deleteDatabase("migration-test-1-3")
         context.deleteDatabase("migration-test-unique")
     }
-
 
     @Test
     fun migrate1To2_preservesExistingDataAndAddsInventoryFields() {

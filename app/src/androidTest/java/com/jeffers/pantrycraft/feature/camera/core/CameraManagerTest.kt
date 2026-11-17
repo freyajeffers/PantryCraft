@@ -20,7 +20,6 @@ import java.util.concurrent.Executors
 
 @RunWith(AndroidJUnit4::class)
 class CameraManagerTest {
-
     private lateinit var context: Context
     private lateinit var executor: ExecutorService
     private lateinit var analyzer: LiveVisionAnalyzer
@@ -31,9 +30,11 @@ class CameraManagerTest {
         context = ApplicationProvider.getApplicationContext()
         executor = Executors.newSingleThreadExecutor()
         val scanner = BarcodeScanning.getClient()
-        val options = ObjectDetectorOptions.Builder()
-            .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-            .build()
+        val options =
+            ObjectDetectorOptions
+                .Builder()
+                .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
+                .build()
         val detector = ObjectDetection.getClient(options)
         analyzer = LiveVisionAnalyzer(scanner, detector, executor, {})
         cameraManager = CameraManager(context, analyzer, executor)
@@ -64,14 +65,15 @@ class CameraManagerTest {
     }
 
     @Test
-    fun cameraManagerCaptureSnapshotThrowsWhenNotReady() = runBlocking {
-        try {
-            cameraManager.captureSnapshot()
-            fail("captureSnapshot must throw IllegalStateException when not bound")
-        } catch (expected: IllegalStateException) {
-            org.junit.Assert.assertEquals("Camera capture is not ready", expected.message)
+    fun cameraManagerCaptureSnapshotThrowsWhenNotReady() =
+        runBlocking {
+            try {
+                cameraManager.captureSnapshot()
+                fail("captureSnapshot must throw IllegalStateException when not bound")
+            } catch (expected: IllegalStateException) {
+                org.junit.Assert.assertEquals("Camera capture is not ready", expected.message)
+            }
         }
-    }
 
     @Test
     fun cameraManagerZoomClampsBoundsAndMultipleUnbindsAreIdempotent() {

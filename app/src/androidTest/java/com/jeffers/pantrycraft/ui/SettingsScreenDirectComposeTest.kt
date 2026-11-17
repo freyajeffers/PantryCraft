@@ -21,7 +21,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SettingsScreenDirectComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -43,10 +42,11 @@ class SettingsScreenDirectComposeTest {
         composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.DESTROYED)
     }
 
-    private fun cleanupTestData() = runBlocking {
-        val db = AppDatabase.getDatabase(context)
-        db.pantryDao().deleteByNamePrefix(prefix)
-    }
+    private fun cleanupTestData() =
+        runBlocking {
+            val db = AppDatabase.getDatabase(context)
+            db.pantryDao().deleteByNamePrefix(prefix)
+        }
 
     @Test
     fun settingsScreenRendersWithUserDataPresent() {

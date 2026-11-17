@@ -20,7 +20,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CameraScreenHostComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -57,37 +56,39 @@ class CameraScreenHostComposeTest {
             PantryCraftTheme {
                 val context = LocalContext.current
                 val state = rememberCameraScreenState(context)
-                val runtime = rememberCameraRuntimeForScreen(
-                    state = state,
-                    onResult = {},
-                    onFrameTime = {},
-                    onBarcodeResolved = {},
-                    onBarcodeUnresolved = {},
-                )
-                val args = CameraScreenBoxArgs(
-                    previewView = state.previewView,
-                    latestResult = null,
-                    focusPoint = Offset(100f, 100f),
-                    labelPaint = android.graphics.Paint(),
-                    badgePaint = android.graphics.Paint(),
-                    cameraManager = runtime.cameraManager,
-                    repository = state.repository,
-                    scope = state.scope,
-                    barcodeMatch = null,
-                    unresolvedBarcode = null,
-                    associateDialogBarcode = null,
-                    parsedItems = emptyList(),
-                    snapshotVisionService = state.snapshotVisionService,
-                    barcodeResolver = state.barcodeResolver,
-                    isTorchOn = false,
-                    onToggleTorch = {},
-                    onClearBarcodeMatch = {},
-                    onParsedItemsChange = {},
-                    onUnresolvedBarcodeChange = {},
-                    onAssociateDialogBarcodeChange = {},
-                    onSnapshotStatusChange = {},
-                    view = LocalView.current,
-                )
+                val runtime =
+                    rememberCameraRuntimeForScreen(
+                        state = state,
+                        onResult = {},
+                        onFrameTime = {},
+                        onBarcodeResolved = {},
+                        onBarcodeUnresolved = {},
+                    )
+                val args =
+                    CameraScreenBoxArgs(
+                        previewView = state.previewView,
+                        latestResult = null,
+                        focusPoint = Offset(100f, 100f),
+                        labelPaint = android.graphics.Paint(),
+                        badgePaint = android.graphics.Paint(),
+                        cameraManager = runtime.cameraManager,
+                        repository = state.repository,
+                        scope = state.scope,
+                        barcodeMatch = null,
+                        unresolvedBarcode = null,
+                        associateDialogBarcode = null,
+                        parsedItems = emptyList(),
+                        snapshotVisionService = state.snapshotVisionService,
+                        barcodeResolver = state.barcodeResolver,
+                        isTorchOn = false,
+                        onToggleTorch = {},
+                        onClearBarcodeMatch = {},
+                        onParsedItemsChange = {},
+                        onUnresolvedBarcodeChange = {},
+                        onAssociateDialogBarcodeChange = {},
+                        onSnapshotStatusChange = {},
+                        view = LocalView.current,
+                    )
                 CameraScreenBox(args = args)
             }
         }

@@ -40,7 +40,6 @@ import java.util.concurrent.Executors
 
 @RunWith(AndroidJUnit4::class)
 class CameraQuickAddComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -72,13 +71,14 @@ class CameraQuickAddComposeTest {
     fun cameraQuickAddCardRendersAndQuickAdds() {
         val context: Context = ApplicationProvider.getApplicationContext()
         val repository = Repository.getInstance(context)
-        val match = BarcodeMatch(
-            barcode = "9988776655",
-            name = "Organic Rolled Oats",
-            category = "GRAINS",
-            unit = "G",
-            estimatedShelfLifeDays = 365,
-        )
+        val match =
+            BarcodeMatch(
+                barcode = "9988776655",
+                name = "Organic Rolled Oats",
+                category = "GRAINS",
+                unit = "G",
+                estimatedShelfLifeDays = 365,
+            )
         var dismissed = false
         var confirmed = false
         var statusMsg: String? = null
@@ -87,14 +87,15 @@ class CameraQuickAddComposeTest {
             PantryCraftTheme {
                 Box {
                     val scope = rememberCoroutineScope()
-                    val actions = CameraQuickAddActions(
-                        repository = repository,
-                        scope = scope,
-                        onDismiss = { dismissed = true },
-                        onReview = {},
-                        onStatus = { statusMsg = it },
-                        onConfirm = { confirmed = true },
-                    )
+                    val actions =
+                        CameraQuickAddActions(
+                            repository = repository,
+                            scope = scope,
+                            onDismiss = { dismissed = true },
+                            onReview = {},
+                            onStatus = { statusMsg = it },
+                            onConfirm = { confirmed = true },
+                        )
                     CameraQuickAddCard(match = match, actions = actions)
                 }
             }
@@ -116,27 +117,29 @@ class CameraQuickAddComposeTest {
     fun cameraQuickAddCardSpicesZeroShelfLifeQuickAdds() {
         val context: Context = ApplicationProvider.getApplicationContext()
         val repository = Repository.getInstance(context)
-        val match = BarcodeMatch(
-            barcode = "998877665500",
-            name = "Ground Cumin",
-            category = "SPICES",
-            unit = "JAR",
-            estimatedShelfLifeDays = 0,
-        )
+        val match =
+            BarcodeMatch(
+                barcode = "998877665500",
+                name = "Ground Cumin",
+                category = "SPICES",
+                unit = "JAR",
+                estimatedShelfLifeDays = 0,
+            )
         var confirmed = false
 
         composeTestRule.setContent {
             PantryCraftTheme {
                 Box {
                     val scope = rememberCoroutineScope()
-                    val actions = CameraQuickAddActions(
-                        repository = repository,
-                        scope = scope,
-                        onDismiss = {},
-                        onReview = {},
-                        onStatus = {},
-                        onConfirm = { confirmed = true },
-                    )
+                    val actions =
+                        CameraQuickAddActions(
+                            repository = repository,
+                            scope = scope,
+                            onDismiss = {},
+                            onReview = {},
+                            onStatus = {},
+                            onConfirm = { confirmed = true },
+                        )
                     CameraQuickAddCard(match = match, actions = actions)
                 }
             }
@@ -161,14 +164,15 @@ class CameraQuickAddComposeTest {
             PantryCraftTheme {
                 Box {
                     val scope = rememberCoroutineScope()
-                    val actions = CameraQuickAddActions(
-                        repository = repository,
-                        scope = scope,
-                        onDismiss = { dismissed = true },
-                        onReview = { reviewedItem = it },
-                        onStatus = {},
-                        onConfirm = {},
-                    )
+                    val actions =
+                        CameraQuickAddActions(
+                            repository = repository,
+                            scope = scope,
+                            onDismiss = { dismissed = true },
+                            onReview = { reviewedItem = it },
+                            onStatus = {},
+                            onConfirm = {},
+                        )
                     CameraQuickAddCard(match = match, actions = actions)
                 }
             }
@@ -196,14 +200,15 @@ class CameraQuickAddComposeTest {
             PantryCraftTheme {
                 Box {
                     val scope = rememberCoroutineScope()
-                    val actions = CameraQuickAddActions(
-                        repository = repository,
-                        scope = scope,
-                        onDismiss = { dismissed = true },
-                        onReview = {},
-                        onStatus = {},
-                        onConfirm = {},
-                    )
+                    val actions =
+                        CameraQuickAddActions(
+                            repository = repository,
+                            scope = scope,
+                            onDismiss = { dismissed = true },
+                            onReview = {},
+                            onStatus = {},
+                            onConfirm = {},
+                        )
                     CameraQuickAddCard(match = match, actions = actions)
                 }
             }
@@ -237,29 +242,30 @@ class CameraQuickAddComposeTest {
             PantryCraftTheme {
                 Box {
                     val scope = rememberCoroutineScope()
-                    val args = CameraOverlayArgs(
-                        latestResult = null,
-                        focusPoint = null,
-                        labelPaint = Paint(),
-                        badgePaint = Paint(),
-                        cameraManager = cameraManager,
-                        repository = repository,
-                        scope = scope,
-                        barcodeMatch = match,
-                        unresolvedBarcode = null,
-                        associateDialogBarcode = null,
-                        parsedItems = emptyList(),
-                        snapshotVisionService = snapshotService,
-                        barcodeResolver = resolver,
-                        isTorchOn = false,
-                        onToggleTorch = {},
-                        onClearBarcodeMatch = { dismissed = true },
-                        onParsedItemsChange = {},
-                        onUnresolvedBarcodeChange = {},
-                        onAssociateDialogBarcodeChange = {},
-                        onSnapshotStatusChange = {},
-                        view = View(context),
-                    )
+                    val args =
+                        CameraOverlayArgs(
+                            latestResult = null,
+                            focusPoint = null,
+                            labelPaint = Paint(),
+                            badgePaint = Paint(),
+                            cameraManager = cameraManager,
+                            repository = repository,
+                            scope = scope,
+                            barcodeMatch = match,
+                            unresolvedBarcode = null,
+                            associateDialogBarcode = null,
+                            parsedItems = emptyList(),
+                            snapshotVisionService = snapshotService,
+                            barcodeResolver = resolver,
+                            isTorchOn = false,
+                            onToggleTorch = {},
+                            onClearBarcodeMatch = { dismissed = true },
+                            onParsedItemsChange = {},
+                            onUnresolvedBarcodeChange = {},
+                            onAssociateDialogBarcodeChange = {},
+                            onSnapshotStatusChange = {},
+                            view = View(context),
+                        )
                     CameraOverlayControls(args)
                 }
             }

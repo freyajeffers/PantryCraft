@@ -84,7 +84,6 @@ class DatabaseBackupManagerTest {
             createdBackupName = backupName
             assertTrue(listBackupFiles(context).contains(backupName))
 
-
             var wrongPinRejected = false
             try {
                 DatabaseBackupManager.restoreEncryptedBackup(
@@ -202,47 +201,48 @@ class DatabaseBackupManagerTest {
     }
 
     @Test
-    fun exportBackupAndRestoreFromUriRoundTripsDatabase() = runBlocking {
-        val database = AppDatabase.getDatabase(context)
-        val marker = "backup-uri-round-trip-${System.nanoTime()}"
-        database.pantryDao().insert(PantryItem(name = marker, quantity = 4f))
+    fun exportBackupAndRestoreFromUriRoundTripsDatabase() =
+        runBlocking {
+            val database = AppDatabase.getDatabase(context)
+            val marker = "backup-uri-round-trip-${System.nanoTime()}"
+            database.pantryDao().insert(PantryItem(name = marker, quantity = 4f))
 
-        val pin = "uri-round-trip-pin".toCharArray()
-        val backupName = DatabaseBackupManager.createEncryptedBackup(context, pin)
-        createdBackupName = backupName
+            val pin = "uri-round-trip-pin".toCharArray()
+            val backupName = DatabaseBackupManager.createEncryptedBackup(context, pin)
+            createdBackupName = backupName
 
-        val exportFile = File(context.cacheDir, "exported_backup_${System.nanoTime()}.pcbk")
-        val exportUri = android.net.Uri.fromFile(exportFile)
+            val exportFile = File(context.cacheDir, "exported_backup_${System.nanoTime()}.pcbk")
+            val exportUri = android.net.Uri.fromFile(exportFile)
 
-        try {
-            DatabaseBackupManager.exportBackup(context, backupName, exportUri)
-            assertTrue(exportFile.exists())
-            assertTrue(exportFile.length() > 0)
+            try {
+                DatabaseBackupManager.exportBackup(context, backupName, exportUri)
+                assertTrue(exportFile.exists())
+                assertTrue(exportFile.length() > 0)
 
-            // Modify database to simulate loss
-            AppDatabase.getDatabase(context).pantryDao().deleteByNamePrefix("backup-uri-round-trip-")
+                // Modify database to simulate loss
+                AppDatabase.getDatabase(context).pantryDao().deleteByNamePrefix("backup-uri-round-trip-")
 
-            // Restore from URI
-            DatabaseBackupManager.restoreEncryptedBackupFromUri(
-                context,
-                exportUri,
-                "uri-round-trip-pin".toCharArray(),
-            )
+                // Restore from URI
+                DatabaseBackupManager.restoreEncryptedBackupFromUri(
+                    context,
+                    exportUri,
+                    "uri-round-trip-pin".toCharArray(),
+                )
 
-            val restoredItem =
-                AppDatabase
-                    .getDatabase(context)
-                    .pantryDao()
-                    .observeAllPantryItems()
-                    .first()
-                    .firstOrNull { it.name == marker }
+                val restoredItem =
+                    AppDatabase
+                        .getDatabase(context)
+                        .pantryDao()
+                        .observeAllPantryItems()
+                        .first()
+                        .firstOrNull { it.name == marker }
 
-            assertNotNull(restoredItem)
-            assertEquals(marker, restoredItem?.name)
-        } finally {
-            exportFile.delete()
+                assertNotNull(restoredItem)
+                assertEquals(marker, restoredItem?.name)
+            } finally {
+                exportFile.delete()
+            }
         }
-    }
 
     @Test(expected = java.io.IOException::class)
     fun exportBackupThrowsIOExceptionForNonExistentBackup() {

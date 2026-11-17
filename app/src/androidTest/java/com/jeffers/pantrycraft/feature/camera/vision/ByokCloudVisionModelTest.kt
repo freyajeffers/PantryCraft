@@ -17,7 +17,6 @@ import java.io.InputStreamReader
 import java.net.ServerSocket
 import java.net.Socket
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
 @RunWith(AndroidJUnit4::class)
@@ -53,191 +52,222 @@ class ByokCloudVisionModelTest {
     }
 
     @Test
-    fun geminiProviderSendsStructuredPayloadAndParsesResponse() = runBlocking {
-        val server = MockHttpServer { request ->
-            assertTrue(request.path.contains("gemini-test-model:generateContent"))
-            assertTrue(request.path.contains("key=test-gemini-key"))
-            assertTrue(request.body.contains("inline_data"))
-            assertTrue(request.body.contains("image") && request.body.contains("webp"))
+    fun geminiProviderSendsStructuredPayloadAndParsesResponse() =
+        runBlocking {
+            val server =
+                MockHttpServer { request ->
+                    assertTrue(request.path.contains("gemini-test-model:generateContent"))
+                    assertTrue(request.path.contains("key=test-gemini-key"))
+                    assertTrue(request.body.contains("inline_data"))
+                    assertTrue(request.body.contains("image") && request.body.contains("webp"))
 
-            MockHttpResponse(
-                statusCode = 200,
-                body = """
-                    {
-                      "candidates": [
-                        {
-                          "content": {
-                            "parts": [
-                              {
-                                "text": "{\"detected_items\":[{\"name\":\"Gemini Milk\"}]}"
-                              }
-                            ]
-                          }
-                        }
-                      ]
-                    }
-                """.trimIndent(),
+                    MockHttpResponse(
+                        statusCode = 200,
+                        body =
+                            """
+                            {
+                              "candidates": [
+                                {
+                                  "content": {
+                                    "parts": [
+                                      {
+                                        "text": "{\"detected_items\":[{\"name\":\"Gemini Milk\"}]}"
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                            """.trimIndent(),
+                    )
+                }
+            mockServer = server
+
+            ByokPreferences.saveConfiguration(
+                context,
+                AiProvider.GEMINI,
+                "gemini-test-model",
+                server.baseUrl,
             )
+            ByokPreferences.saveApiKey(context, "test-gemini-key".toCharArray())
+
+            val model = ByokCloudVisionModel(context)
+            val result = model.analyze(byteArrayOf(1, 2, 3), "scan shelf")
+            assertTrue(result.contains("Gemini Milk"))
         }
-        mockServer = server
-
-        ByokPreferences.saveConfiguration(
-            context,
-            AiProvider.GEMINI,
-            "gemini-test-model",
-            server.baseUrl,
-        )
-        ByokPreferences.saveApiKey(context, "test-gemini-key".toCharArray())
-
-        val model = ByokCloudVisionModel(context)
-        val result = model.analyze(byteArrayOf(1, 2, 3), "scan shelf")
-        assertTrue(result.contains("Gemini Milk"))
-    }
 
     @Test
-    fun openAiProviderSendsBearerAuthAndParsesContent() = runBlocking {
-        val server = MockHttpServer { request ->
-            assertEquals("Bearer test-openai-key", request.headers["authorization"])
-            assertTrue(request.body.contains("image_url"))
-            assertTrue(request.body.contains("gpt-4o-mini-test"))
+    fun openAiProviderSendsBearerAuthAndParsesContent() =
+        runBlocking {
+            val server =
+                MockHttpServer { request ->
+                    assertEquals("Bearer test-openai-key", request.headers["authorization"])
+                    assertTrue(request.body.contains("image_url"))
+                    assertTrue(request.body.contains("gpt-4o-mini-test"))
 
-            MockHttpResponse(
-                statusCode = 200,
-                body = """
-                    {
-                      "choices": [
-                        {
-                          "message": {
-                            "content": "{\"detected_items\":[{\"name\":\"OpenAI Eggs\"}]}"
-                          }
-                        }
-                      ]
-                    }
-                """.trimIndent(),
+                    MockHttpResponse(
+                        statusCode = 200,
+                        body =
+                            """
+                            {
+                              "choices": [
+                                {
+                                  "message": {
+                                    "content": "{\"detected_items\":[{\"name\":\"OpenAI Eggs\"}]}"
+                                  }
+                                }
+                              ]
+                            }
+                            """.trimIndent(),
+                    )
+                }
+            mockServer = server
+
+            ByokPreferences.saveConfiguration(
+                context,
+                AiProvider.OPENAI,
+                "gpt-4o-mini-test",
+                "${server.baseUrl}/v1/chat/completions",
             )
+            ByokPreferences.saveApiKey(context, "test-openai-key".toCharArray())
+
+            val model = ByokCloudVisionModel(context)
+            val result = model.analyze(byteArrayOf(4, 5, 6), "scan eggs")
+            assertTrue(result.contains("OpenAI Eggs"))
         }
-        mockServer = server
-
-        ByokPreferences.saveConfiguration(
-            context,
-            AiProvider.OPENAI,
-            "gpt-4o-mini-test",
-            "${server.baseUrl}/v1/chat/completions",
-        )
-        ByokPreferences.saveApiKey(context, "test-openai-key".toCharArray())
-
-        val model = ByokCloudVisionModel(context)
-        val result = model.analyze(byteArrayOf(4, 5, 6), "scan eggs")
-        assertTrue(result.contains("OpenAI Eggs"))
-    }
 
     @Test
-    fun anthropicProviderSendsCustomHeadersAndParsesText() = runBlocking {
-        val server = MockHttpServer { request ->
-            assertEquals("test-anthropic-key", request.headers["x-api-key"])
-            assertEquals("2023-06-01", request.headers["anthropic-version"])
-            assertTrue(request.body.contains("claude-test-model"))
-            assertTrue(request.body.contains("max_tokens"))
+    fun anthropicProviderSendsCustomHeadersAndParsesText() =
+        runBlocking {
+            val server =
+                MockHttpServer { request ->
+                    assertEquals("test-anthropic-key", request.headers["x-api-key"])
+                    assertEquals("2023-06-01", request.headers["anthropic-version"])
+                    assertTrue(request.body.contains("claude-test-model"))
+                    assertTrue(request.body.contains("max_tokens"))
 
-            MockHttpResponse(
-                statusCode = 200,
-                body = """
-                    {
-                      "content": [
-                        {
-                          "type": "text",
-                          "text": "{\"detected_items\":[{\"name\":\"Anthropic Cheese\"}]}"
-                        }
-                      ]
-                    }
-                """.trimIndent(),
+                    MockHttpResponse(
+                        statusCode = 200,
+                        body =
+                            """
+                            {
+                              "content": [
+                                {
+                                  "type": "text",
+                                  "text": "{\"detected_items\":[{\"name\":\"Anthropic Cheese\"}]}"
+                                }
+                              ]
+                            }
+                            """.trimIndent(),
+                    )
+                }
+            mockServer = server
+
+            ByokPreferences.saveConfiguration(
+                context,
+                AiProvider.ANTHROPIC,
+                "claude-test-model",
+                "${server.baseUrl}/v1/messages",
             )
+            ByokPreferences.saveApiKey(context, "test-anthropic-key".toCharArray())
+
+            val model = ByokCloudVisionModel(context)
+            val result = model.analyze(byteArrayOf(7, 8, 9), "scan cheese")
+            assertTrue(result.contains("Anthropic Cheese"))
         }
-        mockServer = server
-
-        ByokPreferences.saveConfiguration(
-            context,
-            AiProvider.ANTHROPIC,
-            "claude-test-model",
-            "${server.baseUrl}/v1/messages",
-        )
-        ByokPreferences.saveApiKey(context, "test-anthropic-key".toCharArray())
-
-        val model = ByokCloudVisionModel(context)
-        val result = model.analyze(byteArrayOf(7, 8, 9), "scan cheese")
-        assertTrue(result.contains("Anthropic Cheese"))
-    }
 
     @Test
-    fun ollamaProviderSendsPromptWithoutAuth() = runBlocking {
-        val server = MockHttpServer { request ->
-            assertTrue(request.body.contains("llava-test"))
-            assertTrue(request.body.contains("scan pantry"))
+    fun ollamaProviderSendsPromptWithoutAuth() =
+        runBlocking {
+            val server =
+                MockHttpServer { request ->
+                    assertTrue(request.body.contains("llava-test"))
+                    assertTrue(request.body.contains("scan pantry"))
 
-            MockHttpResponse(
-                statusCode = 200,
-                body = """
-                    {
-                      "response": "{\"detected_items\":[{\"name\":\"Ollama Bread\"}]}"
-                    }
-                """.trimIndent(),
+                    MockHttpResponse(
+                        statusCode = 200,
+                        body =
+                            """
+                            {
+                              "response": "{\"detected_items\":[{\"name\":\"Ollama Bread\"}]}"
+                            }
+                            """.trimIndent(),
+                    )
+                }
+            mockServer = server
+
+            ByokPreferences.saveConfiguration(
+                context,
+                AiProvider.OLLAMA,
+                "llava-test",
+                "${server.baseUrl}/api/generate",
             )
+            ByokPreferences.clearApiKey(context)
+
+            val model = ByokCloudVisionModel(context)
+            val result = model.analyze(byteArrayOf(10, 11, 12), "scan pantry")
+            assertTrue(result.contains("Ollama Bread"))
         }
-        mockServer = server
-
-        ByokPreferences.saveConfiguration(
-            context,
-            AiProvider.OLLAMA,
-            "llava-test",
-            "${server.baseUrl}/api/generate",
-        )
-        ByokPreferences.clearApiKey(context)
-
-        val model = ByokCloudVisionModel(context)
-        val result = model.analyze(byteArrayOf(10, 11, 12), "scan pantry")
-        assertTrue(result.contains("Ollama Bread"))
-    }
 
     @Test(expected = IllegalStateException::class)
-    fun offlineMlKitProviderThrowsIllegalStateException() = runBlocking {
-        ByokPreferences.saveConfiguration(context, AiProvider.OFFLINE_MLKIT, "", "")
-        val model = ByokCloudVisionModel(context)
-        model.analyze(ByteArray(0), "test")
-        Unit
-    }
+    fun offlineMlKitProviderThrowsIllegalStateException() =
+        runBlocking {
+            ByokPreferences.saveConfiguration(context, AiProvider.OFFLINE_MLKIT, "", "")
+            val model = ByokCloudVisionModel(context)
+            model.analyze(ByteArray(0), "test")
+            Unit
+        }
 
     @Test(expected = IllegalStateException::class)
-    fun serverErrorResponseThrowsException() = runBlocking {
-        val server = MockHttpServer {
-            MockHttpResponse(statusCode = 500, body = "Internal Server Error")
+    fun serverErrorResponseThrowsException() =
+        runBlocking {
+            val server =
+                MockHttpServer {
+                    MockHttpResponse(statusCode = 500, body = "Internal Server Error")
+                }
+            mockServer = server
+
+            ByokPreferences.saveConfiguration(
+                context,
+                AiProvider.OLLAMA,
+                "llava",
+                server.baseUrl,
+            )
+
+            val model = ByokCloudVisionModel(context)
+            model.analyze(ByteArray(0), "prompt")
+            Unit
         }
-        mockServer = server
-
-        ByokPreferences.saveConfiguration(
-            context,
-            AiProvider.OLLAMA,
-            "llava",
-            server.baseUrl,
-        )
-
-        val model = ByokCloudVisionModel(context)
-        model.analyze(ByteArray(0), "prompt")
-        Unit
-    }
 
     @Test
     fun modelRouterCloseClosesBothModelsWhenAutoCloseable() {
         var localClosed = false
         var cloudClosed = false
 
-        class CloseableLocalModel : LocalVisionModel, AutoCloseable {
-            override suspend fun analyze(webpBytes: ByteArray, prompt: String) = ""
-            override fun close() { localClosed = true }
+        class CloseableLocalModel :
+            LocalVisionModel,
+            AutoCloseable {
+            override suspend fun analyze(
+                webpBytes: ByteArray,
+                prompt: String,
+            ) = ""
+
+            override fun close() {
+                localClosed = true
+            }
         }
 
-        class CloseableCloudModel : LocalVisionModel, AutoCloseable {
-            override suspend fun analyze(webpBytes: ByteArray, prompt: String) = ""
-            override fun close() { cloudClosed = true }
+        class CloseableCloudModel :
+            LocalVisionModel,
+            AutoCloseable {
+            override suspend fun analyze(
+                webpBytes: ByteArray,
+                prompt: String,
+            ) = ""
+
+            override fun close() {
+                cloudClosed = true
+            }
         }
 
         val router = ModelRouter(context, CloseableLocalModel(), CloseableCloudModel())
@@ -265,6 +295,7 @@ class ByokCloudVisionModelTest {
         private val serverSocket = ServerSocket(0)
         val baseUrl = "http://127.0.0.1:${serverSocket.localPort}"
         private val executor = Executors.newSingleThreadExecutor()
+
         @Volatile private var isRunning = true
 
         init {
@@ -311,7 +342,10 @@ class ByokCloudVisionModelTest {
             return headers
         }
 
-        private fun readBody(reader: BufferedReader, headers: Map<String, String>): String {
+        private fun readBody(
+            reader: BufferedReader,
+            headers: Map<String, String>,
+        ): String {
             val length = headers["content-length"]?.toIntOrNull() ?: 0
             return when {
                 length > 0 -> readFixedLengthBody(reader, length)
@@ -320,7 +354,10 @@ class ByokCloudVisionModelTest {
             }
         }
 
-        private fun readFixedLengthBody(reader: BufferedReader, length: Int): String {
+        private fun readFixedLengthBody(
+            reader: BufferedReader,
+            length: Int,
+        ): String {
             val chars = CharArray(length)
             var offset = 0
             while (offset < length) {
@@ -344,7 +381,11 @@ class ByokCloudVisionModelTest {
             return sb.toString()
         }
 
-        private fun appendChunk(reader: BufferedReader, sb: StringBuilder, chunkSize: Int) {
+        private fun appendChunk(
+            reader: BufferedReader,
+            sb: StringBuilder,
+            chunkSize: Int,
+        ) {
             val chunk = CharArray(chunkSize)
             var read = 0
             while (read < chunkSize) {
@@ -355,7 +396,10 @@ class ByokCloudVisionModelTest {
             sb.append(chunk, 0, read)
         }
 
-        private fun sendResponse(socket: Socket, response: MockHttpResponse) {
+        private fun sendResponse(
+            socket: Socket,
+            response: MockHttpResponse,
+        ) {
             val out = socket.getOutputStream()
             val responseBytes = response.body.toByteArray(StandardCharsets.UTF_8)
             val statusText = if (response.statusCode == 200) "OK" else "Error"

@@ -24,9 +24,10 @@ class BackupRecordsInstrumentationTest {
     @Before
     fun setUp() {
         backupDir.mkdirs()
-        originalRecordsJson = context
-            .getSharedPreferences("backup_preferences", Context.MODE_PRIVATE)
-            .getString("backup_records", null)
+        originalRecordsJson =
+            context
+                .getSharedPreferences("backup_preferences", Context.MODE_PRIVATE)
+                .getString("backup_records", null)
     }
 
     @After
@@ -65,16 +66,18 @@ class BackupRecordsInstrumentationTest {
         val unlistedFile = File(backupDir, "untracked.3000.pcbk").apply { writeText("untracked") }
         createdTestFiles.add(unlistedFile)
 
-        val storedJson = JSONArray().apply {
-            put(
-                JSONObject().apply {
-                    put("name", "tracked.4000.pcbk")
-                    put("createdAt", 4000L)
-                    put("createdAtLabel", "Tracked Backup")
-                    put("uri", "content://test/uri/1")
-                },
-            )
-        }.toString()
+        val storedJson =
+            JSONArray()
+                .apply {
+                    put(
+                        JSONObject().apply {
+                            put("name", "tracked.4000.pcbk")
+                            put("createdAt", 4000L)
+                            put("createdAtLabel", "Tracked Backup")
+                            put("uri", "content://test/uri/1")
+                        },
+                    )
+                }.toString()
 
         context
             .getSharedPreferences("backup_preferences", Context.MODE_PRIVATE)

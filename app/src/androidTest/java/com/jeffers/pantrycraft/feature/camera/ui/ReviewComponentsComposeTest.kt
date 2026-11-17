@@ -5,9 +5,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasAnyDescendant
-import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -26,7 +23,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ReviewComponentsComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -52,22 +48,23 @@ class ReviewComponentsComposeTest {
         var decreased = false
         var increased = false
         val item = sampleItem()
-        val listState = ReviewListState(
-            reviewItems = listOf(ReviewItem(item, true)),
-            itemsSize = 1,
-            quantityTextByIndex = emptyMap(),
-            singleName = "Crisp Apple",
-            singleCategory = "FRUIT",
-            singleUnit = "COUNT",
-            singleCustomUnitName = "",
-            singleStorage = "PANTRY",
-            singleShelfLifeDays = 5,
-            onEdit = {},
-            onToggleIncluded = {},
-            onDecrease = { decreased = true },
-            onIncrease = { increased = true },
-            onSetQuantityText = { _, _ -> },
-        )
+        val listState =
+            ReviewListState(
+                reviewItems = listOf(ReviewItem(item, true)),
+                itemsSize = 1,
+                quantityTextByIndex = emptyMap(),
+                singleName = "Crisp Apple",
+                singleCategory = "FRUIT",
+                singleUnit = "COUNT",
+                singleCustomUnitName = "",
+                singleStorage = "PANTRY",
+                singleShelfLifeDays = 5,
+                onEdit = {},
+                onToggleIncluded = {},
+                onDecrease = { decreased = true },
+                onIncrease = { increased = true },
+                onSetQuantityText = { _, _ -> },
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -90,35 +87,37 @@ class ReviewComponentsComposeTest {
         var toggleClicked = false
         var quantityInput = ""
         val item = sampleItem(name = "Flour", unit = "KG", qty = 1.5f)
-        val cardState = ReviewItemCardState(
-            index = 0,
-            itemsCount = 2,
-            reviewItem = ReviewItem(item, included = true),
-            displayedName = "Flour",
-            displayedCategory = "BAKING",
-            displayedUnit = "KG",
-            displayedStorage = "PANTRY",
-            displayedShelfLife = 180,
-            rawUnit = "KG",
-            quantityText = null,
-            onEdit = { editClicked = true },
-            onToggleIncluded = { toggleClicked = true },
-            onDecrease = {},
-            onIncrease = {},
-            onSetQuantityText = { quantityInput = it },
-        )
+        val cardState =
+            ReviewItemCardState(
+                index = 0,
+                itemsCount = 2,
+                reviewItem = ReviewItem(item, included = true),
+                displayedName = "Flour",
+                displayedCategory = "BAKING",
+                displayedUnit = "KG",
+                displayedStorage = "PANTRY",
+                displayedShelfLife = 180,
+                rawUnit = "KG",
+                quantityText = null,
+                onEdit = { editClicked = true },
+                onToggleIncluded = { toggleClicked = true },
+                onDecrease = {},
+                onIncrease = {},
+                onSetQuantityText = { quantityInput = it },
+            )
 
         var qtyText by mutableStateOf<String?>(null)
         composeTestRule.setContent {
             PantryCraftTheme {
                 ReviewItemCard(
-                    state = cardState.copy(
-                        quantityText = qtyText,
-                        onSetQuantityText = {
-                            qtyText = it
-                            quantityInput = it
-                        },
-                    ),
+                    state =
+                        cardState.copy(
+                            quantityText = qtyText,
+                            onSetQuantityText = {
+                                qtyText = it
+                                quantityInput = it
+                            },
+                        ),
                 )
             }
         }
@@ -137,24 +136,25 @@ class ReviewComponentsComposeTest {
     fun reviewEditorFieldsRendersAndHandlesCheckboxes() {
         var openedChanged = false
         var aromaticChanged = false
-        val props = ReviewEditorProps(
-            name = "Olive Oil",
-            onNameChange = {},
-            category = "OILS",
-            onCategoryChange = {},
-            unit = "BOTTLE",
-            onUnitChange = {},
-            storageLocation = "PANTRY",
-            onStorageLocationChange = {},
-            shelfLifeDays = 365,
-            onShelfLifeChange = {},
-            notes = "Extra virgin",
-            onNotesChange = {},
-            isAromatic = false,
-            onAromaticChange = { aromaticChanged = it },
-            isOpened = false,
-            onOpenedChange = { openedChanged = it },
-        )
+        val props =
+            ReviewEditorProps(
+                name = "Olive Oil",
+                onNameChange = {},
+                category = "OILS",
+                onCategoryChange = {},
+                unit = "BOTTLE",
+                onUnitChange = {},
+                storageLocation = "PANTRY",
+                onStorageLocationChange = {},
+                shelfLifeDays = 365,
+                onShelfLifeChange = {},
+                notes = "Extra virgin",
+                onNotesChange = {},
+                isAromatic = false,
+                onAromaticChange = { aromaticChanged = it },
+                isOpened = false,
+                onOpenedChange = { openedChanged = it },
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -173,34 +173,36 @@ class ReviewComponentsComposeTest {
     fun reviewIdentityFieldsWithCustomUnitAndBarcode() {
         var scanBarcodeClicked = false
         var customUnitVal by mutableStateOf("bunch")
-        val props = ReviewEditorProps(
-            name = "Cilantro",
-            onNameChange = {},
-            category = "PRODUCE",
-            onCategoryChange = {},
-            unit = "CUSTOM",
-            onUnitChange = {},
-            customUnitName = "bunch",
-            onCustomUnitNameChange = { customUnitVal = it },
-            storageLocation = "FRIDGE",
-            onStorageLocationChange = {},
-            shelfLifeDays = 7,
-            onShelfLifeChange = {},
-            notes = "",
-            onNotesChange = {},
-            isAromatic = true,
-            onAromaticChange = {},
-            barcode = "1234567890",
-            onScanBarcodeClick = { scanBarcodeClicked = true },
-        )
+        val props =
+            ReviewEditorProps(
+                name = "Cilantro",
+                onNameChange = {},
+                category = "PRODUCE",
+                onCategoryChange = {},
+                unit = "CUSTOM",
+                onUnitChange = {},
+                customUnitName = "bunch",
+                onCustomUnitNameChange = { customUnitVal = it },
+                storageLocation = "FRIDGE",
+                onStorageLocationChange = {},
+                shelfLifeDays = 7,
+                onShelfLifeChange = {},
+                notes = "",
+                onNotesChange = {},
+                isAromatic = true,
+                onAromaticChange = {},
+                barcode = "1234567890",
+                onScanBarcodeClick = { scanBarcodeClicked = true },
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
                 ReviewIdentityFields(
-                    props = props.copy(
-                        customUnitName = customUnitVal,
-                        onCustomUnitNameChange = { customUnitVal = it },
-                    ),
+                    props =
+                        props.copy(
+                            customUnitName = customUnitVal,
+                            onCustomUnitNameChange = { customUnitVal = it },
+                        ),
                 )
             }
         }

@@ -56,9 +56,10 @@ class DatabaseKeyProviderTest {
         val shortPayload = Base64.encodeToString(byteArrayOf(1, 2, 3), Base64.NO_WRAP)
         prefs.edit().putString("wrapped_passphrase", shortPayload).commit()
 
-        val exception = assertThrows(IllegalArgumentException::class.java) {
-            DatabaseKeyProvider.getKey(context)
-        }
+        val exception =
+            assertThrows(IllegalArgumentException::class.java) {
+                DatabaseKeyProvider.getKey(context)
+            }
         assertEquals("Encrypted database passphrase is corrupt", exception.message)
     }
 
@@ -70,9 +71,10 @@ class DatabaseKeyProviderTest {
         currentWrapped[15] = (currentWrapped[15].toInt() xor 0xFF).toByte()
         prefs.edit().putString("wrapped_passphrase", Base64.encodeToString(currentWrapped, Base64.NO_WRAP)).commit()
 
-        val exception = assertThrows(IllegalStateException::class.java) {
-            DatabaseKeyProvider.getKey(context)
-        }
+        val exception =
+            assertThrows(IllegalStateException::class.java) {
+                DatabaseKeyProvider.getKey(context)
+            }
         assertEquals("Encrypted database passphrase cannot be authenticated", exception.message)
     }
 }

@@ -18,7 +18,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class FoodFactsCardComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -27,17 +26,18 @@ class FoodFactsCardComposeTest {
     @Test
     fun foodFactsCardReadyRendersSizeAndDelete() {
         var deleteClicked = false
-        val props = FoodFactsProps(
-            catalogReady = true,
-            catalogFileSize = 5_000_000L,
-            catalogDownloading = false,
-            catalogDownloadedBytes = 0L,
-            catalogTotalBytes = 0L,
-            onStartDownload = {},
-            onDownloadResult = {},
-            onProgress = { _, _ -> },
-            onDelete = { deleteClicked = true },
-        )
+        val props =
+            FoodFactsProps(
+                catalogReady = true,
+                catalogFileSize = 5_000_000L,
+                catalogDownloading = false,
+                catalogDownloadedBytes = 0L,
+                catalogTotalBytes = 0L,
+                onStartDownload = {},
+                onDownloadResult = {},
+                onProgress = { _, _ -> },
+                onDelete = { deleteClicked = true },
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -61,17 +61,18 @@ class FoodFactsCardComposeTest {
     @Test
     fun foodFactsCardNotDownloadedRendersDownloadButton() {
         var downloadStarted = false
-        val props = FoodFactsProps(
-            catalogReady = false,
-            catalogFileSize = null,
-            catalogDownloading = false,
-            catalogDownloadedBytes = 0L,
-            catalogTotalBytes = 0L,
-            onStartDownload = { downloadStarted = true },
-            onDownloadResult = {},
-            onProgress = { _, _ -> },
-            onDelete = {},
-        )
+        val props =
+            FoodFactsProps(
+                catalogReady = false,
+                catalogFileSize = null,
+                catalogDownloading = false,
+                catalogDownloadedBytes = 0L,
+                catalogTotalBytes = 0L,
+                onStartDownload = { downloadStarted = true },
+                onDownloadResult = {},
+                onProgress = { _, _ -> },
+                onDelete = {},
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -93,17 +94,18 @@ class FoodFactsCardComposeTest {
 
     @Test
     fun foodFactsCardDownloadingRendersDeterminateProgress() {
-        val props = FoodFactsProps(
-            catalogReady = false,
-            catalogFileSize = null,
-            catalogDownloading = true,
-            catalogDownloadedBytes = 500L,
-            catalogTotalBytes = 1000L,
-            onStartDownload = {},
-            onDownloadResult = {},
-            onProgress = { _, _ -> },
-            onDelete = {},
-        )
+        val props =
+            FoodFactsProps(
+                catalogReady = false,
+                catalogFileSize = null,
+                catalogDownloading = true,
+                catalogDownloadedBytes = 500L,
+                catalogTotalBytes = 1000L,
+                onStartDownload = {},
+                onDownloadResult = {},
+                onProgress = { _, _ -> },
+                onDelete = {},
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -122,17 +124,18 @@ class FoodFactsCardComposeTest {
 
     @Test
     fun foodFactsCardDownloadingRendersIndeterminateProgress() {
-        val props = FoodFactsProps(
-            catalogReady = false,
-            catalogFileSize = null,
-            catalogDownloading = true,
-            catalogDownloadedBytes = 2048L,
-            catalogTotalBytes = 0L,
-            onStartDownload = {},
-            onDownloadResult = {},
-            onProgress = { _, _ -> },
-            onDelete = {},
-        )
+        val props =
+            FoodFactsProps(
+                catalogReady = false,
+                catalogFileSize = null,
+                catalogDownloading = true,
+                catalogDownloadedBytes = 2048L,
+                catalogTotalBytes = 0L,
+                onStartDownload = {},
+                onDownloadResult = {},
+                onProgress = { _, _ -> },
+                onDelete = {},
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {

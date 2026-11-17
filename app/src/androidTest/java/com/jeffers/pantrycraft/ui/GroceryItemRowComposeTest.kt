@@ -19,7 +19,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class GroceryItemRowComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -27,12 +26,13 @@ class GroceryItemRowComposeTest {
     fun groceryItemRowRendersAndDeletes() {
         var deleted = false
         var checkedState: Boolean? = null
-        val item = GroceryItem(
-            name = "Almond Butter",
-            quantity = 1f,
-            unit = "JAR",
-            checked = false,
-        )
+        val item =
+            GroceryItem(
+                name = "Almond Butter",
+                quantity = 1f,
+                unit = "JAR",
+                checked = false,
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -56,12 +56,13 @@ class GroceryItemRowComposeTest {
     @Test
     fun groceryItemRowRendersCheckedState() {
         var checkedState: Boolean? = null
-        val item = GroceryItem(
-            name = "Rolled Oats",
-            quantity = 2f,
-            unit = "BAG",
-            checked = true,
-        )
+        val item =
+            GroceryItem(
+                name = "Rolled Oats",
+                quantity = 2f,
+                unit = "BAG",
+                checked = true,
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -113,9 +114,10 @@ class GroceryItemRowComposeTest {
             }
         }
 
-        composeTestRule.onNodeWithText(
-            "Your grocery list is empty. Tap Add to create items or replenish from low stock.",
-        ).assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText(
+                "Your grocery list is empty. Tap Add to create items or replenish from low stock.",
+            ).assertIsDisplayed()
     }
 
     @Test

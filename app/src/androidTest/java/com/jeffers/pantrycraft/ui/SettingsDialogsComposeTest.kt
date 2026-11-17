@@ -16,7 +16,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeffers.pantrycraft.data.DatabaseBackupManager.BackupRecord
 import com.jeffers.pantrycraft.feature.camera.barcode.CatalogDownloadService
-import java.io.File
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -25,10 +24,10 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class SettingsDialogsComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -80,18 +79,20 @@ class SettingsDialogsComposeTest {
     fun backupListDialogRendersEmptyAndWithRecords() {
         var selectedRecord: BackupRecord? = null
         var dismissed = false
-        val record = BackupRecord(
-            backupName = "2026-10-26-backup.db",
-            createdAt = 1_700_000_000_000L,
-            createdAtLabel = "Oct 26, 2026 10:00 AM",
-            exportedUri = "content://com.android.providers.downloads/1",
-        )
+        val record =
+            BackupRecord(
+                backupName = "2026-10-26-backup.db",
+                createdAt = 1_700_000_000_000L,
+                createdAtLabel = "Oct 26, 2026 10:00 AM",
+                exportedUri = "content://com.android.providers.downloads/1",
+            )
 
-        val state = BackupListDialogState(
-            records = listOf(record),
-            onDismiss = { dismissed = true },
-            onSelect = { selectedRecord = it },
-        )
+        val state =
+            BackupListDialogState(
+                records = listOf(record),
+                onDismiss = { dismissed = true },
+                onSelect = { selectedRecord = it },
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -114,11 +115,12 @@ class SettingsDialogsComposeTest {
     @Test
     fun settingsCatalogAlertDialogRenders() {
         var dismissed = false
-        val dialog = CatalogDialog(
-            title = "Catalog Downloaded",
-            message = "Offline barcode database is ready.",
-            isError = false,
-        )
+        val dialog =
+            CatalogDialog(
+                title = "Catalog Downloaded",
+                message = "Offline barcode database is ready.",
+                isError = false,
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -193,11 +195,12 @@ class SettingsDialogsComposeTest {
 
     @Test
     fun backupListDialogRendersEmptyStateAndNullUri() {
-        val emptyState = BackupListDialogState(
-            records = emptyList(),
-            onDismiss = {},
-            onSelect = {},
-        )
+        val emptyState =
+            BackupListDialogState(
+                records = emptyList(),
+                onDismiss = {},
+                onSelect = {},
+            )
         var dialogState by mutableStateOf(emptyState)
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -207,17 +210,19 @@ class SettingsDialogsComposeTest {
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("No backups have been created yet.").assertIsDisplayed()
 
-        val nullUriRecord = BackupRecord(
-            backupName = "internal.db",
-            createdAt = 1_700_000_000_000L,
-            createdAtLabel = "Today",
-            exportedUri = null,
-        )
-        val nullUriState = BackupListDialogState(
-            records = listOf(nullUriRecord),
-            onDismiss = {},
-            onSelect = {},
-        )
+        val nullUriRecord =
+            BackupRecord(
+                backupName = "internal.db",
+                createdAt = 1_700_000_000_000L,
+                createdAtLabel = "Today",
+                exportedUri = null,
+            )
+        val nullUriState =
+            BackupListDialogState(
+                records = listOf(nullUriRecord),
+                onDismiss = {},
+                onSelect = {},
+            )
         dialogState = nullUriState
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("Location: app backup storage").assertIsDisplayed()
@@ -226,25 +231,26 @@ class SettingsDialogsComposeTest {
     @Test
     fun settingsDialogsWrapperRendersActiveDialogs() {
         var pinDismissed = false
-        val state = SettingsDialogsState(
-            showPinDialog = true,
-            pinText = "",
-            onPinTextChange = {},
-            onDismissPinDialog = { pinDismissed = true },
-            onConfirmPinDialog = {},
-            showBackupList = false,
-            backupRecords = emptyList(),
-            onDismissBackupList = {},
-            onSelectBackup = {},
-            catalogDialog = null,
-            onDismissCatalogDialog = {},
-            confirmDatabaseReset = false,
-            onDismissDatabaseReset = {},
-            confirmCatalogDelete = false,
-            onDismissCatalogDelete = {},
-            onCatalogDeleted = {},
-            onCatalogDeleteFailed = {},
-        )
+        val state =
+            SettingsDialogsState(
+                showPinDialog = true,
+                pinText = "",
+                onPinTextChange = {},
+                onDismissPinDialog = { pinDismissed = true },
+                onConfirmPinDialog = {},
+                showBackupList = false,
+                backupRecords = emptyList(),
+                onDismissBackupList = {},
+                onSelectBackup = {},
+                catalogDialog = null,
+                onDismissCatalogDialog = {},
+                confirmDatabaseReset = false,
+                onDismissDatabaseReset = {},
+                confirmCatalogDelete = false,
+                onDismissCatalogDelete = {},
+                onCatalogDeleted = {},
+                onCatalogDeleteFailed = {},
+            )
         composeTestRule.setContent {
             PantryCraftTheme {
                 SettingsDialogs(context = context, state = state)

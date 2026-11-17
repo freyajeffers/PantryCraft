@@ -58,87 +58,93 @@ class AutomaticBackupWorkerTest {
         }
     }
 
+    @Test
+    fun doWorkReturnsSuccessWhenDisabled() =
+        runBlocking {
+            AutomaticBackupPreferences.setSchedule(context, enabled = false, intervalMinutes = 1440L)
+            val worker = TestListenableWorkerBuilder<AutomaticBackupWorker>(context).build()
+
+            val result = worker.doWork()
+            assertTrue(result is ListenableWorker.Result.Success)
+        }
 
     @Test
-    fun doWorkReturnsSuccessWhenDisabled() = runBlocking {
-        AutomaticBackupPreferences.setSchedule(context, enabled = false, intervalMinutes = 1440L)
-        val worker = TestListenableWorkerBuilder<AutomaticBackupWorker>(context).build()
+    fun doWorkReturnsFailureWhenEnabledWithoutPin() =
+        runBlocking {
+            AutomaticBackupPreferences.setSchedule(context, enabled = true, intervalMinutes = 1440L)
+            val worker = TestListenableWorkerBuilder<AutomaticBackupWorker>(context).build()
 
-        val result = worker.doWork()
-        assertTrue(result is ListenableWorker.Result.Success)
-    }
-
-    @Test
-    fun doWorkReturnsFailureWhenEnabledWithoutPin() = runBlocking {
-        AutomaticBackupPreferences.setSchedule(context, enabled = true, intervalMinutes = 1440L)
-        val worker = TestListenableWorkerBuilder<AutomaticBackupWorker>(context).build()
-
-        val result = worker.doWork()
-        assertTrue(result is ListenableWorker.Result.Failure)
-    }
+            val result = worker.doWork()
+            assertTrue(result is ListenableWorker.Result.Failure)
+        }
 
     @Test
-    fun doWorkSucceedsWhenEnabledWithPinAndEmptyInventory() = runBlocking {
-        AutomaticBackupPreferences.setSchedule(context, enabled = true, intervalMinutes = 1440L)
-        val pin = "654321".toCharArray()
-        AutomaticBackupPreferences.savePin(context, pin)
+    fun doWorkSucceedsWhenEnabledWithPinAndEmptyInventory() =
+        runBlocking {
+            AutomaticBackupPreferences.setSchedule(context, enabled = true, intervalMinutes = 1440L)
+            val pin = "654321".toCharArray()
+            AutomaticBackupPreferences.savePin(context, pin)
 
-        val worker = TestListenableWorkerBuilder<AutomaticBackupWorker>(context).build()
-        val result = worker.doWork()
-
-        assertTrue(result is ListenableWorker.Result.Success)
-    }
-
-    @Test
-    fun doWorkCreatesBackupWhenEnabledWithPinAndActiveInventory() = runBlocking {
-        AutomaticBackupPreferences.setSchedule(context, enabled = true, intervalMinutes = 1440L)
-        val pin = "123456".toCharArray()
-        AutomaticBackupPreferences.savePin(context, pin)
-
-        val db = AppDatabase.getDatabase(context)
-        val testItem = PantryItem(
-            name = "AutoBackupTestItem",
-            quantity = 5f,
-            category = "GRAINS",
-            storageLocation = "PANTRY",
-        )
-        val insertedId = db.pantryDao().insert(testItem)
-        try {
             val worker = TestListenableWorkerBuilder<AutomaticBackupWorker>(context).build()
             val result = worker.doWork()
 
             assertTrue(result is ListenableWorker.Result.Success)
-            assertTrue(backupRecords(context).isNotEmpty())
-        } finally {
-            AppDatabase.getDatabase(context).pantryDao().delete(testItem.copy(id = insertedId))
         }
-    }
 
     @Test
-    fun doWorkReturnsRetryWhenLocationThrowsIllegalStateException() = runBlocking {
-        AutomaticBackupPreferences.setSchedule(context, enabled = true, intervalMinutes = 1440L)
-        val pin = "123456".toCharArray()
-        AutomaticBackupPreferences.savePin(context, pin)
-        persistAutoBackupTreeUri(context, android.net.Uri.parse("content://invalid/tree"))
+    fun doWorkCreatesBackupWhenEnabledWithPinAndActiveInventory() =
+        runBlocking {
+            AutomaticBackupPreferences.setSchedule(context, enabled = true, intervalMinutes = 1440L)
+            val pin = "123456".toCharArray()
+            AutomaticBackupPreferences.savePin(context, pin)
 
-        val db = AppDatabase.getDatabase(context)
-        val testItem = PantryItem(
-            name = "AutoBackupRetryItem",
-            quantity = 2f,
-            category = "SNACKS",
-            storageLocation = "PANTRY",
-        )
-        val insertedId = db.pantryDao().insert(testItem)
-        try {
-            val worker = TestListenableWorkerBuilder<AutomaticBackupWorker>(context).build()
-            val result = worker.doWork()
+            val db = AppDatabase.getDatabase(context)
+            val testItem =
+                PantryItem(
+                    name = "AutoBackupTestItem",
+                    quantity = 5f,
+                    category = "GRAINS",
+                    storageLocation = "PANTRY",
+                )
+            val insertedId = db.pantryDao().insert(testItem)
+            try {
+                val worker = TestListenableWorkerBuilder<AutomaticBackupWorker>(context).build()
+                val result = worker.doWork()
 
-            assertTrue(result is ListenableWorker.Result.Retry)
-        } finally {
-            AppDatabase.getDatabase(context).pantryDao().delete(testItem.copy(id = insertedId))
-            persistAutoBackupTreeUri(context, null)
+                assertTrue(result is ListenableWorker.Result.Success)
+                assertTrue(backupRecords(context).isNotEmpty())
+            } finally {
+                AppDatabase.getDatabase(context).pantryDao().delete(testItem.copy(id = insertedId))
+            }
         }
-    }
+
+    @Test
+    fun doWorkReturnsRetryWhenLocationThrowsIllegalStateException() =
+        runBlocking {
+            AutomaticBackupPreferences.setSchedule(context, enabled = true, intervalMinutes = 1440L)
+            val pin = "123456".toCharArray()
+            AutomaticBackupPreferences.savePin(context, pin)
+            persistAutoBackupTreeUri(context, android.net.Uri.parse("content://invalid/tree"))
+
+            val db = AppDatabase.getDatabase(context)
+            val testItem =
+                PantryItem(
+                    name = "AutoBackupRetryItem",
+                    quantity = 2f,
+                    category = "SNACKS",
+                    storageLocation = "PANTRY",
+                )
+            val insertedId = db.pantryDao().insert(testItem)
+            try {
+                val worker = TestListenableWorkerBuilder<AutomaticBackupWorker>(context).build()
+                val result = worker.doWork()
+
+                assertTrue(result is ListenableWorker.Result.Retry)
+            } finally {
+                AppDatabase.getDatabase(context).pantryDao().delete(testItem.copy(id = insertedId))
+                persistAutoBackupTreeUri(context, null)
+            }
+        }
 
     @Test
     fun schedulerEnqueuesAndCancelsPeriodicWork() {
@@ -171,14 +177,20 @@ class AutomaticBackupWorkerTest {
     fun schedulerScheduleIfEnabledEnqueuesWorkOnlyWhenEnabled() {
         AutomaticBackupPreferences.setSchedule(context, enabled = false, intervalMinutes = 60L)
         AutomaticBackupScheduler.scheduleIfEnabled(context)
-        val initialWork = WorkManager.getInstance(context)
-            .getWorkInfosForUniqueWork("pantrycraft_automatic_backup").get()
+        val initialWork =
+            WorkManager
+                .getInstance(context)
+                .getWorkInfosForUniqueWork("pantrycraft_automatic_backup")
+                .get()
         assertTrue(initialWork.isEmpty() || initialWork.all { it.state == WorkInfo.State.CANCELLED })
 
         AutomaticBackupPreferences.setSchedule(context, enabled = true, intervalMinutes = 60L)
         AutomaticBackupScheduler.scheduleIfEnabled(context)
-        val enqueuedWork = WorkManager.getInstance(context)
-            .getWorkInfosForUniqueWork("pantrycraft_automatic_backup").get()
+        val enqueuedWork =
+            WorkManager
+                .getInstance(context)
+                .getWorkInfosForUniqueWork("pantrycraft_automatic_backup")
+                .get()
         assertFalse(enqueuedWork.isEmpty())
         assertEquals(WorkInfo.State.ENQUEUED, enqueuedWork.first().state)
     }

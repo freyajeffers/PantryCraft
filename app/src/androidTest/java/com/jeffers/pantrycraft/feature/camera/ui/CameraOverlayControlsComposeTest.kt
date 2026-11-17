@@ -42,7 +42,6 @@ import java.util.concurrent.Executors
 
 @RunWith(AndroidJUnit4::class)
 class CameraOverlayControlsComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -62,9 +61,11 @@ class CameraOverlayControlsComposeTest {
 
         executor = Executors.newSingleThreadExecutor()
         val scanner = BarcodeScanning.getClient()
-        val options = ObjectDetectorOptions.Builder()
-            .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-            .build()
+        val options =
+            ObjectDetectorOptions
+                .Builder()
+                .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
+                .build()
         val detector = ObjectDetection.getClient(options)
         analyzer = LiveVisionAnalyzer(scanner, detector, executor, {})
         cameraManager = CameraManager(context, analyzer, executor)
@@ -90,29 +91,30 @@ class CameraOverlayControlsComposeTest {
         unresolvedBarcode: String? = null,
         onTorchToggle: () -> Unit = {},
         onAssociate: (String?) -> Unit = {},
-    ): CameraOverlayArgs = CameraOverlayArgs(
-        latestResult = null,
-        focusPoint = null,
-        labelPaint = Paint(),
-        badgePaint = Paint(),
-        cameraManager = cameraManager,
-        repository = repository,
-        scope = scope,
-        barcodeMatch = barcodeMatch,
-        unresolvedBarcode = unresolvedBarcode,
-        associateDialogBarcode = null,
-        parsedItems = emptyList(),
-        snapshotVisionService = snapshotVisionService,
-        barcodeResolver = barcodeResolver,
-        isTorchOn = false,
-        onToggleTorch = onTorchToggle,
-        onClearBarcodeMatch = {},
-        onParsedItemsChange = {},
-        onUnresolvedBarcodeChange = {},
-        onAssociateDialogBarcodeChange = onAssociate,
-        onSnapshotStatusChange = {},
-        view = View(context),
-    )
+    ): CameraOverlayArgs =
+        CameraOverlayArgs(
+            latestResult = null,
+            focusPoint = null,
+            labelPaint = Paint(),
+            badgePaint = Paint(),
+            cameraManager = cameraManager,
+            repository = repository,
+            scope = scope,
+            barcodeMatch = barcodeMatch,
+            unresolvedBarcode = unresolvedBarcode,
+            associateDialogBarcode = null,
+            parsedItems = emptyList(),
+            snapshotVisionService = snapshotVisionService,
+            barcodeResolver = barcodeResolver,
+            isTorchOn = false,
+            onToggleTorch = onTorchToggle,
+            onClearBarcodeMatch = {},
+            onParsedItemsChange = {},
+            onUnresolvedBarcodeChange = {},
+            onAssociateDialogBarcodeChange = onAssociate,
+            onSnapshotStatusChange = {},
+            view = View(context),
+        )
 
     @Test
     fun cameraOverlayControlsRendersHeaderAndTogglesTorch() {
@@ -142,11 +144,12 @@ class CameraOverlayControlsComposeTest {
             PantryCraftTheme {
                 Box {
                     val scope = rememberCoroutineScope()
-                    val args = buildOverlayArgs(
-                        scope = scope,
-                        unresolvedBarcode = "987654321098",
-                        onAssociate = { associatedBarcode = it },
-                    )
+                    val args =
+                        buildOverlayArgs(
+                            scope = scope,
+                            unresolvedBarcode = "987654321098",
+                            onAssociate = { associatedBarcode = it },
+                        )
                     CameraOverlayControls(args)
                 }
             }
@@ -160,13 +163,14 @@ class CameraOverlayControlsComposeTest {
 
     @Test
     fun cameraOverlayControlsRendersQuickAddMatch() {
-        val match = BarcodeMatch(
-            barcode = "111222333",
-            name = "Organic Rolled Oats",
-            category = "GRAINS",
-            unit = "BOX",
-            estimatedShelfLifeDays = 365,
-        )
+        val match =
+            BarcodeMatch(
+                barcode = "111222333",
+                name = "Organic Rolled Oats",
+                category = "GRAINS",
+                unit = "BOX",
+                estimatedShelfLifeDays = 365,
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -190,29 +194,30 @@ class CameraOverlayControlsComposeTest {
             PantryCraftTheme {
                 Box {
                     val scope = rememberCoroutineScope()
-                    val args = CameraOverlayArgs(
-                        latestResult = null,
-                        focusPoint = null,
-                        labelPaint = Paint(),
-                        badgePaint = Paint(),
-                        cameraManager = cameraManager,
-                        repository = repository,
-                        scope = scope,
-                        barcodeMatch = null,
-                        unresolvedBarcode = null,
-                        associateDialogBarcode = "777888",
-                        parsedItems = emptyList(),
-                        snapshotVisionService = snapshotVisionService,
-                        barcodeResolver = barcodeResolver,
-                        isTorchOn = false,
-                        onToggleTorch = {},
-                        onClearBarcodeMatch = {},
-                        onParsedItemsChange = {},
-                        onUnresolvedBarcodeChange = {},
-                        onAssociateDialogBarcodeChange = { dismissedAssociate = it },
-                        onSnapshotStatusChange = {},
-                        view = View(context),
-                    )
+                    val args =
+                        CameraOverlayArgs(
+                            latestResult = null,
+                            focusPoint = null,
+                            labelPaint = Paint(),
+                            badgePaint = Paint(),
+                            cameraManager = cameraManager,
+                            repository = repository,
+                            scope = scope,
+                            barcodeMatch = null,
+                            unresolvedBarcode = null,
+                            associateDialogBarcode = "777888",
+                            parsedItems = emptyList(),
+                            snapshotVisionService = snapshotVisionService,
+                            barcodeResolver = barcodeResolver,
+                            isTorchOn = false,
+                            onToggleTorch = {},
+                            onClearBarcodeMatch = {},
+                            onParsedItemsChange = {},
+                            onUnresolvedBarcodeChange = {},
+                            onAssociateDialogBarcodeChange = { dismissedAssociate = it },
+                            onSnapshotStatusChange = {},
+                            view = View(context),
+                        )
                     CameraOverlayControls(args)
                 }
             }
@@ -227,46 +232,48 @@ class CameraOverlayControlsComposeTest {
     @Test
     fun cameraOverlayControlsRendersBatchReviewDialogAndDismisses() {
         var updatedItems: List<ParsedVisionItem>? = null
-        val item = ParsedVisionItem(
-            name = "Baby Spinach",
-            category = "PRODUCE",
-            storageLocation = "FRIDGE",
-            quantity = 1f,
-            unit = "BAG",
-            confidence = 0.9f,
-            estimatedShelfLifeDays = 7,
-            isAromaticOrSeasoning = false,
-            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-            conditionNotes = null,
-        )
+        val item =
+            ParsedVisionItem(
+                name = "Baby Spinach",
+                category = "PRODUCE",
+                storageLocation = "FRIDGE",
+                quantity = 1f,
+                unit = "BAG",
+                confidence = 0.9f,
+                estimatedShelfLifeDays = 7,
+                isAromaticOrSeasoning = false,
+                boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+                conditionNotes = null,
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
                 Box {
                     val scope = rememberCoroutineScope()
-                    val args = CameraOverlayArgs(
-                        latestResult = null,
-                        focusPoint = null,
-                        labelPaint = Paint(),
-                        badgePaint = Paint(),
-                        cameraManager = cameraManager,
-                        repository = repository,
-                        scope = scope,
-                        barcodeMatch = null,
-                        unresolvedBarcode = null,
-                        associateDialogBarcode = null,
-                        parsedItems = listOf(item),
-                        snapshotVisionService = snapshotVisionService,
-                        barcodeResolver = barcodeResolver,
-                        isTorchOn = false,
-                        onToggleTorch = {},
-                        onClearBarcodeMatch = {},
-                        onParsedItemsChange = { updatedItems = it },
-                        onUnresolvedBarcodeChange = {},
-                        onAssociateDialogBarcodeChange = {},
-                        onSnapshotStatusChange = {},
-                        view = View(context),
-                    )
+                    val args =
+                        CameraOverlayArgs(
+                            latestResult = null,
+                            focusPoint = null,
+                            labelPaint = Paint(),
+                            badgePaint = Paint(),
+                            cameraManager = cameraManager,
+                            repository = repository,
+                            scope = scope,
+                            barcodeMatch = null,
+                            unresolvedBarcode = null,
+                            associateDialogBarcode = null,
+                            parsedItems = listOf(item),
+                            snapshotVisionService = snapshotVisionService,
+                            barcodeResolver = barcodeResolver,
+                            isTorchOn = false,
+                            onToggleTorch = {},
+                            onClearBarcodeMatch = {},
+                            onParsedItemsChange = { updatedItems = it },
+                            onUnresolvedBarcodeChange = {},
+                            onAssociateDialogBarcodeChange = {},
+                            onSnapshotStatusChange = {},
+                            view = View(context),
+                        )
                     CameraOverlayControls(args)
                 }
             }

@@ -23,25 +23,25 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class BatchReviewBarcodeScannerComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     private val context: Context = ApplicationProvider.getApplicationContext()
 
     private fun createBatchReviewSheetState(): BatchReviewSheetState {
-        val item = ParsedVisionItem(
-            name = "Apples",
-            category = "PRODUCE",
-            storageLocation = "PANTRY",
-            quantity = 2f,
-            unit = "COUNT",
-            confidence = 0.95f,
-            estimatedShelfLifeDays = 7,
-            isAromaticOrSeasoning = false,
-            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-            conditionNotes = null,
-        )
+        val item =
+            ParsedVisionItem(
+                name = "Apples",
+                category = "PRODUCE",
+                storageLocation = "PANTRY",
+                quantity = 2f,
+                unit = "COUNT",
+                confidence = 0.95f,
+                estimatedShelfLifeDays = 7,
+                isAromaticOrSeasoning = false,
+                boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+                conditionNotes = null,
+            )
         return BatchReviewSheetState(items = listOf(item))
     }
 
@@ -98,13 +98,14 @@ class BatchReviewBarcodeScannerComposeTest {
         state.showEmbeddedBarcodeScanner = true
         state.editName = ""
 
-        val match = BarcodeMatch(
-            barcode = "012345678905",
-            name = "Organic Black Peppercorn",
-            category = "SPICES",
-            unit = "G",
-            estimatedShelfLifeDays = 365,
-        )
+        val match =
+            BarcodeMatch(
+                barcode = "012345678905",
+                name = "Organic Black Peppercorn",
+                category = "SPICES",
+                unit = "G",
+                estimatedShelfLifeDays = 365,
+            )
 
         applyScannedBarcodeToState(state, "012345678905", match)
 

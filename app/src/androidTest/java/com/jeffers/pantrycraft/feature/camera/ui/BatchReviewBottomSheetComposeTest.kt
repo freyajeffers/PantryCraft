@@ -25,7 +25,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class BatchReviewBottomSheetComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -33,18 +32,19 @@ class BatchReviewBottomSheetComposeTest {
         name: String,
         shelfLife: Int = 14,
         category: String = "DAIRY",
-    ): ParsedVisionItem = ParsedVisionItem(
-        name = name,
-        category = category,
-        storageLocation = "FRIDGE",
-        quantity = 1f,
-        unit = "CARTON",
-        confidence = 0.95f,
-        estimatedShelfLifeDays = shelfLife,
-        isAromaticOrSeasoning = false,
-        boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-        conditionNotes = null,
-    )
+    ): ParsedVisionItem =
+        ParsedVisionItem(
+            name = name,
+            category = category,
+            storageLocation = "FRIDGE",
+            quantity = 1f,
+            unit = "CARTON",
+            confidence = 0.95f,
+            estimatedShelfLifeDays = shelfLife,
+            isAromaticOrSeasoning = false,
+            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+            conditionNotes = null,
+        )
 
     @Test
     fun multiItemBatchReviewRendersAndCancels() {
@@ -130,7 +130,11 @@ class BatchReviewBottomSheetComposeTest {
             }
         }
 
-        composeTestRule.onAllNodes(isToggleable()).onFirst().performScrollTo().performClick()
+        composeTestRule
+            .onAllNodes(isToggleable())
+            .onFirst()
+            .performScrollTo()
+            .performClick()
         composeTestRule.onNodeWithText("Save").performClick()
 
         assertEquals(1, confirmed?.size)

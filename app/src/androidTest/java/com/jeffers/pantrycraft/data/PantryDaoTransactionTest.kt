@@ -40,61 +40,64 @@ class PantryDaoTransactionTest {
     }
 
     @Test
-    fun transactionAtomicRollbackLeavesNoOrphanedRows() = runBlocking {
-        val itemName = "${prefix}rollback-item"
+    fun transactionAtomicRollbackLeavesNoOrphanedRows() =
+        runBlocking {
+            val itemName = "${prefix}rollback-item"
 
-        try {
-            db.withTransaction {
-                pantryDao.insert(
-                    PantryItem(
-                        name = itemName,
-                        quantity = 5f,
-                        storageLocation = "PANTRY",
-                    ),
-                )
-                // Intentionally fail transaction
-                error("Simulated atomic failure")
+            try {
+                db.withTransaction {
+                    pantryDao.insert(
+                        PantryItem(
+                            name = itemName,
+                            quantity = 5f,
+                            storageLocation = "PANTRY",
+                        ),
+                    )
+                    // Intentionally fail transaction
+                    error("Simulated atomic failure")
+                }
+            } catch (_: IllegalStateException) {
+                // Expected failure
             }
-        } catch (_: IllegalStateException) {
-            // Expected failure
+
+            val items = pantryDao.observeAllPantryItems().first().filter { it.name == itemName }
+            assertTrue("Item inserted within aborted transaction must be rolled back", items.isEmpty())
         }
 
-        val items = pantryDao.observeAllPantryItems().first().filter { it.name == itemName }
-        assertTrue("Item inserted within aborted transaction must be rolled back", items.isEmpty())
-    }
-
     @Test
-    fun softDeleteAndRestoreMaintainsHistoryWithinTransaction() = runBlocking {
-        val testBarcode = "999${System.nanoTime().toString().takeLast(8)}"
-        val id = pantryDao.insert(
-            PantryItem(
-                name = "${prefix}soft-delete-item",
-                quantity = 3f,
-                barcode = testBarcode,
-                storageLocation = "FRIDGE",
-            ),
-        )
+    fun softDeleteAndRestoreMaintainsHistoryWithinTransaction() =
+        runBlocking {
+            val testBarcode = "999${System.nanoTime().toString().takeLast(8)}"
+            val id =
+                pantryDao.insert(
+                    PantryItem(
+                        name = "${prefix}soft-delete-item",
+                        quantity = 3f,
+                        barcode = testBarcode,
+                        storageLocation = "FRIDGE",
+                    ),
+                )
 
-        // Verify active
-        val activeBefore = pantryDao.findByBarcode(testBarcode)
-        assertNotNull(activeBefore)
-        assertEquals(id, activeBefore?.id)
-        assertFalse(activeBefore!!.isDeleted)
+            // Verify active
+            val activeBefore = pantryDao.findByBarcode(testBarcode)
+            assertNotNull(activeBefore)
+            assertEquals(id, activeBefore?.id)
+            assertFalse(activeBefore!!.isDeleted)
 
-        // Soft delete
-        pantryDao.softDelete(id)
-        val activeAfterDelete = pantryDao.findByBarcode(testBarcode)
-        assertNull(activeAfterDelete)
+            // Soft delete
+            pantryDao.softDelete(id)
+            val activeAfterDelete = pantryDao.findByBarcode(testBarcode)
+            assertNull(activeAfterDelete)
 
-        // Verify row still exists in raw table marked deleted
-        val anyAfterDelete = pantryDao.findAnyByBarcode(testBarcode)
-        assertNotNull(anyAfterDelete)
-        assertTrue(anyAfterDelete!!.isDeleted)
+            // Verify row still exists in raw table marked deleted
+            val anyAfterDelete = pantryDao.findAnyByBarcode(testBarcode)
+            assertNotNull(anyAfterDelete)
+            assertTrue(anyAfterDelete!!.isDeleted)
 
-        // Restore
-        pantryDao.restore(id)
-        val activeAfterRestore = pantryDao.findByBarcode(testBarcode)
-        assertNotNull(activeAfterRestore)
-        assertFalse(activeAfterRestore!!.isDeleted)
-    }
+            // Restore
+            pantryDao.restore(id)
+            val activeAfterRestore = pantryDao.findByBarcode(testBarcode)
+            assertNotNull(activeAfterRestore)
+            assertFalse(activeAfterRestore!!.isDeleted)
+        }
 }

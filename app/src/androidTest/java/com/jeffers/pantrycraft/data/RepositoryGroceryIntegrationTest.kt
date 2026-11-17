@@ -45,154 +45,170 @@ class RepositoryGroceryIntegrationTest {
     }
 
     @Test
-    fun insertAndObserveGroceryItems() = runBlocking {
-        val groceryItem = GroceryItem(
-            name = "${prefix}almond milk",
-            quantity = 2f,
-            unit = "BOTTLE",
-            checked = false,
-        )
+    fun insertAndObserveGroceryItems() =
+        runBlocking {
+            val groceryItem =
+                GroceryItem(
+                    name = "${prefix}almond milk",
+                    quantity = 2f,
+                    unit = "BOTTLE",
+                    checked = false,
+                )
 
-        repository.insertGrocery(groceryItem)
+            repository.insertGrocery(groceryItem)
 
-        val items = repository.observeGroceryItems().first().filter { it.name.startsWith(prefix) }
-        assertEquals(1, items.size)
-        assertEquals("${prefix}almond milk", items.first().name)
-        assertEquals(2f, items.first().quantity)
-        assertEquals("BOTTLE", items.first().unit)
-    }
-
-    @Test
-    fun updateGroceryItemCheckedState() = runBlocking {
-        val groceryItem = GroceryItem(
-            name = "${prefix}dark chocolate",
-            quantity = 1f,
-            unit = "PACKAGE",
-            checked = false,
-        )
-        repository.insertGrocery(groceryItem)
-
-        val inserted = repository.observeGroceryItems().first().first { it.name == "${prefix}dark chocolate" }
-        repository.updateGrocery(inserted.copy(checked = true))
-
-        val updated = repository.observeGroceryItems().first().first { it.name == "${prefix}dark chocolate" }
-        assertTrue(updated.checked)
-    }
+            val items = repository.observeGroceryItems().first().filter { it.name.startsWith(prefix) }
+            assertEquals(1, items.size)
+            assertEquals("${prefix}almond milk", items.first().name)
+            assertEquals(2f, items.first().quantity)
+            assertEquals("BOTTLE", items.first().unit)
+        }
 
     @Test
-    fun restockCheckedGroceryWithLinkedPantryItemUpdatesQuantity() = runBlocking {
-        // 1. Insert existing pantry item
-        val pantryItem = PantryItem(
-            name = "${prefix}flour",
-            quantity = 2f,
-            unit = "KG",
-            storageLocation = "PANTRY",
-        )
-        val pantryId = repository.insertPantry(pantryItem)
+    fun updateGroceryItemCheckedState() =
+        runBlocking {
+            val groceryItem =
+                GroceryItem(
+                    name = "${prefix}dark chocolate",
+                    quantity = 1f,
+                    unit = "PACKAGE",
+                    checked = false,
+                )
+            repository.insertGrocery(groceryItem)
 
-        // 2. Insert checked grocery item linked to this pantry item
-        val groceryItem = GroceryItem(
-            name = "${prefix}flour",
-            quantity = 3f,
-            unit = "KG",
-            checked = true,
-            fromPantryId = pantryId,
-        )
-        repository.insertGrocery(groceryItem)
+            val inserted = repository.observeGroceryItems().first().first { it.name == "${prefix}dark chocolate" }
+            repository.updateGrocery(inserted.copy(checked = true))
 
-        // 3. Restock checked items to pantry
-        val restockedCount = repository.restockCheckedGroceryToPantry()
-        assertEquals(1, restockedCount)
-
-        // 4. Verify pantry item quantity updated from 2f to 5f
-        val updatedPantry = repository.observePantryItems().first().first { it.id == pantryId }
-        assertEquals(5f, updatedPantry.quantity)
-
-        // 5. Verify checked grocery item is deleted
-        val remainingGrocery = repository.observeGroceryItems().first().filter { it.name == "${prefix}flour" }
-        assertTrue("Checked grocery item must be deleted after restocking", remainingGrocery.isEmpty())
-    }
+            val updated = repository.observeGroceryItems().first().first { it.name == "${prefix}dark chocolate" }
+            assertTrue(updated.checked)
+        }
 
     @Test
-    fun restockCheckedGroceryWithoutLinkedPantryItemCreatesNewPantryItem() = runBlocking {
-        // 1. Insert checked grocery item without pantry link
-        val groceryItem = GroceryItem(
-            name = "${prefix}organic vanilla",
-            quantity = 1f,
-            unit = "BOTTLE",
-            checked = true,
-            fromPantryId = null,
-        )
-        repository.insertGrocery(groceryItem)
+    fun restockCheckedGroceryWithLinkedPantryItemUpdatesQuantity() =
+        runBlocking {
+            // 1. Insert existing pantry item
+            val pantryItem =
+                PantryItem(
+                    name = "${prefix}flour",
+                    quantity = 2f,
+                    unit = "KG",
+                    storageLocation = "PANTRY",
+                )
+            val pantryId = repository.insertPantry(pantryItem)
 
-        // 2. Restock checked items
-        val restockedCount = repository.restockCheckedGroceryToPantry()
-        assertEquals(1, restockedCount)
+            // 2. Insert checked grocery item linked to this pantry item
+            val groceryItem =
+                GroceryItem(
+                    name = "${prefix}flour",
+                    quantity = 3f,
+                    unit = "KG",
+                    checked = true,
+                    fromPantryId = pantryId,
+                )
+            repository.insertGrocery(groceryItem)
 
-        // 3. Verify newly created pantry item
-        val createdPantry =
-            repository.observePantryItems().first().firstOrNull { it.name == "${prefix}organic vanilla" }
-        assertNotNull(createdPantry)
-        assertEquals(1f, createdPantry!!.quantity)
-        assertEquals("BOTTLE", createdPantry.unit)
-    }
+            // 3. Restock checked items to pantry
+            val restockedCount = repository.restockCheckedGroceryToPantry()
+            assertEquals(1, restockedCount)
 
-    @Test
-    fun restockLeavesUncheckedGroceryItemsUntouched() = runBlocking {
-        val uncheckedItem = GroceryItem(
-            name = "${prefix}cinnamon sticks",
-            quantity = 1f,
-            unit = "PACKAGE",
-            checked = false,
-        )
-        repository.insertGrocery(uncheckedItem)
+            // 4. Verify pantry item quantity updated from 2f to 5f
+            val updatedPantry = repository.observePantryItems().first().first { it.id == pantryId }
+            assertEquals(5f, updatedPantry.quantity)
 
-        val restockedCount = repository.restockCheckedGroceryToPantry()
-        assertEquals(0, restockedCount)
-
-        val remaining = repository.observeGroceryItems().first().filter { it.name == "${prefix}cinnamon sticks" }
-        assertEquals(1, remaining.size)
-    }
+            // 5. Verify checked grocery item is deleted
+            val remainingGrocery = repository.observeGroceryItems().first().filter { it.name == "${prefix}flour" }
+            assertTrue("Checked grocery item must be deleted after restocking", remainingGrocery.isEmpty())
+        }
 
     @Test
-    fun clearCheckedGroceryDeletesCheckedItemsWhileLeavingUncheckedIntact() = runBlocking {
-        val checkedItem = GroceryItem(
-            name = "${prefix}sea salt",
-            quantity = 1f,
-            unit = "CANISTER",
-            checked = true,
-        )
-        val uncheckedItem = GroceryItem(
-            name = "${prefix}black pepper",
-            quantity = 2f,
-            unit = "JAR",
-            checked = false,
-        )
-        repository.insertGrocery(checkedItem)
-        repository.insertGrocery(uncheckedItem)
+    fun restockCheckedGroceryWithoutLinkedPantryItemCreatesNewPantryItem() =
+        runBlocking {
+            // 1. Insert checked grocery item without pantry link
+            val groceryItem =
+                GroceryItem(
+                    name = "${prefix}organic vanilla",
+                    quantity = 1f,
+                    unit = "BOTTLE",
+                    checked = true,
+                    fromPantryId = null,
+                )
+            repository.insertGrocery(groceryItem)
 
-        repository.clearCheckedGrocery()
+            // 2. Restock checked items
+            val restockedCount = repository.restockCheckedGroceryToPantry()
+            assertEquals(1, restockedCount)
 
-        val items = repository.observeGroceryItems().first().filter { it.name.startsWith(prefix) }
-        assertEquals(1, items.size)
-        assertEquals("${prefix}black pepper", items.first().name)
-        assertEquals(false, items.first().checked)
-    }
+            // 3. Verify newly created pantry item
+            val createdPantry =
+                repository.observePantryItems().first().firstOrNull { it.name == "${prefix}organic vanilla" }
+            assertNotNull(createdPantry)
+            assertEquals(1f, createdPantry!!.quantity)
+            assertEquals("BOTTLE", createdPantry.unit)
+        }
 
     @Test
-    fun deleteGroceryRemovesSingleItem() = runBlocking {
-        val item = GroceryItem(
-            name = "${prefix}olive oil",
-            quantity = 1f,
-            unit = "BOTTLE",
-            checked = false,
-        )
-        repository.insertGrocery(item)
+    fun restockLeavesUncheckedGroceryItemsUntouched() =
+        runBlocking {
+            val uncheckedItem =
+                GroceryItem(
+                    name = "${prefix}cinnamon sticks",
+                    quantity = 1f,
+                    unit = "PACKAGE",
+                    checked = false,
+                )
+            repository.insertGrocery(uncheckedItem)
 
-        val inserted = repository.observeGroceryItems().first().first { it.name == "${prefix}olive oil" }
-        repository.deleteGrocery(inserted)
+            val restockedCount = repository.restockCheckedGroceryToPantry()
+            assertEquals(0, restockedCount)
 
-        val remaining = repository.observeGroceryItems().first().filter { it.name == "${prefix}olive oil" }
-        assertTrue("Deleted grocery item must be removed from repository", remaining.isEmpty())
-    }
+            val remaining = repository.observeGroceryItems().first().filter { it.name == "${prefix}cinnamon sticks" }
+            assertEquals(1, remaining.size)
+        }
+
+    @Test
+    fun clearCheckedGroceryDeletesCheckedItemsWhileLeavingUncheckedIntact() =
+        runBlocking {
+            val checkedItem =
+                GroceryItem(
+                    name = "${prefix}sea salt",
+                    quantity = 1f,
+                    unit = "CANISTER",
+                    checked = true,
+                )
+            val uncheckedItem =
+                GroceryItem(
+                    name = "${prefix}black pepper",
+                    quantity = 2f,
+                    unit = "JAR",
+                    checked = false,
+                )
+            repository.insertGrocery(checkedItem)
+            repository.insertGrocery(uncheckedItem)
+
+            repository.clearCheckedGrocery()
+
+            val items = repository.observeGroceryItems().first().filter { it.name.startsWith(prefix) }
+            assertEquals(1, items.size)
+            assertEquals("${prefix}black pepper", items.first().name)
+            assertEquals(false, items.first().checked)
+        }
+
+    @Test
+    fun deleteGroceryRemovesSingleItem() =
+        runBlocking {
+            val item =
+                GroceryItem(
+                    name = "${prefix}olive oil",
+                    quantity = 1f,
+                    unit = "BOTTLE",
+                    checked = false,
+                )
+            repository.insertGrocery(item)
+
+            val inserted = repository.observeGroceryItems().first().first { it.name == "${prefix}olive oil" }
+            repository.deleteGrocery(inserted)
+
+            val remaining = repository.observeGroceryItems().first().filter { it.name == "${prefix}olive oil" }
+            assertTrue("Deleted grocery item must be removed from repository", remaining.isEmpty())
+        }
 }

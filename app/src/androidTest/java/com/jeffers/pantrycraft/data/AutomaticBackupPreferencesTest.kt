@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import java.security.GeneralSecurityException
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -15,6 +14,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.security.GeneralSecurityException
 
 @RunWith(AndroidJUnit4::class)
 class AutomaticBackupPreferencesTest {
@@ -69,7 +69,10 @@ class AutomaticBackupPreferencesTest {
 
     @Test
     fun saveAndLoadEncryptedBackupPinWithMemoryScrubbing() {
-        val keyStore = java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val keyStore =
+            java.security.KeyStore
+                .getInstance("AndroidKeyStore")
+                .apply { load(null) }
         if (keyStore.containsAlias("automatic_backup_pin_master_key")) {
             keyStore.deleteEntry("automatic_backup_pin_master_key")
         }
@@ -106,7 +109,8 @@ class AutomaticBackupPreferencesTest {
         assertNull(AutomaticBackupPreferences.loadPin(context))
 
         // Only IV, missing ciphertext
-        prefs.edit()
+        prefs
+            .edit()
             .remove("automatic_backup_pin_ciphertext")
             .putString("automatic_backup_pin_iv", "QUJDREVGR0hJSktMTU5PUA==")
             .apply()

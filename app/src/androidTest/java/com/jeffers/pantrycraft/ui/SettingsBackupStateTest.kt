@@ -50,14 +50,15 @@ class SettingsBackupStateTest {
 
     @Test
     fun buildAutoBackupPropsPassesThroughArguments() {
-        val args = AutoBackupScheduleArgs(
-            enabled = true,
-            intervalMinutes = 720L,
-            databaseHasUserData = true,
-            onScheduleChange = { _, _ -> },
-            onRequirePin = {},
-            onPerformBackup = {},
-        )
+        val args =
+            AutoBackupScheduleArgs(
+                enabled = true,
+                intervalMinutes = 720L,
+                databaseHasUserData = true,
+                onScheduleChange = { _, _ -> },
+                onRequirePin = {},
+                onPerformBackup = {},
+            )
 
         val props = buildAutoBackupProps(context, args)
 
@@ -73,18 +74,19 @@ class SettingsBackupStateTest {
         var updatedEnabled = true
         var updatedInterval = 0L
 
-        val args = AutoBackupScheduleArgs(
-            enabled = true,
-            intervalMinutes = 1440L,
-            databaseHasUserData = true,
-            onScheduleChange = { enabled, minutes ->
-                scheduleChangeCalled = true
-                updatedEnabled = enabled
-                updatedInterval = minutes
-            },
-            onRequirePin = {},
-            onPerformBackup = {},
-        )
+        val args =
+            AutoBackupScheduleArgs(
+                enabled = true,
+                intervalMinutes = 1440L,
+                databaseHasUserData = true,
+                onScheduleChange = { enabled, minutes ->
+                    scheduleChangeCalled = true
+                    updatedEnabled = enabled
+                    updatedInterval = minutes
+                },
+                onRequirePin = {},
+                onPerformBackup = {},
+            )
 
         val props = buildAutoBackupProps(context, args)
         props.onDisable()
@@ -104,21 +106,22 @@ class SettingsBackupStateTest {
         var updatedEnabled = false
         var updatedInterval = 0L
 
-        val args = AutoBackupScheduleArgs(
-            enabled = false,
-            intervalMinutes = 1440L,
-            databaseHasUserData = true,
-            onScheduleChange = { enabled, minutes ->
-                scheduleChangeCalled = true
-                updatedEnabled = enabled
-                updatedInterval = minutes
-            },
-            onRequirePin = { callback ->
-                val testPin = "7890".toCharArray()
-                callback(testPin)
-            },
-            onPerformBackup = {},
-        )
+        val args =
+            AutoBackupScheduleArgs(
+                enabled = false,
+                intervalMinutes = 1440L,
+                databaseHasUserData = true,
+                onScheduleChange = { enabled, minutes ->
+                    scheduleChangeCalled = true
+                    updatedEnabled = enabled
+                    updatedInterval = minutes
+                },
+                onRequirePin = { callback ->
+                    val testPin = "7890".toCharArray()
+                    callback(testPin)
+                },
+                onPerformBackup = {},
+            )
 
         val props = buildAutoBackupProps(context, args)
         props.onEnableRequested()
@@ -139,18 +142,19 @@ class SettingsBackupStateTest {
         var updatedEnabled = false
         var updatedInterval = 0L
 
-        val args = AutoBackupScheduleArgs(
-            enabled = false,
-            intervalMinutes = 1440L,
-            databaseHasUserData = true,
-            onScheduleChange = { enabled, minutes ->
-                scheduleChangeCalled = true
-                updatedEnabled = enabled
-                updatedInterval = minutes
-            },
-            onRequirePin = {},
-            onPerformBackup = {},
-        )
+        val args =
+            AutoBackupScheduleArgs(
+                enabled = false,
+                intervalMinutes = 1440L,
+                databaseHasUserData = true,
+                onScheduleChange = { enabled, minutes ->
+                    scheduleChangeCalled = true
+                    updatedEnabled = enabled
+                    updatedInterval = minutes
+                },
+                onRequirePin = {},
+                onPerformBackup = {},
+            )
 
         val props = buildAutoBackupProps(context, args)
         props.onIntervalSelected(360L)
@@ -167,19 +171,20 @@ class SettingsBackupStateTest {
         var requirePinInvoked = false
         var backupPinSupplied: String? = null
 
-        val args = AutoBackupScheduleArgs(
-            enabled = true,
-            intervalMinutes = 1440L,
-            databaseHasUserData = true,
-            onScheduleChange = { _, _ -> },
-            onRequirePin = { action ->
-                requirePinInvoked = true
-                action("4321".toCharArray())
-            },
-            onPerformBackup = { pinChars ->
-                backupPinSupplied = pinChars.concatToString()
-            },
-        )
+        val args =
+            AutoBackupScheduleArgs(
+                enabled = true,
+                intervalMinutes = 1440L,
+                databaseHasUserData = true,
+                onScheduleChange = { _, _ -> },
+                onRequirePin = { action ->
+                    requirePinInvoked = true
+                    action("4321".toCharArray())
+                },
+                onPerformBackup = { pinChars ->
+                    backupPinSupplied = pinChars.concatToString()
+                },
+            )
 
         val props = buildAutoBackupProps(context, args)
         props.onBackupNow()
@@ -201,11 +206,12 @@ class SettingsBackupStateTest {
         var treeLaunched = false
         var restoreLaunched = false
 
-        val launchers = BackupLaunchers(
-            launchCreateBackup = { createName = it },
-            launchTree = { treeLaunched = true },
-            launchRestore = { restoreLaunched = true },
-        )
+        val launchers =
+            BackupLaunchers(
+                launchCreateBackup = { createName = it },
+                launchTree = { treeLaunched = true },
+                launchRestore = { restoreLaunched = true },
+            )
         launchers.launchCreateBackup("test.db")
         launchers.launchTree()
         launchers.launchRestore()
@@ -221,13 +227,14 @@ class SettingsBackupStateTest {
         var treeUri: Uri? = null
         var pinPrompt = false
         var restorePrompt = false
-        val callbacks = BackupLauncherCallbacks(
-            onBackupSaved = { savedUri = it },
-            onBackupFailed = { failMsg = it },
-            onTreeSelected = { treeUri = it },
-            onRequirePin = { pinPrompt = true },
-            onRequireRestore = { restorePrompt = true },
-        )
+        val callbacks =
+            BackupLauncherCallbacks(
+                onBackupSaved = { savedUri = it },
+                onBackupFailed = { failMsg = it },
+                onTreeSelected = { treeUri = it },
+                onRequirePin = { pinPrompt = true },
+                onRequireRestore = { restorePrompt = true },
+            )
         callbacks.onBackupSaved(uri)
         callbacks.onBackupFailed("error")
         callbacks.onTreeSelected(uri)
@@ -246,12 +253,13 @@ class SettingsBackupStateTest {
     }
 
     private fun verifyStatePropsContract(uri: Uri) {
-        val stateProps = BackupStateProps(
-            lastExportedUri = uri,
-            hasBackupRecords = true,
-            autoBackupTreeUri = uri,
-            backupResult = "Success",
-        )
+        val stateProps =
+            BackupStateProps(
+                lastExportedUri = uri,
+                hasBackupRecords = true,
+                autoBackupTreeUri = uri,
+                backupResult = "Success",
+            )
         assertEquals(uri, stateProps.lastExportedUri)
         assertTrue(stateProps.hasBackupRecords)
         assertEquals(uri, stateProps.autoBackupTreeUri)

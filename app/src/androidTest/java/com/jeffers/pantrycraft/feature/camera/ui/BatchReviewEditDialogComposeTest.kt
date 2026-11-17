@@ -22,23 +22,23 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class BatchReviewEditDialogComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     private fun createBatchReviewSheetState(): BatchReviewSheetState {
-        val item = ParsedVisionItem(
-            name = "Apples",
-            category = "PRODUCE",
-            storageLocation = "PANTRY",
-            quantity = 2f,
-            unit = "COUNT",
-            confidence = 0.95f,
-            estimatedShelfLifeDays = 7,
-            isAromaticOrSeasoning = false,
-            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-            conditionNotes = null,
-        )
+        val item =
+            ParsedVisionItem(
+                name = "Apples",
+                category = "PRODUCE",
+                storageLocation = "PANTRY",
+                quantity = 2f,
+                unit = "COUNT",
+                confidence = 0.95f,
+                estimatedShelfLifeDays = 7,
+                isAromaticOrSeasoning = false,
+                boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+                conditionNotes = null,
+            )
         return BatchReviewSheetState(items = listOf(item))
     }
 

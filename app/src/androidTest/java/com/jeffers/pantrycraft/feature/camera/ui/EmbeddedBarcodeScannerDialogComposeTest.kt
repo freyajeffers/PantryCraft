@@ -19,7 +19,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EmbeddedBarcodeScannerDialogComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -51,7 +50,9 @@ class EmbeddedBarcodeScannerDialogComposeTest {
     @Test
     fun embeddedBarcodeScannerDialogRendersWithCameraPermission() {
         val context = composeTestRule.activity
-        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().uiAutomation
+        androidx.test.platform.app.InstrumentationRegistry
+            .getInstrumentation()
+            .uiAutomation
             .grantRuntimePermission(context.packageName, android.Manifest.permission.CAMERA)
 
         composeTestRule.setContent {
@@ -64,7 +65,8 @@ class EmbeddedBarcodeScannerDialogComposeTest {
         }
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("Scan Item Barcode").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Point the camera at a UPC or EAN barcode to auto-fill item details.")
+        composeTestRule
+            .onNodeWithText("Point the camera at a UPC or EAN barcode to auto-fill item details.")
             .assertIsDisplayed()
     }
 
@@ -87,18 +89,23 @@ class EmbeddedBarcodeScannerDialogComposeTest {
 
     @Test
     fun createBarcodeAnalyzerProcessesDetectedBarcode() {
-        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val executor =
+            java.util.concurrent.Executors
+                .newSingleThreadExecutor()
         var reportedBarcode: String? = null
-        val analyzer = createBarcodeAnalyzer(executor) { barcode ->
-            reportedBarcode = barcode
-        }
+        val analyzer =
+            createBarcodeAnalyzer(executor) { barcode ->
+                reportedBarcode = barcode
+            }
         val onResultField = analyzer::class.java.getDeclaredField("onResult").apply { isAccessible = true }
+
         @Suppress("UNCHECKED_CAST")
         val onResult = onResultField.get(analyzer) as (LiveVisionResult) -> Unit
-        val dummyResult = LiveVisionResult(
-            barcodes = listOf("012345678905"),
-            objectBoxes = emptyList(),
-        )
+        val dummyResult =
+            LiveVisionResult(
+                barcodes = listOf("012345678905"),
+                objectBoxes = emptyList(),
+            )
         onResult.invoke(dummyResult)
         assertEquals("012345678905", reportedBarcode)
         analyzer.close()

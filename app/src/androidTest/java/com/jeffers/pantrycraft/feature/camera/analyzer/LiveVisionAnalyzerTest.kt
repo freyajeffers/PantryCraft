@@ -12,12 +12,13 @@ class LiveVisionAnalyzerTest {
     @Test
     fun rectToNormalizedWithinBounds() {
         val rect = Rect(100, 200, 400, 800)
-        val normalized = rect.toNormalized(
-            width = 1000,
-            height = 1000,
-            label = "Apple",
-            confidence = 0.92f,
-        )
+        val normalized =
+            rect.toNormalized(
+                width = 1000,
+                height = 1000,
+                label = "Apple",
+                confidence = 0.92f,
+            )
 
         assertEquals(0.2f, normalized.ymin, 0.001f)
         assertEquals(0.1f, normalized.xmin, 0.001f)
@@ -30,10 +31,11 @@ class LiveVisionAnalyzerTest {
     @Test
     fun rectToNormalizedClampsOutOfBoundsCoordinates() {
         val rect = Rect(-50, -100, 1500, 2000)
-        val normalized = rect.toNormalized(
-            width = 1000,
-            height = 1000,
-        )
+        val normalized =
+            rect.toNormalized(
+                width = 1000,
+                height = 1000,
+            )
 
         assertEquals(0f, normalized.ymin, 0.001f)
         assertEquals(0f, normalized.xmin, 0.001f)

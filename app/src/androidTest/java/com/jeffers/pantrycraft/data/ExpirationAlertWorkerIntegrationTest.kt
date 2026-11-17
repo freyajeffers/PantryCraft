@@ -25,7 +25,9 @@ class ExpirationAlertWorkerIntegrationTest {
     @Before
     fun setUp() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().uiAutomation
+            androidx.test.platform.app.InstrumentationRegistry
+                .getInstrumentation()
+                .uiAutomation
                 .grantRuntimePermission(context.packageName, android.Manifest.permission.POST_NOTIFICATIONS)
         }
         originalEnabled = ExpirationAlertWorker.isEnabled(context)
@@ -44,77 +46,88 @@ class ExpirationAlertWorkerIntegrationTest {
     }
 
     @Test
-    fun doWorkReturnsSuccessWhenDisabled() = runBlocking {
-        ExpirationAlertWorker.setEnabled(context, false)
-        val worker = TestListenableWorkerBuilder<ExpirationAlertWorker>(context).build()
-        val result = worker.doWork()
+    fun doWorkReturnsSuccessWhenDisabled() =
+        runBlocking {
+            ExpirationAlertWorker.setEnabled(context, false)
+            val worker = TestListenableWorkerBuilder<ExpirationAlertWorker>(context).build()
+            val result = worker.doWork()
 
-        assertTrue(result is ListenableWorker.Result.Success)
-    }
-
-    @Test
-    fun doWorkSucceedsWhenEnabledWithNoExpiringItems() = runBlocking {
-        ExpirationAlertWorker.setEnabled(context, true)
-        val worker = TestListenableWorkerBuilder<ExpirationAlertWorker>(context).build()
-        val result = worker.doWork()
-
-        assertTrue(result is ListenableWorker.Result.Success)
-    }
+            assertTrue(result is ListenableWorker.Result.Success)
+        }
 
     @Test
-    fun doWorkSucceedsWhenEnabledWithExpiringItem() = runBlocking {
-        ExpirationAlertWorker.setEnabled(context, true)
-        val repository = Repository.getInstance(context)
-        val testItem = PantryItem(
-            name = "${testPrefix}milk",
-            quantity = 1f,
-            storageLocation = "FRIDGE",
-            category = "DAIRY",
-            expirationTimestamp = System.currentTimeMillis() + 3600_000L, // 1 hour from now
-        )
-        repository.insertPantry(testItem)
+    fun doWorkSucceedsWhenEnabledWithNoExpiringItems() =
+        runBlocking {
+            ExpirationAlertWorker.setEnabled(context, true)
+            val worker = TestListenableWorkerBuilder<ExpirationAlertWorker>(context).build()
+            val result = worker.doWork()
 
-        val worker = TestListenableWorkerBuilder<ExpirationAlertWorker>(context).build()
-        val result = worker.doWork()
-
-        assertTrue(result is ListenableWorker.Result.Success)
-    }
+            assertTrue(result is ListenableWorker.Result.Success)
+        }
 
     @Test
-    fun doWorkFormatsSummaryWithMoreThanFourExpiringItems() = runBlocking {
-        ExpirationAlertWorker.setEnabled(context, true)
-        val repository = Repository.getInstance(context)
-        val now = System.currentTimeMillis()
-        (1..5).forEach { i ->
-            repository.insertPantry(
+    fun doWorkSucceedsWhenEnabledWithExpiringItem() =
+        runBlocking {
+            ExpirationAlertWorker.setEnabled(context, true)
+            val repository = Repository.getInstance(context)
+            val testItem =
                 PantryItem(
-                    name = "${testPrefix}item$i",
+                    name = "${testPrefix}milk",
                     quantity = 1f,
                     storageLocation = "FRIDGE",
                     category = "DAIRY",
-                    expirationTimestamp = now + (i * 1000L),
-                ),
-            )
+                    expirationTimestamp = System.currentTimeMillis() + 3600_000L, // 1 hour from now
+                )
+            repository.insertPantry(testItem)
+
+            val worker = TestListenableWorkerBuilder<ExpirationAlertWorker>(context).build()
+            val result = worker.doWork()
+
+            assertTrue(result is ListenableWorker.Result.Success)
         }
 
-        val worker = TestListenableWorkerBuilder<ExpirationAlertWorker>(context).build()
-        val result = worker.doWork()
+    @Test
+    fun doWorkFormatsSummaryWithMoreThanFourExpiringItems() =
+        runBlocking {
+            ExpirationAlertWorker.setEnabled(context, true)
+            val repository = Repository.getInstance(context)
+            val now = System.currentTimeMillis()
+            (1..5).forEach { i ->
+                repository.insertPantry(
+                    PantryItem(
+                        name = "${testPrefix}item$i",
+                        quantity = 1f,
+                        storageLocation = "FRIDGE",
+                        category = "DAIRY",
+                        expirationTimestamp = now + (i * 1000L),
+                    ),
+                )
+            }
 
-        assertTrue(result is ListenableWorker.Result.Success)
-    }
+            val worker = TestListenableWorkerBuilder<ExpirationAlertWorker>(context).build()
+            val result = worker.doWork()
+
+            assertTrue(result is ListenableWorker.Result.Success)
+        }
 
     @Test
     fun expirationAlertSchedulerEnqueuesWorkWhenEnabled() {
         ExpirationAlertWorker.setEnabled(context, false)
         ExpirationAlertScheduler.scheduleIfEnabled(context)
-        val initialWork = WorkManager.getInstance(context)
-            .getWorkInfosForUniqueWork("pantrycraft_expiration_alerts").get()
+        val initialWork =
+            WorkManager
+                .getInstance(context)
+                .getWorkInfosForUniqueWork("pantrycraft_expiration_alerts")
+                .get()
         assertTrue(initialWork.isEmpty() || initialWork.all { it.state == WorkInfo.State.CANCELLED })
 
         ExpirationAlertWorker.setEnabled(context, true)
         ExpirationAlertScheduler.scheduleIfEnabled(context)
-        val enqueuedWork = WorkManager.getInstance(context)
-            .getWorkInfosForUniqueWork("pantrycraft_expiration_alerts").get()
+        val enqueuedWork =
+            WorkManager
+                .getInstance(context)
+                .getWorkInfosForUniqueWork("pantrycraft_expiration_alerts")
+                .get()
         assertFalse(enqueuedWork.isEmpty())
         assertEquals(WorkInfo.State.ENQUEUED, enqueuedWork.first().state)
     }

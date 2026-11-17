@@ -373,7 +373,10 @@ class EndToEndMealJourneyTest {
         return Pair(garlicId, flourId)
     }
 
-    private fun createScalingRecipe(garlicId: Long, flourId: Long): MealRecipe =
+    private fun createScalingRecipe(
+        garlicId: Long,
+        flourId: Long,
+    ): MealRecipe =
         MealRecipe(
             recipeId = "${marker}recipe_scaling",
             title = "Seasoned Bread",

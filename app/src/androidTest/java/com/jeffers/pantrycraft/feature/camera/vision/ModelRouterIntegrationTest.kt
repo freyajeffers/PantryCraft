@@ -46,51 +46,55 @@ class ModelRouterIntegrationTest {
     }
 
     @Test
-    fun offlineMlKitDispatchesToLocalFallback() = runBlocking {
-        ByokPreferences.saveConfiguration(context, AiProvider.OFFLINE_MLKIT, "", "")
+    fun offlineMlKitDispatchesToLocalFallback() =
+        runBlocking {
+            ByokPreferences.saveConfiguration(context, AiProvider.OFFLINE_MLKIT, "", "")
 
-        val localModel = LocalVisionModel { _, _ -> "local-fallback-output" }
-        val cloudModel = LocalVisionModel { _, _ -> "cloud-output" }
-        val router = ModelRouter(context, localModel, cloudModel)
+            val localModel = LocalVisionModel { _, _ -> "local-fallback-output" }
+            val cloudModel = LocalVisionModel { _, _ -> "cloud-output" }
+            val router = ModelRouter(context, localModel, cloudModel)
 
-        val result = router.analyze(ByteArray(0), "test-prompt")
-        assertEquals("local-fallback-output", result)
-    }
-
-    @Test
-    fun cloudProviderWithoutApiKeyFallsBackToLocalModel() = runBlocking {
-        ByokPreferences.saveConfiguration(context, AiProvider.OPENAI, "gpt-4o-mini", "")
-        ByokPreferences.clearApiKey(context)
-
-        val localModel = LocalVisionModel { _, _ -> "local-fallback-output" }
-        val cloudModel = LocalVisionModel { _, _ -> "cloud-output" }
-        val router = ModelRouter(context, localModel, cloudModel)
-
-        val result = router.analyze(ByteArray(0), "test-prompt")
-        assertEquals("local-fallback-output", result)
-    }
+            val result = router.analyze(ByteArray(0), "test-prompt")
+            assertEquals("local-fallback-output", result)
+        }
 
     @Test
-    fun failingCloudModelCatchesAndFallsBackToLocalModel() = runBlocking {
-        ByokPreferences.saveConfiguration(context, AiProvider.OLLAMA, "llava:latest", "http://127.0.0.1:11434")
+    fun cloudProviderWithoutApiKeyFallsBackToLocalModel() =
+        runBlocking {
+            ByokPreferences.saveConfiguration(context, AiProvider.OPENAI, "gpt-4o-mini", "")
+            ByokPreferences.clearApiKey(context)
 
-        val localModel = LocalVisionModel { _, _ -> "local-fallback-output" }
-        val cloudModel = LocalVisionModel { _, _ -> throw IOException("Network unreachable") }
-        val router = ModelRouter(context, localModel, cloudModel)
+            val localModel = LocalVisionModel { _, _ -> "local-fallback-output" }
+            val cloudModel = LocalVisionModel { _, _ -> "cloud-output" }
+            val router = ModelRouter(context, localModel, cloudModel)
 
-        val result = router.analyze(ByteArray(0), "test-prompt")
-        assertEquals("local-fallback-output", result)
-    }
+            val result = router.analyze(ByteArray(0), "test-prompt")
+            assertEquals("local-fallback-output", result)
+        }
 
     @Test
-    fun successfulCloudModelReturnsCloudOutput() = runBlocking {
-        ByokPreferences.saveConfiguration(context, AiProvider.OLLAMA, "llava:latest", "http://127.0.0.1:11434")
+    fun failingCloudModelCatchesAndFallsBackToLocalModel() =
+        runBlocking {
+            ByokPreferences.saveConfiguration(context, AiProvider.OLLAMA, "llava:latest", "http://127.0.0.1:11434")
 
-        val localModel = LocalVisionModel { _, _ -> "local-fallback-output" }
-        val cloudModel = LocalVisionModel { _, _ -> "cloud-output" }
-        val router = ModelRouter(context, localModel, cloudModel)
+            val localModel = LocalVisionModel { _, _ -> "local-fallback-output" }
+            val cloudModel = LocalVisionModel { _, _ -> throw IOException("Network unreachable") }
+            val router = ModelRouter(context, localModel, cloudModel)
 
-        val result = router.analyze(ByteArray(0), "test-prompt")
-        assertEquals("cloud-output", result)
-    }
+            val result = router.analyze(ByteArray(0), "test-prompt")
+            assertEquals("local-fallback-output", result)
+        }
+
+    @Test
+    fun successfulCloudModelReturnsCloudOutput() =
+        runBlocking {
+            ByokPreferences.saveConfiguration(context, AiProvider.OLLAMA, "llava:latest", "http://127.0.0.1:11434")
+
+            val localModel = LocalVisionModel { _, _ -> "local-fallback-output" }
+            val cloudModel = LocalVisionModel { _, _ -> "cloud-output" }
+            val router = ModelRouter(context, localModel, cloudModel)
+
+            val result = router.analyze(ByteArray(0), "test-prompt")
+            assertEquals("cloud-output", result)
+        }
 }

@@ -29,7 +29,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PantryComponentsComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -53,14 +52,15 @@ class PantryComponentsComposeTest {
         composeTestRule.setContent {
             PantryCraftTheme {
                 PantryListContent(
-                    props = PantryListContentProps(
-                        items = emptyList(),
-                        selectedLocation = PantryLocationFilter.ALL,
-                        searchQuery = "",
-                        onSearchQueryChange = {},
-                        onLocationSelected = {},
-                        itemContent = {},
-                    ),
+                    props =
+                        PantryListContentProps(
+                            items = emptyList(),
+                            selectedLocation = PantryLocationFilter.ALL,
+                            searchQuery = "",
+                            onSearchQueryChange = {},
+                            onLocationSelected = {},
+                            itemContent = {},
+                        ),
                 )
             }
         }
@@ -73,21 +73,23 @@ class PantryComponentsComposeTest {
     fun pantryListContentRendersItemsAndInteractions() {
         var queryInput = ""
         var selectedFilter: PantryLocationFilter? = null
-        val items = listOf(
-            PantryItem(id = 1L, name = "Basmati Rice", quantity = 2f, unit = "KG"),
-        )
+        val items =
+            listOf(
+                PantryItem(id = 1L, name = "Basmati Rice", quantity = 2f, unit = "KG"),
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
                 PantryListContent(
-                    props = PantryListContentProps(
-                        items = items,
-                        selectedLocation = PantryLocationFilter.ALL,
-                        searchQuery = queryInput,
-                        onSearchQueryChange = { queryInput = it },
-                        onLocationSelected = { selectedFilter = it },
-                        itemContent = { item -> Text("Item: ${item.name}") },
-                    ),
+                    props =
+                        PantryListContentProps(
+                            items = items,
+                            selectedLocation = PantryLocationFilter.ALL,
+                            searchQuery = queryInput,
+                            onSearchQueryChange = { queryInput = it },
+                            onLocationSelected = { selectedFilter = it },
+                            itemContent = { item -> Text("Item: ${item.name}") },
+                        ),
                 )
             }
         }
@@ -153,19 +155,20 @@ class PantryComponentsComposeTest {
     @Test
     fun pantryScreenOverlaysRendersStorageDiagnostic() {
         var errorDismissed = false
-        val props = PantryScreenOverlayProps(
-            showAddDialog = false,
-            editorItem = null,
-            onSaveDraft = { _, _ -> },
-            onDismissEditor = {},
-            useItem = null,
-            useAmount = "",
-            onAmountChange = {},
-            onConfirmUse = {},
-            onDismissUse = {},
-            storageError = "Low disk space",
-            onDismissStorageError = { errorDismissed = true },
-        )
+        val props =
+            PantryScreenOverlayProps(
+                showAddDialog = false,
+                editorItem = null,
+                onSaveDraft = { _, _ -> },
+                onDismissEditor = {},
+                useItem = null,
+                useAmount = "",
+                onAmountChange = {},
+                onConfirmUse = {},
+                onDismissUse = {},
+                storageError = "Low disk space",
+                onDismissStorageError = { errorDismissed = true },
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {

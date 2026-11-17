@@ -11,7 +11,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class MainActivityScenarioTest {
-
     @Test
     fun mainActivityLaunchesSuccessfully() {
         val scenario = ActivityScenario.launch(MainActivity::class.java)

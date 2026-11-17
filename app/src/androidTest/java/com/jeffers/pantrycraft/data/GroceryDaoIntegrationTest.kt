@@ -1,7 +1,6 @@
 package com.jeffers.pantrycraft.data
 
 import android.content.Context
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
@@ -46,97 +45,101 @@ class GroceryDaoIntegrationTest {
         }
     }
 
+    @Test
+    fun groceryDaoCrudLifecycle() =
+        runBlocking {
+            val itemA = GroceryItem(name = "$marker-ItemA", quantity = 2f, unit = "COUNT")
+            val itemB = GroceryItem(name = "$marker-ItemB", quantity = 1.5f, unit = "KG")
 
+            val idA = repository.insertGrocery(itemA)
+            val idB = repository.insertGrocery(itemB)
 
+            val items = repository.observeGroceryItems().first().filter { it.name.startsWith(marker) }
+            assertEquals(2, items.size)
+
+            val insertedA = items.single { it.id == idA }
+            repository.updateGrocery(insertedA.copy(checked = true))
+
+            val updatedItems = repository.observeGroceryItems().first().filter { it.name.startsWith(marker) }
+            assertTrue(updatedItems.single { it.id == idA }.checked)
+            assertFalse(updatedItems.single { it.id == idB }.checked)
+
+            repository.clearCheckedGrocery()
+
+            val remaining = repository.observeGroceryItems().first().filter { it.name.startsWith(marker) }
+            assertEquals(1, remaining.size)
+            assertEquals(idB, remaining.first().id)
+        }
 
     @Test
-    fun groceryDaoCrudLifecycle() = runBlocking {
-        val itemA = GroceryItem(name = "$marker-ItemA", quantity = 2f, unit = "COUNT")
-        val itemB = GroceryItem(name = "$marker-ItemB", quantity = 1.5f, unit = "KG")
+    fun restockCheckedGroceryUpdatesExistingPantryItem() =
+        runBlocking {
+            val pantryId =
+                repository.insertPantry(
+                    PantryItem(name = "$marker-Milk", quantity = 1f, unit = "L", storageLocation = "FRIDGE"),
+                )
 
-        val idA = repository.insertGrocery(itemA)
-        val idB = repository.insertGrocery(itemB)
+            val groceryItem =
+                GroceryItem(
+                    name = "$marker-Milk",
+                    quantity = 2f,
+                    unit = "L",
+                    checked = true,
+                    fromPantryId = pantryId,
+                )
+            val groceryId = repository.insertGrocery(groceryItem)
 
-        val items = repository.observeGroceryItems().first().filter { it.name.startsWith(marker) }
-        assertEquals(2, items.size)
+            val restockedCount = repository.restockCheckedGroceryToPantry()
+            assertEquals(1, restockedCount)
 
-        val insertedA = items.single { it.id == idA }
-        repository.updateGrocery(insertedA.copy(checked = true))
+            // Verifies grocery item was cleared
+            assertFalse(repository.observeGroceryItems().first().any { it.id == groceryId })
 
-        val updatedItems = repository.observeGroceryItems().first().filter { it.name.startsWith(marker) }
-        assertTrue(updatedItems.single { it.id == idA }.checked)
-        assertFalse(updatedItems.single { it.id == idB }.checked)
-
-        repository.clearCheckedGrocery()
-
-        val remaining = repository.observeGroceryItems().first().filter { it.name.startsWith(marker) }
-        assertEquals(1, remaining.size)
-        assertEquals(idB, remaining.first().id)
-    }
-
-    @Test
-    fun restockCheckedGroceryUpdatesExistingPantryItem() = runBlocking {
-        val pantryId = repository.insertPantry(
-            PantryItem(name = "$marker-Milk", quantity = 1f, unit = "L", storageLocation = "FRIDGE")
-        )
-
-        val groceryItem = GroceryItem(
-            name = "$marker-Milk",
-            quantity = 2f,
-            unit = "L",
-            checked = true,
-            fromPantryId = pantryId,
-        )
-        val groceryId = repository.insertGrocery(groceryItem)
-
-        val restockedCount = repository.restockCheckedGroceryToPantry()
-        assertEquals(1, restockedCount)
-
-        // Verifies grocery item was cleared
-        assertFalse(repository.observeGroceryItems().first().any { it.id == groceryId })
-
-        // Verifies pantry item quantity was incremented (1 + 2 = 3)
-        val updatedPantry = repository.observePantryItems().first().single { it.id == pantryId }
-        assertEquals(3f, updatedPantry.quantity)
-    }
+            // Verifies pantry item quantity was incremented (1 + 2 = 3)
+            val updatedPantry = repository.observePantryItems().first().single { it.id == pantryId }
+            assertEquals(3f, updatedPantry.quantity)
+        }
 
     @Test
-    fun restockCheckedGroceryCreatesNewPantryItemWhenUnlinked() = runBlocking {
-        val groceryItem = GroceryItem(
-            name = "$marker-OliveOil",
-            quantity = 500f,
-            unit = "ML",
-            checked = true,
-            fromPantryId = null,
-        )
-        repository.insertGrocery(groceryItem)
+    fun restockCheckedGroceryCreatesNewPantryItemWhenUnlinked() =
+        runBlocking {
+            val groceryItem =
+                GroceryItem(
+                    name = "$marker-OliveOil",
+                    quantity = 500f,
+                    unit = "ML",
+                    checked = true,
+                    fromPantryId = null,
+                )
+            repository.insertGrocery(groceryItem)
 
-        val count = repository.restockCheckedGroceryToPantry()
-        assertEquals(1, count)
+            val count = repository.restockCheckedGroceryToPantry()
+            assertEquals(1, count)
 
-        val pantryItem = repository.observePantryItems().first().single { it.name == "$marker-OliveOil" }
-        assertEquals(500f, pantryItem.quantity)
-        assertEquals("ML", pantryItem.unit)
-    }
+            val pantryItem = repository.observePantryItems().first().single { it.name == "$marker-OliveOil" }
+            assertEquals(500f, pantryItem.quantity)
+            assertEquals("ML", pantryItem.unit)
+        }
 
     @Test
-    fun groceryDaoDirectDeleteAndPrefixDelete() = runBlocking {
-        val db = AppDatabase.getDatabase(context)
-        val dao = db.groceryDao()
+    fun groceryDaoDirectDeleteAndPrefixDelete() =
+        runBlocking {
+            val db = AppDatabase.getDatabase(context)
+            val dao = db.groceryDao()
 
-        val item1 = GroceryItem(name = "$marker-Direct1", quantity = 1f)
-        val item2 = GroceryItem(name = "$marker-Direct2", quantity = 2f)
-        val id1 = dao.insert(item1)
-        val id2 = dao.insert(item2)
+            val item1 = GroceryItem(name = "$marker-Direct1", quantity = 1f)
+            val item2 = GroceryItem(name = "$marker-Direct2", quantity = 2f)
+            val id1 = dao.insert(item1)
+            val id2 = dao.insert(item2)
 
-        dao.delete(item1.copy(id = id1))
-        val afterDeleteOne = dao.observeAllGroceryItems().first().filter { it.name.startsWith(marker) }
-        assertEquals(1, afterDeleteOne.size)
-        assertEquals(id2, afterDeleteOne.first().id)
+            dao.delete(item1.copy(id = id1))
+            val afterDeleteOne = dao.observeAllGroceryItems().first().filter { it.name.startsWith(marker) }
+            assertEquals(1, afterDeleteOne.size)
+            assertEquals(id2, afterDeleteOne.first().id)
 
-        val deletedCount = dao.deleteByNamePrefix(marker)
-        assertEquals(1, deletedCount)
-        val afterPrefixDelete = dao.observeAllGroceryItems().first().filter { it.name.startsWith(marker) }
-        assertTrue(afterPrefixDelete.isEmpty())
-    }
+            val deletedCount = dao.deleteByNamePrefix(marker)
+            assertEquals(1, deletedCount)
+            val afterPrefixDelete = dao.observeAllGroceryItems().first().filter { it.name.startsWith(marker) }
+            assertTrue(afterPrefixDelete.isEmpty())
+        }
 }

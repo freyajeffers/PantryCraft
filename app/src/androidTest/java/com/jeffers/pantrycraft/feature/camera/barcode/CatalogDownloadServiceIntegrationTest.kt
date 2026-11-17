@@ -51,28 +51,29 @@ class CatalogDownloadServiceIntegrationTest {
     ) {
         val server = ServerSocket(0)
         val port = server.localPort
-        val worker = thread {
-            try {
-                val socket = server.accept()
-                val reader = socket.getInputStream().bufferedReader()
-                var line = reader.readLine()
-                while (!line.isNullOrEmpty()) {
-                    line = reader.readLine()
+        val worker =
+            thread {
+                try {
+                    val socket = server.accept()
+                    val reader = socket.getInputStream().bufferedReader()
+                    var line = reader.readLine()
+                    while (!line.isNullOrEmpty()) {
+                        line = reader.readLine()
+                    }
+                    val out = socket.getOutputStream()
+                    val header = "$statusLine\r\nContent-Length: $contentLength\r\nConnection: close\r\n\r\n"
+                    out.write(header.toByteArray(StandardCharsets.UTF_8))
+                    if (body.isNotEmpty()) {
+                        out.write(body)
+                    }
+                    out.flush()
+                    socket.close()
+                } catch (_: Exception) {
+                    // Socket closed or stream finished
+                } finally {
+                    runCatching { server.close() }
                 }
-                val out = socket.getOutputStream()
-                val header = "$statusLine\r\nContent-Length: $contentLength\r\nConnection: close\r\n\r\n"
-                out.write(header.toByteArray(StandardCharsets.UTF_8))
-                if (body.isNotEmpty()) {
-                    out.write(body)
-                }
-                out.flush()
-                socket.close()
-            } catch (_: Exception) {
-                // Socket closed or stream finished
-            } finally {
-                runCatching { server.close() }
             }
-        }
         try {
             block("http://127.0.0.1:$port/foodfacts.db")
         } finally {
@@ -82,101 +83,111 @@ class CatalogDownloadServiceIntegrationTest {
     }
 
     @Test
-    fun downloadIfNeededReturnsExistingFileWhenChecksumMatchesWithoutNetwork() = runBlocking {
-        val testContent = "pantrycraft-sqlite-catalog-test-payload-bytes"
-        catalogFile.writeText(testContent)
+    fun downloadIfNeededReturnsExistingFileWhenChecksumMatchesWithoutNetwork() =
+        runBlocking {
+            val testContent = "pantrycraft-sqlite-catalog-test-payload-bytes"
+            catalogFile.writeText(testContent)
 
-        val expectedSha = CatalogDownloadVerifier.sha256(catalogFile)
-        val service = CatalogDownloadService(context)
-
-        var progressCalled = false
-        val result = service.downloadIfNeeded(
-            url = "https://127.0.0.1:9/invalid-url-should-never-be-reached",
-            expectedSha256 = expectedSha,
-            onProgress = { _, _ -> progressCalled = true },
-        )
-
-        assertEquals(catalogFile.absolutePath, result.absolutePath)
-        assertTrue(result.isFile)
-        assertEquals(testContent, result.readText())
-        assertEquals(false, progressCalled)
-    }
-
-    @Test
-    fun downloadIfNeededSuccessDownloadsAndVerifiesPayload() = runBlocking {
-        val payload = "mock-sqlite-database-contents-for-offline-catalog".toByteArray(StandardCharsets.UTF_8)
-        val tempFile = File(context.cacheDir, "expected.tmp")
-        tempFile.writeBytes(payload)
-        val expectedSha = CatalogDownloadVerifier.sha256(tempFile)
-        tempFile.delete()
-
-        var progressReported = false
-        runMockServer(
-            statusLine = "HTTP/1.1 200 OK",
-            contentLength = payload.size.toLong(),
-            body = payload,
-        ) { url ->
+            val expectedSha = CatalogDownloadVerifier.sha256(catalogFile)
             val service = CatalogDownloadService(context)
-            val result = runBlocking {
+
+            var progressCalled = false
+            val result =
                 service.downloadIfNeeded(
-                    url = url,
+                    url = "https://127.0.0.1:9/invalid-url-should-never-be-reached",
                     expectedSha256 = expectedSha,
-                    onProgress = { current, total ->
-                        if (current > 0 && total > 0) progressReported = true
-                    },
+                    onProgress = { _, _ -> progressCalled = true },
                 )
-            }
+
             assertEquals(catalogFile.absolutePath, result.absolutePath)
             assertTrue(result.isFile)
-            assertEquals(payload.size.toLong(), result.length())
+            assertEquals(testContent, result.readText())
+            assertEquals(false, progressCalled)
         }
-        assertTrue(progressReported)
-    }
 
     @Test
-    fun downloadIfNeededFailsOnHttpError() = runBlocking {
-        runMockServer(statusLine = "HTTP/1.1 404 Not Found") { url ->
-            val service = CatalogDownloadService(context)
-            val exception = assertThrows(CatalogDownloadException::class.java) {
-                runBlocking { service.downloadIfNeeded(url = url, expectedSha256 = "dummy") }
+    fun downloadIfNeededSuccessDownloadsAndVerifiesPayload() =
+        runBlocking {
+            val payload = "mock-sqlite-database-contents-for-offline-catalog".toByteArray(StandardCharsets.UTF_8)
+            val tempFile = File(context.cacheDir, "expected.tmp")
+            tempFile.writeBytes(payload)
+            val expectedSha = CatalogDownloadVerifier.sha256(tempFile)
+            tempFile.delete()
+
+            var progressReported = false
+            runMockServer(
+                statusLine = "HTTP/1.1 200 OK",
+                contentLength = payload.size.toLong(),
+                body = payload,
+            ) { url ->
+                val service = CatalogDownloadService(context)
+                val result =
+                    runBlocking {
+                        service.downloadIfNeeded(
+                            url = url,
+                            expectedSha256 = expectedSha,
+                            onProgress = { current, total ->
+                                if (current > 0 && total > 0) progressReported = true
+                            },
+                        )
+                    }
+                assertEquals(catalogFile.absolutePath, result.absolutePath)
+                assertTrue(result.isFile)
+                assertEquals(payload.size.toLong(), result.length())
             }
-            assertTrue(exception.message?.contains("HTTP 404") == true)
+            assertTrue(progressReported)
         }
-    }
 
     @Test
-    fun downloadIfNeededFailsOnChecksumMismatch() = runBlocking {
-        val payload = "payload-with-mismatched-sha".toByteArray(StandardCharsets.UTF_8)
-        runMockServer(
-            statusLine = "HTTP/1.1 200 OK",
-            contentLength = payload.size.toLong(),
-            body = payload,
-        ) { url ->
-            val service = CatalogDownloadService(context)
-            val exception = assertThrows(CatalogDownloadException::class.java) {
-                runBlocking {
-                    service.downloadIfNeeded(
-                        url = url,
-                        expectedSha256 = "0000000000000000000000000000000000000000000000000000000000000000",
-                    )
-                }
+    fun downloadIfNeededFailsOnHttpError() =
+        runBlocking {
+            runMockServer(statusLine = "HTTP/1.1 404 Not Found") { url ->
+                val service = CatalogDownloadService(context)
+                val exception =
+                    assertThrows(CatalogDownloadException::class.java) {
+                        runBlocking { service.downloadIfNeeded(url = url, expectedSha256 = "dummy") }
+                    }
+                assertTrue(exception.message?.contains("HTTP 404") == true)
             }
-            assertTrue(exception.message?.contains("Catalog checksum mismatch") == true)
         }
-    }
 
     @Test
-    fun downloadIfNeededFailsOnExcessiveSizeLimit() = runBlocking {
-        val hugeSize = 35L * 1024L * 1024L
-        runMockServer(
-            statusLine = "HTTP/1.1 200 OK",
-            contentLength = hugeSize,
-        ) { url ->
-            val service = CatalogDownloadService(context)
-            val exception = assertThrows(CatalogDownloadException::class.java) {
-                runBlocking { service.downloadIfNeeded(url = url, expectedSha256 = "dummy") }
+    fun downloadIfNeededFailsOnChecksumMismatch() =
+        runBlocking {
+            val payload = "payload-with-mismatched-sha".toByteArray(StandardCharsets.UTF_8)
+            runMockServer(
+                statusLine = "HTTP/1.1 200 OK",
+                contentLength = payload.size.toLong(),
+                body = payload,
+            ) { url ->
+                val service = CatalogDownloadService(context)
+                val exception =
+                    assertThrows(CatalogDownloadException::class.java) {
+                        runBlocking {
+                            service.downloadIfNeeded(
+                                url = url,
+                                expectedSha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+                            )
+                        }
+                    }
+                assertTrue(exception.message?.contains("Catalog checksum mismatch") == true)
             }
-            assertTrue(exception.message?.contains("Catalog exceeds size limit") == true)
         }
-    }
+
+    @Test
+    fun downloadIfNeededFailsOnExcessiveSizeLimit() =
+        runBlocking {
+            val hugeSize = 35L * 1024L * 1024L
+            runMockServer(
+                statusLine = "HTTP/1.1 200 OK",
+                contentLength = hugeSize,
+            ) { url ->
+                val service = CatalogDownloadService(context)
+                val exception =
+                    assertThrows(CatalogDownloadException::class.java) {
+                        runBlocking { service.downloadIfNeeded(url = url, expectedSha256 = "dummy") }
+                    }
+                assertTrue(exception.message?.contains("Catalog exceeds size limit") == true)
+            }
+        }
 }

@@ -17,7 +17,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class DataSovereigntyCardComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -28,12 +27,13 @@ class DataSovereigntyCardComposeTest {
         var importJsonCalled = false
         var importCsvCalled = false
 
-        val props = DataSovereigntyProps(
-            onExportJson = { exportJsonCalled = true },
-            onExportCsv = { exportCsvCalled = true },
-            onImportJson = { importJsonCalled = true },
-            onImportCsv = { importCsvCalled = true },
-        )
+        val props =
+            DataSovereigntyProps(
+                onExportJson = { exportJsonCalled = true },
+                onExportCsv = { exportCsvCalled = true },
+                onImportJson = { importJsonCalled = true },
+                onImportCsv = { importCsvCalled = true },
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -81,7 +81,9 @@ class DataSovereigntyCardComposeTest {
     @Test
     fun performExportJsonAndCsvWritesToTargetUri() {
         kotlinx.coroutines.runBlocking {
-            val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+            val context =
+                androidx.test.core.app.ApplicationProvider
+                    .getApplicationContext<android.content.Context>()
             val repository = Repository.getInstance(context)
 
             val jsonFile = java.io.File(context.cacheDir, "export_test_${System.nanoTime()}.json")
@@ -105,7 +107,9 @@ class DataSovereigntyCardComposeTest {
     @Test
     fun performImportJsonAndCsvParsesInputUri() {
         kotlinx.coroutines.runBlocking {
-            val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+            val context =
+                androidx.test.core.app.ApplicationProvider
+                    .getApplicationContext<android.content.Context>()
             val repository = Repository.getInstance(context)
 
             val jsonFile = java.io.File(context.cacheDir, "import_test_${System.nanoTime()}.json")
@@ -127,7 +131,9 @@ class DataSovereigntyCardComposeTest {
     @Test
     fun performExportAndImportHandleInvalidUrisGracefully() {
         kotlinx.coroutines.runBlocking {
-            val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+            val context =
+                androidx.test.core.app.ApplicationProvider
+                    .getApplicationContext<android.content.Context>()
             val repository = Repository.getInstance(context)
             val invalidUri = android.net.Uri.parse("file:///nonexistent/invalid_path/file.dat")
 

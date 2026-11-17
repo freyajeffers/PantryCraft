@@ -44,41 +44,44 @@ class PantryScreenScaffoldTest {
         cleanupTestData()
     }
 
-    private fun cleanupTestData() = runBlocking {
-        val db = AppDatabase.getDatabase(context)
-        db.pantryDao().deleteByNamePrefix(prefix)
-        db.groceryDao().deleteByNamePrefix(prefix)
-    }
+    private fun cleanupTestData() =
+        runBlocking {
+            val db = AppDatabase.getDatabase(context)
+            db.pantryDao().deleteByNamePrefix(prefix)
+            db.groceryDao().deleteByNamePrefix(prefix)
+        }
 
     @Test
     fun buildPantryScaffoldPropsPassesPropertiesAndTriggersEditorCallbacks() {
-        val sampleItem = PantryItem(
-            id = 42L,
-            name = "${prefix}Granola",
-            quantity = 3f,
-            unit = "BOX",
-        )
+        val sampleItem =
+            PantryItem(
+                id = 42L,
+                name = "${prefix}Granola",
+                quantity = 3f,
+                unit = "BOX",
+            )
         val itemsList = listOf(sampleItem)
         var openedItem: PantryItem? = sampleItem
         var editorCallCount = 0
         var usedItem: PantryItem? = null
 
-        val state = PantryScreenScaffoldState(
-            viewModel = viewModel,
-            items = itemsList,
-            selectedLocation = PantryLocationFilter.FRIDGE,
-            selectedSortOrder = PantrySortOrder.CATEGORY,
-            searchQuery = "Granola",
-            onOpenEditor = { item ->
-                editorCallCount++
-                openedItem = item
-            },
-            onUseItem = { item ->
-                usedItem = item
-            },
-            snackbarHostState = SnackbarHostState(),
-            scope = CoroutineScope(Dispatchers.Main.immediate),
-        )
+        val state =
+            PantryScreenScaffoldState(
+                viewModel = viewModel,
+                items = itemsList,
+                selectedLocation = PantryLocationFilter.FRIDGE,
+                selectedSortOrder = PantrySortOrder.CATEGORY,
+                searchQuery = "Granola",
+                onOpenEditor = { item ->
+                    editorCallCount++
+                    openedItem = item
+                },
+                onUseItem = { item ->
+                    usedItem = item
+                },
+                snackbarHostState = SnackbarHostState(),
+                scope = CoroutineScope(Dispatchers.Main.immediate),
+            )
 
         val props = buildPantryScaffoldProps(state)
 
@@ -104,17 +107,18 @@ class PantryScreenScaffoldTest {
 
     @Test
     fun scaffoldPropsFilterAndSortMutationsPropagateToViewModel() {
-        val state = PantryScreenScaffoldState(
-            viewModel = viewModel,
-            items = emptyList(),
-            selectedLocation = PantryLocationFilter.ALL,
-            selectedSortOrder = PantrySortOrder.NAME_ASC,
-            searchQuery = "",
-            onOpenEditor = {},
-            onUseItem = {},
-            snackbarHostState = SnackbarHostState(),
-            scope = CoroutineScope(Dispatchers.Main.immediate),
-        )
+        val state =
+            PantryScreenScaffoldState(
+                viewModel = viewModel,
+                items = emptyList(),
+                selectedLocation = PantryLocationFilter.ALL,
+                selectedSortOrder = PantrySortOrder.NAME_ASC,
+                searchQuery = "",
+                onOpenEditor = {},
+                onUseItem = {},
+                snackbarHostState = SnackbarHostState(),
+                scope = CoroutineScope(Dispatchers.Main.immediate),
+            )
 
         val props = buildPantryScaffoldProps(state)
 
@@ -129,63 +133,67 @@ class PantryScreenScaffoldTest {
     }
 
     @Test
-    fun scaffoldPropsAddToGroceryInsertsGroceryItem() = runBlocking {
-        val pantryItem = PantryItem(
-            name = "${prefix}Almonds",
-            quantity = 1f,
-            unit = "BAG",
-        )
-        val pantryId = repository.insertPantry(pantryItem)
-        val persistedItem = pantryItem.copy(id = pantryId)
+    fun scaffoldPropsAddToGroceryInsertsGroceryItem() =
+        runBlocking {
+            val pantryItem =
+                PantryItem(
+                    name = "${prefix}Almonds",
+                    quantity = 1f,
+                    unit = "BAG",
+                )
+            val pantryId = repository.insertPantry(pantryItem)
+            val persistedItem = pantryItem.copy(id = pantryId)
 
-        val state = PantryScreenScaffoldState(
-            viewModel = viewModel,
-            items = listOf(persistedItem),
-            selectedLocation = PantryLocationFilter.ALL,
-            selectedSortOrder = PantrySortOrder.NAME_ASC,
-            searchQuery = "",
-            onOpenEditor = {},
-            onUseItem = {},
-            snackbarHostState = SnackbarHostState(),
-            scope = CoroutineScope(Dispatchers.Main.immediate),
-        )
+            val state =
+                PantryScreenScaffoldState(
+                    viewModel = viewModel,
+                    items = listOf(persistedItem),
+                    selectedLocation = PantryLocationFilter.ALL,
+                    selectedSortOrder = PantrySortOrder.NAME_ASC,
+                    searchQuery = "",
+                    onOpenEditor = {},
+                    onUseItem = {},
+                    snackbarHostState = SnackbarHostState(),
+                    scope = CoroutineScope(Dispatchers.Main.immediate),
+                )
 
-        val props = buildPantryScaffoldProps(state)
-        props.onAddToGrocery(persistedItem)
+            val props = buildPantryScaffoldProps(state)
+            props.onAddToGrocery(persistedItem)
 
-        // Allow coroutine execution
-        var attempts = 0
-        var foundGrocery = false
-        while (attempts < 20 && !foundGrocery) {
-            val groceries = repository.observeGroceryItems().first().filter { it.name.startsWith(prefix) }
-            if (groceries.isNotEmpty()) {
-                foundGrocery = true
-                val grocery = groceries.first()
-                assertEquals("${prefix}Almonds", grocery.name)
-                assertEquals(1f, grocery.quantity)
-                assertEquals("BAG", grocery.unit)
-                assertEquals(pantryId, grocery.fromPantryId)
-            } else {
-                kotlinx.coroutines.delay(50L)
-                attempts++
+            // Allow coroutine execution
+            var attempts = 0
+            var foundGrocery = false
+            while (attempts < 20 && !foundGrocery) {
+                val groceries = repository.observeGroceryItems().first().filter { it.name.startsWith(prefix) }
+                if (groceries.isNotEmpty()) {
+                    foundGrocery = true
+                    val grocery = groceries.first()
+                    assertEquals("${prefix}Almonds", grocery.name)
+                    assertEquals(1f, grocery.quantity)
+                    assertEquals("BAG", grocery.unit)
+                    assertEquals(pantryId, grocery.fromPantryId)
+                } else {
+                    kotlinx.coroutines.delay(50L)
+                    attempts++
+                }
             }
+            assertTrue("Grocery item must be inserted from pantry item via scaffold prop", foundGrocery)
         }
-        assertTrue("Grocery item must be inserted from pantry item via scaffold prop", foundGrocery)
-    }
 
     @Test
     fun pantryScreenScaffoldRendersContent() {
-        val state = PantryScreenScaffoldState(
-            viewModel = viewModel,
-            items = emptyList(),
-            selectedLocation = PantryLocationFilter.ALL,
-            selectedSortOrder = PantrySortOrder.NAME_ASC,
-            searchQuery = "",
-            onOpenEditor = {},
-            onUseItem = {},
-            snackbarHostState = SnackbarHostState(),
-            scope = CoroutineScope(Dispatchers.Main.immediate),
-        )
+        val state =
+            PantryScreenScaffoldState(
+                viewModel = viewModel,
+                items = emptyList(),
+                selectedLocation = PantryLocationFilter.ALL,
+                selectedSortOrder = PantrySortOrder.NAME_ASC,
+                searchQuery = "",
+                onOpenEditor = {},
+                onUseItem = {},
+                snackbarHostState = SnackbarHostState(),
+                scope = CoroutineScope(Dispatchers.Main.immediate),
+            )
         composeTestRule.setContent {
             PantryCraftTheme {
                 PantryScreenScaffold(state)

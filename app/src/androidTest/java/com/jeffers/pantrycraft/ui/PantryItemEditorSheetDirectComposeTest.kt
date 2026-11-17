@@ -23,7 +23,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PantryItemEditorSheetDirectComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -73,13 +72,14 @@ class PantryItemEditorSheetDirectComposeTest {
 
     @Test
     fun editorSheetExistingItemSavesAndDismisses() {
-        val existing = PantryItem(
-            id = 55L,
-            name = "Pearl Barley",
-            quantity = 2f,
-            unit = "KG",
-            storageLocation = "PANTRY",
-        )
+        val existing =
+            PantryItem(
+                id = 55L,
+                name = "Pearl Barley",
+                quantity = 2f,
+                unit = "KG",
+                storageLocation = "PANTRY",
+            )
         var savedIsNew: Boolean? = null
         var savedItem: PantryItem? = null
 

@@ -23,7 +23,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SettingsCardsComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -34,15 +33,16 @@ class SettingsCardsComposeTest {
         var selectedInterval = 0L
         var backupNow = false
 
-        val props = AutomaticBackupProps(
-            enabled = true,
-            intervalMinutes = 60L,
-            databaseHasUserData = true,
-            onDisable = { disabled = true },
-            onEnableRequested = { enableRequested = true },
-            onIntervalSelected = { selectedInterval = it },
-            onBackupNow = { backupNow = true },
-        )
+        val props =
+            AutomaticBackupProps(
+                enabled = true,
+                intervalMinutes = 60L,
+                databaseHasUserData = true,
+                onDisable = { disabled = true },
+                onEnableRequested = { enableRequested = true },
+                onIntervalSelected = { selectedInterval = it },
+                onBackupNow = { backupNow = true },
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -65,28 +65,30 @@ class SettingsCardsComposeTest {
         var openFileCalled = false
         var resetDbCalled = false
 
-        val dummyAuto = AutomaticBackupProps(
-            enabled = false,
-            intervalMinutes = 1440L,
-            databaseHasUserData = false,
-            onDisable = {},
-            onEnableRequested = {},
-            onIntervalSelected = {},
-            onBackupNow = {},
-        )
+        val dummyAuto =
+            AutomaticBackupProps(
+                enabled = false,
+                intervalMinutes = 1440L,
+                databaseHasUserData = false,
+                onDisable = {},
+                onEnableRequested = {},
+                onIntervalSelected = {},
+                onBackupNow = {},
+            )
 
-        val props = EncryptedBackupCardProps(
-            autoBackupProps = dummyAuto,
-            lastExportedUri = null,
-            hasBackupRecords = false,
-            autoBackupTreeUri = null,
-            backupResult = "Backup complete",
-            onShareSavedBackup = {},
-            onRestoreSavedBackup = {},
-            onSelectAutoBackupLocation = { selectLocationCalled = true },
-            onOpenBackupFile = { openFileCalled = true },
-            onResetDatabase = { resetDbCalled = true },
-        )
+        val props =
+            EncryptedBackupCardProps(
+                autoBackupProps = dummyAuto,
+                lastExportedUri = null,
+                hasBackupRecords = false,
+                autoBackupTreeUri = null,
+                backupResult = "Backup complete",
+                onShareSavedBackup = {},
+                onRestoreSavedBackup = {},
+                onSelectAutoBackupLocation = { selectLocationCalled = true },
+                onOpenBackupFile = { openFileCalled = true },
+                onResetDatabase = { resetDbCalled = true },
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -117,28 +119,30 @@ class SettingsCardsComposeTest {
         var selectLocationCalled = false
         val dummyUri = Uri.parse("content://com.jeffers.pantrycraft/backup.db")
 
-        val dummyAuto = AutomaticBackupProps(
-            enabled = false,
-            intervalMinutes = 1440L,
-            databaseHasUserData = false,
-            onDisable = {},
-            onEnableRequested = {},
-            onIntervalSelected = {},
-            onBackupNow = {},
-        )
+        val dummyAuto =
+            AutomaticBackupProps(
+                enabled = false,
+                intervalMinutes = 1440L,
+                databaseHasUserData = false,
+                onDisable = {},
+                onEnableRequested = {},
+                onIntervalSelected = {},
+                onBackupNow = {},
+            )
 
-        val props = EncryptedBackupCardProps(
-            autoBackupProps = dummyAuto,
-            lastExportedUri = dummyUri,
-            hasBackupRecords = true,
-            autoBackupTreeUri = dummyUri,
-            backupResult = null,
-            onShareSavedBackup = { shareCalled = true },
-            onRestoreSavedBackup = { restoreSavedCalled = true },
-            onSelectAutoBackupLocation = { selectLocationCalled = true },
-            onOpenBackupFile = {},
-            onResetDatabase = {},
-        )
+        val props =
+            EncryptedBackupCardProps(
+                autoBackupProps = dummyAuto,
+                lastExportedUri = dummyUri,
+                hasBackupRecords = true,
+                autoBackupTreeUri = dummyUri,
+                backupResult = null,
+                onShareSavedBackup = { shareCalled = true },
+                onRestoreSavedBackup = { restoreSavedCalled = true },
+                onSelectAutoBackupLocation = { selectLocationCalled = true },
+                onOpenBackupFile = {},
+                onResetDatabase = {},
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -165,17 +169,18 @@ class SettingsCardsComposeTest {
         val repository = Repository.getInstance(context)
         val scope = CoroutineScope(Dispatchers.Main.immediate)
 
-        val downloadingProps = FoodFactsProps(
-            catalogReady = false,
-            catalogDownloading = true,
-            catalogDownloadedBytes = 500L,
-            catalogTotalBytes = 1000L,
-            catalogFileSize = null,
-            onStartDownload = {},
-            onDownloadResult = {},
-            onProgress = { _, _ -> },
-            onDelete = { deleteCalled = true },
-        )
+        val downloadingProps =
+            FoodFactsProps(
+                catalogReady = false,
+                catalogDownloading = true,
+                catalogDownloadedBytes = 500L,
+                catalogTotalBytes = 1000L,
+                catalogFileSize = null,
+                onStartDownload = {},
+                onDownloadResult = {},
+                onProgress = { _, _ -> },
+                onDelete = { deleteCalled = true },
+            )
 
         var downloadingPropsState by mutableStateOf(downloadingProps)
         composeTestRule.setContent {
@@ -188,11 +193,12 @@ class SettingsCardsComposeTest {
         composeTestRule.onNodeWithText("Downloading 500 B of 1000 B").assertIsDisplayed()
         composeTestRule.onNodeWithText("Download food catalog").assertIsNotEnabled()
 
-        val readyProps = downloadingProps.copy(
-            catalogReady = true,
-            catalogDownloading = false,
-            catalogFileSize = 5_000_000L,
-        )
+        val readyProps =
+            downloadingProps.copy(
+                catalogReady = true,
+                catalogDownloading = false,
+                catalogFileSize = 5_000_000L,
+            )
 
         downloadingPropsState = readyProps
         composeTestRule.waitForIdle()
@@ -209,17 +215,18 @@ class SettingsCardsComposeTest {
         val repository = Repository.getInstance(context)
         val scope = CoroutineScope(Dispatchers.Main.immediate)
 
-        val indeterminateProps = FoodFactsProps(
-            catalogReady = false,
-            catalogDownloading = true,
-            catalogDownloadedBytes = 256L,
-            catalogTotalBytes = 0L,
-            catalogFileSize = null,
-            onStartDownload = {},
-            onDownloadResult = {},
-            onProgress = { _, _ -> },
-            onDelete = {},
-        )
+        val indeterminateProps =
+            FoodFactsProps(
+                catalogReady = false,
+                catalogDownloading = true,
+                catalogDownloadedBytes = 256L,
+                catalogTotalBytes = 0L,
+                catalogFileSize = null,
+                onStartDownload = {},
+                onDownloadResult = {},
+                onProgress = { _, _ -> },
+                onDelete = {},
+            )
 
         var indeterminatePropsState by mutableStateOf(indeterminateProps)
         composeTestRule.setContent {
@@ -231,10 +238,11 @@ class SettingsCardsComposeTest {
 
         composeTestRule.onNodeWithText("Downloading 256 B").assertIsDisplayed()
 
-        val idleProps = indeterminateProps.copy(
-            catalogDownloading = false,
-            onStartDownload = { startCalled = true },
-        )
+        val idleProps =
+            indeterminateProps.copy(
+                catalogDownloading = false,
+                onStartDownload = { startCalled = true },
+            )
 
         indeterminatePropsState = idleProps
         composeTestRule.waitForIdle()

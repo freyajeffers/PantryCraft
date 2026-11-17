@@ -15,18 +15,19 @@ import java.io.FileOutputStream
 
 @RunWith(AndroidJUnit4::class)
 class SnapshotCaptureServiceTest {
-
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val imageCapture: ImageCapture = ImageCapture.Builder().build()
 
     @Test
     fun calculateSampleSizeCalculatesCorrectPowersOfTwo() {
         val service = SnapshotCaptureService(context, imageCapture)
-        val method = SnapshotCaptureService::class.java.getDeclaredMethod(
-            "calculateSampleSize",
-            Int::class.javaPrimitiveType,
-            Int::class.javaPrimitiveType,
-        ).apply { isAccessible = true }
+        val method =
+            SnapshotCaptureService::class.java
+                .getDeclaredMethod(
+                    "calculateSampleSize",
+                    Int::class.javaPrimitiveType,
+                    Int::class.javaPrimitiveType,
+                ).apply { isAccessible = true }
 
         val smallSample = method.invoke(service, 1000, 800) as Int
         assertEquals(1, smallSample)
@@ -38,10 +39,12 @@ class SnapshotCaptureServiceTest {
     @Test
     fun scaleRetainsSmallBitmapsAndDownsamplesLargeBitmaps() {
         val service = SnapshotCaptureService(context, imageCapture)
-        val scaleMethod = SnapshotCaptureService::class.java.getDeclaredMethod(
-            "scale",
-            Bitmap::class.java,
-        ).apply { isAccessible = true }
+        val scaleMethod =
+            SnapshotCaptureService::class.java
+                .getDeclaredMethod(
+                    "scale",
+                    Bitmap::class.java,
+                ).apply { isAccessible = true }
 
         val smallBitmap = Bitmap.createBitmap(500, 500, Bitmap.Config.ARGB_8888)
         val unchanged = scaleMethod.invoke(service, smallBitmap) as Bitmap
@@ -59,11 +62,13 @@ class SnapshotCaptureServiceTest {
     @Test
     fun applyExifOrientationReturnsSourceOnNormalOrMissingFile() {
         val service = SnapshotCaptureService(context, imageCapture)
-        val method = SnapshotCaptureService::class.java.getDeclaredMethod(
-            "applyExifOrientation",
-            String::class.java,
-            Bitmap::class.java,
-        ).apply { isAccessible = true }
+        val method =
+            SnapshotCaptureService::class.java
+                .getDeclaredMethod(
+                    "applyExifOrientation",
+                    String::class.java,
+                    Bitmap::class.java,
+                ).apply { isAccessible = true }
 
         val source = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
         val result = method.invoke(service, "/non/existent/file.jpg", source) as Bitmap
@@ -74,24 +79,27 @@ class SnapshotCaptureServiceTest {
     @Test
     fun applyExifOrientationRotatesAndFlips() {
         val service = SnapshotCaptureService(context, imageCapture)
-        val method = SnapshotCaptureService::class.java.getDeclaredMethod(
-            "applyExifOrientation",
-            String::class.java,
-            Bitmap::class.java,
-        ).apply { isAccessible = true }
+        val method =
+            SnapshotCaptureService::class.java
+                .getDeclaredMethod(
+                    "applyExifOrientation",
+                    String::class.java,
+                    Bitmap::class.java,
+                ).apply { isAccessible = true }
 
         val scratchDir = File(context.cacheDir, "exif-scratch").apply { mkdirs() }
         val tempFile = File.createTempFile("exif-", ".jpg", scratchDir)
         val bitmap = Bitmap.createBitmap(80, 40, Bitmap.Config.ARGB_8888)
         FileOutputStream(tempFile).use { fos -> bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos) }
 
-        val orientations = listOf(
-            android.media.ExifInterface.ORIENTATION_ROTATE_90,
-            android.media.ExifInterface.ORIENTATION_ROTATE_180,
-            android.media.ExifInterface.ORIENTATION_ROTATE_270,
-            android.media.ExifInterface.ORIENTATION_FLIP_HORIZONTAL,
-            android.media.ExifInterface.ORIENTATION_FLIP_VERTICAL,
-        )
+        val orientations =
+            listOf(
+                android.media.ExifInterface.ORIENTATION_ROTATE_90,
+                android.media.ExifInterface.ORIENTATION_ROTATE_180,
+                android.media.ExifInterface.ORIENTATION_ROTATE_270,
+                android.media.ExifInterface.ORIENTATION_FLIP_HORIZONTAL,
+                android.media.ExifInterface.ORIENTATION_FLIP_VERTICAL,
+            )
         orientations.forEach { orientation ->
             val exif = android.media.ExifInterface(tempFile.absolutePath)
             exif.setAttribute(android.media.ExifInterface.TAG_ORIENTATION, orientation.toString())
@@ -119,10 +127,12 @@ class SnapshotCaptureServiceTest {
         }
         bitmap.recycle()
 
-        val compressMethod = SnapshotCaptureService::class.java.getDeclaredMethod(
-            "compressForVision",
-            File::class.java,
-        ).apply { isAccessible = true }
+        val compressMethod =
+            SnapshotCaptureService::class.java
+                .getDeclaredMethod(
+                    "compressForVision",
+                    File::class.java,
+                ).apply { isAccessible = true }
 
         val webpBytes = compressMethod.invoke(service, tempFile) as ByteArray
         assertNotNull(webpBytes)
@@ -137,10 +147,12 @@ class SnapshotCaptureServiceTest {
         val service = SnapshotCaptureService(context, imageCapture)
         val tempFile = File.createTempFile("invalid-", ".jpg", context.cacheDir)
         tempFile.writeText("not an image")
-        val compressMethod = SnapshotCaptureService::class.java.getDeclaredMethod(
-            "compressForVision",
-            File::class.java,
-        ).apply { isAccessible = true }
+        val compressMethod =
+            SnapshotCaptureService::class.java
+                .getDeclaredMethod(
+                    "compressForVision",
+                    File::class.java,
+                ).apply { isAccessible = true }
 
         try {
             compressMethod.invoke(service, tempFile)

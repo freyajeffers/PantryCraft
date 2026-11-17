@@ -51,16 +51,17 @@ class CameraScreenStateTest {
             val previewView = PreviewView(context)
             val scope = CoroutineScope(Dispatchers.Main.immediate)
 
-            val deps = CameraDeps(
-                context = context,
-                repository = repository,
-                analysisExecutor = executor,
-                scope = scope,
-                previewView = previewView,
-                barcodeResolver = resolver,
-                snapshotVisionService = snapshotService,
-                frameTimingStats = frameTimingStats,
-            )
+            val deps =
+                CameraDeps(
+                    context = context,
+                    repository = repository,
+                    analysisExecutor = executor,
+                    scope = scope,
+                    previewView = previewView,
+                    barcodeResolver = resolver,
+                    snapshotVisionService = snapshotService,
+                    frameTimingStats = frameTimingStats,
+                )
 
             val state = CameraScreenState(deps)
 
@@ -89,13 +90,14 @@ class CameraScreenStateTest {
             state.focusPoint = Offset(100f, 200f)
             assertEquals(Offset(100f, 200f), state.focusPoint)
 
-            val match = BarcodeMatch(
-                barcode = "12345678",
-                name = "Test Item",
-                category = "PANTRY_STAPLE",
-                unit = "COUNT",
-                estimatedShelfLifeDays = 30,
-            )
+            val match =
+                BarcodeMatch(
+                    barcode = "12345678",
+                    name = "Test Item",
+                    category = "PANTRY_STAPLE",
+                    unit = "COUNT",
+                    estimatedShelfLifeDays = 30,
+                )
             state.barcodeMatch = match
             assertEquals("Test Item", state.barcodeMatch?.name)
 
@@ -117,30 +119,31 @@ class CameraScreenStateTest {
             var matchCleared = false
             var snapshotStatusSet: String? = null
 
-            val boxArgs = CameraScreenBoxArgs(
-                previewView = previewView,
-                latestResult = null,
-                focusPoint = Offset(10f, 20f),
-                labelPaint = android.graphics.Paint(),
-                badgePaint = android.graphics.Paint(),
-                cameraManager = cameraManager,
-                repository = repository,
-                scope = CoroutineScope(Dispatchers.Main.immediate),
-                barcodeMatch = null,
-                unresolvedBarcode = null,
-                associateDialogBarcode = null,
-                parsedItems = emptyList(),
-                snapshotVisionService = snapshotService,
-                barcodeResolver = resolver,
-                isTorchOn = false,
-                onToggleTorch = { torchToggled = true },
-                onClearBarcodeMatch = { matchCleared = true },
-                onParsedItemsChange = {},
-                onUnresolvedBarcodeChange = {},
-                onAssociateDialogBarcodeChange = {},
-                onSnapshotStatusChange = { snapshotStatusSet = it },
-                view = previewView,
-            )
+            val boxArgs =
+                CameraScreenBoxArgs(
+                    previewView = previewView,
+                    latestResult = null,
+                    focusPoint = Offset(10f, 20f),
+                    labelPaint = android.graphics.Paint(),
+                    badgePaint = android.graphics.Paint(),
+                    cameraManager = cameraManager,
+                    repository = repository,
+                    scope = CoroutineScope(Dispatchers.Main.immediate),
+                    barcodeMatch = null,
+                    unresolvedBarcode = null,
+                    associateDialogBarcode = null,
+                    parsedItems = emptyList(),
+                    snapshotVisionService = snapshotService,
+                    barcodeResolver = resolver,
+                    isTorchOn = false,
+                    onToggleTorch = { torchToggled = true },
+                    onClearBarcodeMatch = { matchCleared = true },
+                    onParsedItemsChange = {},
+                    onUnresolvedBarcodeChange = {},
+                    onAssociateDialogBarcodeChange = {},
+                    onSnapshotStatusChange = { snapshotStatusSet = it },
+                    view = previewView,
+                )
 
             assertEquals(previewView, boxArgs.previewView)
             assertEquals(Offset(10f, 20f), boxArgs.focusPoint)
@@ -168,29 +171,30 @@ class CameraScreenStateTest {
             val previewView = PreviewView(context)
             val cameraManager = createTestCameraManager()
 
-            val overlayArgs = CameraOverlayArgs(
-                latestResult = null,
-                focusPoint = Offset(10f, 20f),
-                labelPaint = android.graphics.Paint(),
-                badgePaint = android.graphics.Paint(),
-                cameraManager = cameraManager,
-                repository = repository,
-                scope = CoroutineScope(Dispatchers.Main.immediate),
-                barcodeMatch = null,
-                unresolvedBarcode = null,
-                associateDialogBarcode = null,
-                parsedItems = emptyList(),
-                snapshotVisionService = snapshotService,
-                barcodeResolver = resolver,
-                isTorchOn = false,
-                onToggleTorch = {},
-                onClearBarcodeMatch = {},
-                onParsedItemsChange = {},
-                onUnresolvedBarcodeChange = {},
-                onAssociateDialogBarcodeChange = {},
-                onSnapshotStatusChange = {},
-                view = previewView,
-            )
+            val overlayArgs =
+                CameraOverlayArgs(
+                    latestResult = null,
+                    focusPoint = Offset(10f, 20f),
+                    labelPaint = android.graphics.Paint(),
+                    badgePaint = android.graphics.Paint(),
+                    cameraManager = cameraManager,
+                    repository = repository,
+                    scope = CoroutineScope(Dispatchers.Main.immediate),
+                    barcodeMatch = null,
+                    unresolvedBarcode = null,
+                    associateDialogBarcode = null,
+                    parsedItems = emptyList(),
+                    snapshotVisionService = snapshotService,
+                    barcodeResolver = resolver,
+                    isTorchOn = false,
+                    onToggleTorch = {},
+                    onClearBarcodeMatch = {},
+                    onParsedItemsChange = {},
+                    onUnresolvedBarcodeChange = {},
+                    onAssociateDialogBarcodeChange = {},
+                    onSnapshotStatusChange = {},
+                    view = previewView,
+                )
 
             assertEquals(Offset(10f, 20f), overlayArgs.focusPoint)
             assertEquals(previewView, overlayArgs.view)
@@ -201,18 +205,28 @@ class CameraScreenStateTest {
     }
 
     private fun createTestCameraManager(): com.jeffers.pantrycraft.feature.camera.core.CameraManager {
-        val barcodeOptions = com.google.mlkit.vision.barcode.BarcodeScannerOptions.Builder()
-            .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_UPC_A)
-            .build()
-        val objectOptions = com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions.Builder()
-            .setDetectorMode(com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions.STREAM_MODE)
-            .build()
-        val analyzer = com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer(
-            barcodeScanner = com.google.mlkit.vision.barcode.BarcodeScanning.getClient(barcodeOptions),
-            objectDetector = com.google.mlkit.vision.objects.ObjectDetection.getClient(objectOptions),
-            executor = executor,
-            onResult = {},
-        )
-        return com.jeffers.pantrycraft.feature.camera.core.CameraManager(context, analyzer, executor)
+        val barcodeOptions =
+            com.google.mlkit.vision.barcode.BarcodeScannerOptions
+                .Builder()
+                .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_UPC_A)
+                .build()
+        val objectOptions =
+            com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
+                .Builder()
+                .setDetectorMode(com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions.STREAM_MODE)
+                .build()
+        val analyzer =
+            com.jeffers.pantrycraft.feature.camera.analyzer.LiveVisionAnalyzer(
+                barcodeScanner =
+                    com.google.mlkit.vision.barcode.BarcodeScanning
+                        .getClient(barcodeOptions),
+                objectDetector =
+                    com.google.mlkit.vision.objects.ObjectDetection
+                        .getClient(objectOptions),
+                executor = executor,
+                onResult = {},
+            )
+        return com.jeffers.pantrycraft.feature.camera.core
+            .CameraManager(context, analyzer, executor)
     }
 }

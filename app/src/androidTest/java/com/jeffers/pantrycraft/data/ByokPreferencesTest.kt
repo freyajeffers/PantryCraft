@@ -43,7 +43,6 @@ class ByokPreferencesTest {
         }
     }
 
-
     @Test
     fun saveAndLoadApiKeyWithHardwareKeyStoreEncryption() {
         assertFalse(ByokPreferences.hasApiKey(context))
@@ -128,7 +127,11 @@ class ByokPreferencesTest {
     @Test
     fun selectedModelAndEndpointFallbackToDefaultsWhenPrefsAreNull() {
         val prefs = context.getSharedPreferences("byok_ai_preferences", Context.MODE_PRIVATE)
-        prefs.edit().remove("selected_model_name").remove("selected_endpoint_url").apply()
+        prefs
+            .edit()
+            .remove("selected_model_name")
+            .remove("selected_endpoint_url")
+            .apply()
         val provider = ByokPreferences.selectedProvider(context)
         assertEquals(provider.defaultModel, ByokPreferences.selectedModel(context))
         assertEquals(provider.defaultEndpoint, ByokPreferences.selectedEndpoint(context))
@@ -136,7 +139,10 @@ class ByokPreferencesTest {
 
     @Test
     fun getOrCreateKeyRecreatesKeyWhenAliasDeletedAndBlankModelFallback() {
-        val keyStore = java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val keyStore =
+            java.security.KeyStore
+                .getInstance("AndroidKeyStore")
+                .apply { load(null) }
         if (keyStore.containsAlias("pantrycraft_byok_api_key_v1")) {
             keyStore.deleteEntry("pantrycraft_byok_api_key_v1")
         }
@@ -145,7 +151,8 @@ class ByokPreferencesTest {
         assertTrue(ByokPreferences.hasApiKey(context))
         assertEquals("recreated-key-12345", ByokPreferences.loadApiKey(context))
 
-        context.getSharedPreferences("byok_ai_preferences", Context.MODE_PRIVATE)
+        context
+            .getSharedPreferences("byok_ai_preferences", Context.MODE_PRIVATE)
             .edit()
             .putString("selected_model_name", "   ")
             .commit()

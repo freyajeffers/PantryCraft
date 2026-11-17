@@ -52,9 +52,10 @@ class ThemeComposeTest {
 
     @Test
     fun themeRendersContentWithDarkTheme() {
-        val darkConfig = Configuration(composeTestRule.activity.resources.configuration).apply {
-            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_YES
-        }
+        val darkConfig =
+            Configuration(composeTestRule.activity.resources.configuration).apply {
+                uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_YES
+            }
         composeTestRule.setContent {
             CompositionLocalProvider(LocalConfiguration provides darkConfig) {
                 PantryCraftTheme {

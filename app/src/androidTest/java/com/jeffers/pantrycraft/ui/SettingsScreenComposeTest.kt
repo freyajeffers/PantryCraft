@@ -34,8 +34,10 @@ class SettingsScreenComposeTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        com.jeffers.pantrycraft.data.AppDatabase.getDatabase(context)
-        com.jeffers.pantrycraft.data.Repository.getInstance(context)
+        com.jeffers.pantrycraft.data.AppDatabase
+            .getDatabase(context)
+        com.jeffers.pantrycraft.data.Repository
+            .getInstance(context)
         val km = context.getSystemService(Context.KEYGUARD_SERVICE) as? android.app.KeyguardManager
         org.junit.Assume.assumeTrue(
             "Screen is locked; skipping Compose UI test",

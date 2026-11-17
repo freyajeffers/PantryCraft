@@ -35,7 +35,6 @@ import java.util.concurrent.Executors
 
 @RunWith(AndroidJUnit4::class)
 class CameraSnapshotFabComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -56,9 +55,11 @@ class CameraSnapshotFabComposeTest {
         val context: Context = ApplicationProvider.getApplicationContext()
         val executor = Executors.newSingleThreadExecutor()
         val scanner = BarcodeScanning.getClient()
-        val options = ObjectDetectorOptions.Builder()
-            .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-            .build()
+        val options =
+            ObjectDetectorOptions
+                .Builder()
+                .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
+                .build()
         val detector = ObjectDetection.getClient(options)
         val analyzer = LiveVisionAnalyzer(scanner, detector, executor, {})
         val cameraManager = CameraManager(context, analyzer, executor)
@@ -99,41 +100,43 @@ class CameraSnapshotFabComposeTest {
     }
 
     @Test
-    fun executeSnapshotCaptureSuccessProcessesItems() = runBlocking {
-        val dummyModel = LocalVisionModel { _, _ -> "{\"detected_items\":[{\"name\":\"Honeycrisp Apple\"}]}" }
-        val snapshotService = SnapshotVisionService(dummyModel)
-        var receivedItems = emptyList<ParsedVisionItem>()
-        var finalStatus: String? = null
+    fun executeSnapshotCaptureSuccessProcessesItems() =
+        runBlocking {
+            val dummyModel = LocalVisionModel { _, _ -> "{\"detected_items\":[{\"name\":\"Honeycrisp Apple\"}]}" }
+            val snapshotService = SnapshotVisionService(dummyModel)
+            var receivedItems = emptyList<ParsedVisionItem>()
+            var finalStatus: String? = null
 
-        executeSnapshotCapture(
-            snapshotProvider = { SnapshotFrame(ByteArray(10)) },
-            snapshotVisionService = snapshotService,
-            onStatus = { finalStatus = it },
-            onItems = { receivedItems = it },
-        )
+            executeSnapshotCapture(
+                snapshotProvider = { SnapshotFrame(ByteArray(10)) },
+                snapshotVisionService = snapshotService,
+                onStatus = { finalStatus = it },
+                onItems = { receivedItems = it },
+            )
 
-        assertEquals(1, receivedItems.size)
-        assertEquals("Honeycrisp Apple", receivedItems.first().name)
-        assertEquals("Detected 1 items from shelf", finalStatus)
-        snapshotService.close()
-    }
+            assertEquals(1, receivedItems.size)
+            assertEquals("Honeycrisp Apple", receivedItems.first().name)
+            assertEquals("Detected 1 items from shelf", finalStatus)
+            snapshotService.close()
+        }
 
     @Test
-    fun executeSnapshotCaptureFailureReportsError() = runBlocking {
-        val dummyModel = LocalVisionModel { _, _ -> "{}" }
-        val snapshotService = SnapshotVisionService(dummyModel)
-        var receivedItems = emptyList<ParsedVisionItem>()
-        var finalStatus: String? = null
+    fun executeSnapshotCaptureFailureReportsError() =
+        runBlocking {
+            val dummyModel = LocalVisionModel { _, _ -> "{}" }
+            val snapshotService = SnapshotVisionService(dummyModel)
+            var receivedItems = emptyList<ParsedVisionItem>()
+            var finalStatus: String? = null
 
-        executeSnapshotCapture(
-            snapshotProvider = { error("Camera hardware failed") },
-            snapshotVisionService = snapshotService,
-            onStatus = { finalStatus = it },
-            onItems = { receivedItems = it },
-        )
+            executeSnapshotCapture(
+                snapshotProvider = { error("Camera hardware failed") },
+                snapshotVisionService = snapshotService,
+                onStatus = { finalStatus = it },
+                onItems = { receivedItems = it },
+            )
 
-        assertEquals(0, receivedItems.size)
-        assertEquals("Snapshot failed: Camera hardware failed", finalStatus)
-        snapshotService.close()
-    }
+            assertEquals(0, receivedItems.size)
+            assertEquals("Snapshot failed: Camera hardware failed", finalStatus)
+            snapshotService.close()
+        }
 }

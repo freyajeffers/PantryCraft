@@ -23,7 +23,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class NotificationSettingsCardComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -47,10 +46,11 @@ class NotificationSettingsCardComposeTest {
 
         composeTestRule.setContent {
             PantryCraftTheme {
-                val launcher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission(),
-                    onResult = {},
-                )
+                val launcher =
+                    rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission(),
+                        onResult = {},
+                    )
                 NotificationSettingsCard(
                     context = context,
                     enabled = enabledState,
@@ -79,10 +79,11 @@ class NotificationSettingsCardComposeTest {
 
         composeTestRule.setContent {
             PantryCraftTheme {
-                val launcher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission(),
-                    onResult = {},
-                )
+                val launcher =
+                    rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission(),
+                        onResult = {},
+                    )
                 NotificationSettingsCard(
                     context = context,
                     enabled = enabledState,

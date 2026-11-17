@@ -16,7 +16,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class AutomaticBackupCardComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -25,15 +24,16 @@ class AutomaticBackupCardComposeTest {
         var enableRequested = false
         var backupNowClicked = false
 
-        val props = AutomaticBackupProps(
-            enabled = false,
-            intervalMinutes = 60L,
-            databaseHasUserData = true,
-            onDisable = {},
-            onEnableRequested = { enableRequested = true },
-            onIntervalSelected = {},
-            onBackupNow = { backupNowClicked = true },
-        )
+        val props =
+            AutomaticBackupProps(
+                enabled = false,
+                intervalMinutes = 60L,
+                databaseHasUserData = true,
+                onDisable = {},
+                onEnableRequested = { enableRequested = true },
+                onIntervalSelected = {},
+                onBackupNow = { backupNowClicked = true },
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -55,15 +55,16 @@ class AutomaticBackupCardComposeTest {
         var disabled = false
         var selectedInterval: Long? = null
 
-        val props = AutomaticBackupProps(
-            enabled = true,
-            intervalMinutes = 1440L,
-            databaseHasUserData = true,
-            onDisable = { disabled = true },
-            onEnableRequested = {},
-            onIntervalSelected = { selectedInterval = it },
-            onBackupNow = {},
-        )
+        val props =
+            AutomaticBackupProps(
+                enabled = true,
+                intervalMinutes = 1440L,
+                databaseHasUserData = true,
+                onDisable = { disabled = true },
+                onEnableRequested = {},
+                onIntervalSelected = { selectedInterval = it },
+                onBackupNow = {},
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -72,7 +73,11 @@ class AutomaticBackupCardComposeTest {
         }
 
         composeTestRule.onNodeWithText("✓ Daily").performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithText("1 hour").performScrollTo().assertIsDisplayed().performClick()
+        composeTestRule
+            .onNodeWithText("1 hour")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
         assertEquals(60L, selectedInterval)
 
         composeTestRule.onNode(isToggleable()).performClick()
@@ -81,15 +86,16 @@ class AutomaticBackupCardComposeTest {
 
     @Test
     fun automaticBackupCardNoUserDataHidesBackupNowButton() {
-        val props = AutomaticBackupProps(
-            enabled = false,
-            intervalMinutes = 60L,
-            databaseHasUserData = false,
-            onDisable = {},
-            onEnableRequested = {},
-            onIntervalSelected = {},
-            onBackupNow = {},
-        )
+        val props =
+            AutomaticBackupProps(
+                enabled = false,
+                intervalMinutes = 60L,
+                databaseHasUserData = false,
+                onDisable = {},
+                onEnableRequested = {},
+                onIntervalSelected = {},
+                onBackupNow = {},
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {

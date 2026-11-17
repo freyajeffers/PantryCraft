@@ -1,5 +1,6 @@
 package com.jeffers.pantrycraft.ui
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -11,11 +12,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.Lifecycle
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeffers.pantrycraft.MainActivity
 import com.jeffers.pantrycraft.data.AppDatabase
-import android.content.Context
-import androidx.test.core.app.ApplicationProvider
 import com.jeffers.pantrycraft.data.GroceryItem
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -58,8 +58,6 @@ class GroceryScreenComposeTest {
             previouslyCheckedItems.forEach { dao.update(it) }
         }
     }
-
-
 
     @Test
     fun addCheckAndClearGroceryItemFlow() {

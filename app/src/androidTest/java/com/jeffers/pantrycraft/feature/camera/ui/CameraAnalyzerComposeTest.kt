@@ -35,7 +35,6 @@ import java.util.concurrent.Executors
 
 @RunWith(AndroidJUnit4::class)
 class CameraAnalyzerComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -67,18 +66,19 @@ class CameraAnalyzerComposeTest {
             PantryCraftTheme {
                 Box {
                     val scope = rememberCoroutineScope()
-                    val state = CameraAnalyzerState(
-                        context = context,
-                        view = view,
-                        executor = executor,
-                        scope = scope,
-                        barcodeResolver = resolver,
-                        frameTimingStats = stats,
-                        onResult = { resultReceived = it },
-                        onFrameTime = { frameTimeReceived = it },
-                        onBarcodeResolved = {},
-                        onBarcodeUnresolved = {},
-                    )
+                    val state =
+                        CameraAnalyzerState(
+                            context = context,
+                            view = view,
+                            executor = executor,
+                            scope = scope,
+                            barcodeResolver = resolver,
+                            frameTimingStats = stats,
+                            onResult = { resultReceived = it },
+                            onFrameTime = { frameTimeReceived = it },
+                            onBarcodeResolved = {},
+                            onBarcodeUnresolved = {},
+                        )
                     val analyzer = rememberCameraAnalyzer(state)
                     analyzerInstance = analyzer
                 }

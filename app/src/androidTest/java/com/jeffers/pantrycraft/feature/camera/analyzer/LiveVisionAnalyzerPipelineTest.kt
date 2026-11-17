@@ -9,6 +9,10 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.barcode.common.internal.BarcodeSource
 import com.google.mlkit.vision.objects.DetectedObject
 import com.google.mlkit.vision.objects.ObjectDetector
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
 import java.lang.reflect.Proxy
 import java.util.concurrent.AbstractExecutorService
 import java.util.concurrent.ExecutorService
@@ -16,54 +20,64 @@ import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
-import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class LiveVisionAnalyzerPipelineTest {
-
     private fun createMockBarcode(rawValue: String): Barcode {
-        val barcodeSource = Proxy.newProxyInstance(
-            BarcodeSource::class.java.classLoader,
-            arrayOf(BarcodeSource::class.java),
-        ) { _, method, _ ->
-            when (method.name) {
-                "getRawValue" -> rawValue
-                "getBoundingBox" -> Rect(0, 0, 50, 50)
-                else -> null
-            }
-        } as BarcodeSource
+        val barcodeSource =
+            Proxy.newProxyInstance(
+                BarcodeSource::class.java.classLoader,
+                arrayOf(BarcodeSource::class.java),
+            ) { _, method, _ ->
+                when (method.name) {
+                    "getRawValue" -> rawValue
+                    "getBoundingBox" -> Rect(0, 0, 50, 50)
+                    else -> null
+                }
+            } as BarcodeSource
         return Barcode(barcodeSource)
     }
 
-    private fun createMockImageProxy(width: Int, height: Int, onClosed: () -> Unit = {}): ImageProxy {
-        return Proxy.newProxyInstance(
+    private fun createMockImageProxy(
+        width: Int,
+        height: Int,
+        onClosed: () -> Unit = {},
+    ): ImageProxy =
+        Proxy.newProxyInstance(
             ImageProxy::class.java.classLoader,
             arrayOf(ImageProxy::class.java),
         ) { _, method, _ ->
             when (method.name) {
-                "getWidth" -> width
-                "getHeight" -> height
+                "getWidth" -> {
+                    width
+                }
+
+                "getHeight" -> {
+                    height
+                }
+
                 "close" -> {
                     onClosed()
                     null
                 }
-                else -> null
+
+                else -> {
+                    null
+                }
             }
         } as ImageProxy
-    }
 
     private fun createDummyAnalyzer(executor: ExecutorService): LiveVisionAnalyzer {
-        val barcodeScanner = Proxy.newProxyInstance(
-            BarcodeScanner::class.java.classLoader,
-            arrayOf(BarcodeScanner::class.java),
-        ) { _, _, _ -> null } as BarcodeScanner
-        val objectDetector = Proxy.newProxyInstance(
-            ObjectDetector::class.java.classLoader,
-            arrayOf(ObjectDetector::class.java),
-        ) { _, _, _ -> null } as ObjectDetector
+        val barcodeScanner =
+            Proxy.newProxyInstance(
+                BarcodeScanner::class.java.classLoader,
+                arrayOf(BarcodeScanner::class.java),
+            ) { _, _, _ -> null } as BarcodeScanner
+        val objectDetector =
+            Proxy.newProxyInstance(
+                ObjectDetector::class.java.classLoader,
+                arrayOf(ObjectDetector::class.java),
+            ) { _, _, _ -> null } as ObjectDetector
         return LiveVisionAnalyzer(
             barcodeScanner = barcodeScanner,
             objectDetector = objectDetector,
@@ -79,12 +93,13 @@ class LiveVisionAnalyzerPipelineTest {
         val detected = DetectedObject(Rect(10, 20, 50, 80), 1, listOf(label))
         val imageProxy = createMockImageProxy(width = 640, height = 480)
 
-        val result = buildLiveVisionResult(
-            barcodeTask = Tasks.forResult(listOf(barcode)),
-            objectTask = Tasks.forResult(listOf(detected)),
-            imageProxy = imageProxy,
-            rotation = 90,
-        )
+        val result =
+            buildLiveVisionResult(
+                barcodeTask = Tasks.forResult(listOf(barcode)),
+                objectTask = Tasks.forResult(listOf(detected)),
+                imageProxy = imageProxy,
+                rotation = 90,
+            )
 
         assertEquals(listOf("0123456789"), result.barcodes)
         assertEquals(480, result.imageWidth)
@@ -101,12 +116,13 @@ class LiveVisionAnalyzerPipelineTest {
         val unlabeledObject = DetectedObject(Rect(30, 40, 70, 90), 2, emptyList())
         val imageProxy = createMockImageProxy(width = 1280, height = 720)
 
-        val result = buildLiveVisionResult(
-            barcodeTask = Tasks.forResult(emptyList()),
-            objectTask = Tasks.forResult(listOf(lowConfObject, unlabeledObject)),
-            imageProxy = imageProxy,
-            rotation = 0,
-        )
+        val result =
+            buildLiveVisionResult(
+                barcodeTask = Tasks.forResult(emptyList()),
+                objectTask = Tasks.forResult(listOf(lowConfObject, unlabeledObject)),
+                imageProxy = imageProxy,
+                rotation = 0,
+            )
 
         assertTrue(result.barcodes.isEmpty())
         assertEquals(1280, result.imageWidth)
@@ -134,18 +150,25 @@ class LiveVisionAnalyzerPipelineTest {
 
     @Test
     fun safeExecuteWhenRejectedExecutionExceptionTriggersOnRejected() {
-        val throwingExecutor = object : AbstractExecutorService() {
-            override fun shutdown() {
-                // No-op for mock executor
+        val throwingExecutor =
+            object : AbstractExecutorService() {
+                override fun shutdown() {
+                    // No-op for mock executor
+                }
+
+                override fun shutdownNow(): List<Runnable> = emptyList()
+
+                override fun isShutdown(): Boolean = false
+
+                override fun isTerminated(): Boolean = false
+
+                override fun awaitTermination(
+                    timeout: Long,
+                    unit: TimeUnit,
+                ): Boolean = true
+
+                override fun execute(command: Runnable): Unit = throw RejectedExecutionException("Forced rejection")
             }
-            override fun shutdownNow(): List<Runnable> = emptyList()
-            override fun isShutdown(): Boolean = false
-            override fun isTerminated(): Boolean = false
-            override fun awaitTermination(timeout: Long, unit: TimeUnit): Boolean = true
-            override fun execute(command: Runnable) {
-                throw RejectedExecutionException("Forced rejection")
-            }
-        }
         val analyzer = createDummyAnalyzer(throwingExecutor)
 
         val rejected = AtomicBoolean(false)
@@ -164,9 +187,10 @@ class LiveVisionAnalyzerPipelineTest {
         val analyzer = createDummyAnalyzer(executor)
 
         val proxyClosed = AtomicBoolean(false)
-        val proxy = createMockImageProxy(width = 640, height = 480) {
-            proxyClosed.set(true)
-        }
+        val proxy =
+            createMockImageProxy(width = 640, height = 480) {
+                proxyClosed.set(true)
+            }
 
         analyzer.analyze(proxy)
         assertTrue(proxyClosed.get())

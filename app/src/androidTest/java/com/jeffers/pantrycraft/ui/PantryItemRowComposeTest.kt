@@ -10,7 +10,6 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -26,7 +25,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PantryItemRowComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -51,24 +49,26 @@ class PantryItemRowComposeTest {
         var markOpenedCalled = false
         var addToGroceryCalled = false
 
-        val item = PantryItem(
-            id = 1L,
-            name = "Organic Eggs",
-            quantity = 2f,
-            unit = "COUNT",
-            threshold = 6f,
-            isOpened = false,
-            storageLocation = "FRIDGE",
-        )
-        val actions = PantryItemRowActions(
-            onDecrement = { decrementCalled = true },
-            onIncrement = { incrementCalled = true },
-            onUse = {},
-            onEdit = { editCalled = true },
-            onMarkOpened = { markOpenedCalled = true },
-            onAddToGrocery = { addToGroceryCalled = true },
-            onDelete = { deleteCalled = true },
-        )
+        val item =
+            PantryItem(
+                id = 1L,
+                name = "Organic Eggs",
+                quantity = 2f,
+                unit = "COUNT",
+                threshold = 6f,
+                isOpened = false,
+                storageLocation = "FRIDGE",
+            )
+        val actions =
+            PantryItemRowActions(
+                onDecrement = { decrementCalled = true },
+                onIncrement = { incrementCalled = true },
+                onUse = {},
+                onEdit = { editCalled = true },
+                onMarkOpened = { markOpenedCalled = true },
+                onAddToGrocery = { addToGroceryCalled = true },
+                onDelete = { deleteCalled = true },
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -102,24 +102,26 @@ class PantryItemRowComposeTest {
     @Test
     fun pantryItemRowDecimalUnitsAndOpenedBadge() {
         var useCalled = false
-        val item = PantryItem(
-            id = 2L,
-            name = "Olive Oil",
-            quantity = 0.75f,
-            unit = "LITERS",
-            threshold = 0f,
-            isOpened = true,
-            storageLocation = "PANTRY",
-        )
-        val actions = PantryItemRowActions(
-            onDecrement = {},
-            onIncrement = {},
-            onUse = { useCalled = true },
-            onEdit = {},
-            onMarkOpened = {},
-            onAddToGrocery = {},
-            onDelete = {},
-        )
+        val item =
+            PantryItem(
+                id = 2L,
+                name = "Olive Oil",
+                quantity = 0.75f,
+                unit = "LITERS",
+                threshold = 0f,
+                isOpened = true,
+                storageLocation = "PANTRY",
+            )
+        val actions =
+            PantryItemRowActions(
+                onDecrement = {},
+                onIncrement = {},
+                onUse = { useCalled = true },
+                onEdit = {},
+                onMarkOpened = {},
+                onAddToGrocery = {},
+                onDelete = {},
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -140,12 +142,13 @@ class PantryItemRowComposeTest {
         var dismissed = false
         var currentAmount = "1.5"
 
-        val item = PantryItem(
-            id = 3L,
-            name = "Sugar",
-            quantity = 5f,
-            unit = "KG",
-        )
+        val item =
+            PantryItem(
+                id = 3L,
+                name = "Sugar",
+                quantity = 5f,
+                unit = "KG",
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -172,19 +175,20 @@ class PantryItemRowComposeTest {
     fun pantryScreenOverlaysDisplaysUseDialog() {
         var confirmedUse = 0f
         val item = PantryItem(id = 4L, name = "Flour", quantity = 2f, unit = "CUSTOM", customUnitName = "cups")
-        val props = PantryScreenOverlayProps(
-            showAddDialog = false,
-            editorItem = null,
-            onSaveDraft = { _, _ -> },
-            onDismissEditor = {},
-            useItem = item,
-            useAmount = "0.5",
-            onAmountChange = {},
-            onConfirmUse = { confirmedUse = it },
-            onDismissUse = {},
-            storageError = null,
-            onDismissStorageError = {},
-        )
+        val props =
+            PantryScreenOverlayProps(
+                showAddDialog = false,
+                editorItem = null,
+                onSaveDraft = { _, _ -> },
+                onDismissEditor = {},
+                useItem = item,
+                useAmount = "0.5",
+                onAmountChange = {},
+                onConfirmUse = { confirmedUse = it },
+                onDismissUse = {},
+                storageError = null,
+                onDismissStorageError = {},
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {

@@ -16,7 +16,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EncryptedBackupCardComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -26,28 +25,30 @@ class EncryptedBackupCardComposeTest {
         var openFileClicked = false
         var resetClicked = false
 
-        val autoProps = AutomaticBackupProps(
-            enabled = false,
-            intervalMinutes = 60L,
-            databaseHasUserData = false,
-            onDisable = {},
-            onEnableRequested = {},
-            onIntervalSelected = {},
-            onBackupNow = {},
-        )
+        val autoProps =
+            AutomaticBackupProps(
+                enabled = false,
+                intervalMinutes = 60L,
+                databaseHasUserData = false,
+                onDisable = {},
+                onEnableRequested = {},
+                onIntervalSelected = {},
+                onBackupNow = {},
+            )
 
-        val props = EncryptedBackupCardProps(
-            autoBackupProps = autoProps,
-            lastExportedUri = null,
-            hasBackupRecords = false,
-            autoBackupTreeUri = null,
-            backupResult = null,
-            onShareSavedBackup = {},
-            onRestoreSavedBackup = {},
-            onSelectAutoBackupLocation = { setLocationClicked = true },
-            onOpenBackupFile = { openFileClicked = true },
-            onResetDatabase = { resetClicked = true },
-        )
+        val props =
+            EncryptedBackupCardProps(
+                autoBackupProps = autoProps,
+                lastExportedUri = null,
+                hasBackupRecords = false,
+                autoBackupTreeUri = null,
+                backupResult = null,
+                onShareSavedBackup = {},
+                onRestoreSavedBackup = {},
+                onSelectAutoBackupLocation = { setLocationClicked = true },
+                onOpenBackupFile = { openFileClicked = true },
+                onResetDatabase = { resetClicked = true },
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -57,9 +58,10 @@ class EncryptedBackupCardComposeTest {
         composeTestRule.waitForIdle()
 
         composeTestRule.onAllNodesWithText("Encrypted backup").onFirst().assertIsDisplayed()
-        composeTestRule.onNodeWithText(
-            "Choose a file location so it can be found during recovery.",
-        ).assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText(
+                "Choose a file location so it can be found during recovery.",
+            ).assertIsDisplayed()
         composeTestRule.onNodeWithText("Set auto-backup location").assertIsDisplayed().performClick()
         assertTrue(setLocationClicked)
 
@@ -75,29 +77,31 @@ class EncryptedBackupCardComposeTest {
         var shareClicked = false
         var restoreClicked = false
 
-        val autoProps = AutomaticBackupProps(
-            enabled = true,
-            intervalMinutes = 1440L,
-            databaseHasUserData = true,
-            onDisable = {},
-            onEnableRequested = {},
-            onIntervalSelected = {},
-            onBackupNow = {},
-        )
+        val autoProps =
+            AutomaticBackupProps(
+                enabled = true,
+                intervalMinutes = 1440L,
+                databaseHasUserData = true,
+                onDisable = {},
+                onEnableRequested = {},
+                onIntervalSelected = {},
+                onBackupNow = {},
+            )
 
         val testUri = Uri.parse("content://com.android.providers.downloads.documents/document/123")
-        val props = EncryptedBackupCardProps(
-            autoBackupProps = autoProps,
-            lastExportedUri = testUri,
-            hasBackupRecords = true,
-            autoBackupTreeUri = Uri.parse("content://tree/location"),
-            backupResult = "Encrypted backup saved: pantrycraft-backup.pantrybackup",
-            onShareSavedBackup = { shareClicked = true },
-            onRestoreSavedBackup = { restoreClicked = true },
-            onSelectAutoBackupLocation = {},
-            onOpenBackupFile = {},
-            onResetDatabase = {},
-        )
+        val props =
+            EncryptedBackupCardProps(
+                autoBackupProps = autoProps,
+                lastExportedUri = testUri,
+                hasBackupRecords = true,
+                autoBackupTreeUri = Uri.parse("content://tree/location"),
+                backupResult = "Encrypted backup saved: pantrycraft-backup.pantrybackup",
+                onShareSavedBackup = { shareClicked = true },
+                onRestoreSavedBackup = { restoreClicked = true },
+                onSelectAutoBackupLocation = {},
+                onOpenBackupFile = {},
+                onResetDatabase = {},
+            )
 
         composeTestRule.setContent {
             PantryCraftTheme {
@@ -108,9 +112,10 @@ class EncryptedBackupCardComposeTest {
 
         composeTestRule.onNodeWithText("Saved location remembered for recovery.").assertIsDisplayed()
         composeTestRule.onNodeWithText("Change auto-backup location").assertIsDisplayed()
-        composeTestRule.onNodeWithText(
-            "Encrypted backup saved: pantrycraft-backup.pantrybackup",
-        ).assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText(
+                "Encrypted backup saved: pantrycraft-backup.pantrybackup",
+            ).assertIsDisplayed()
 
         composeTestRule.onNodeWithText("Share saved backup").assertIsDisplayed().performClick()
         assertTrue(shareClicked)

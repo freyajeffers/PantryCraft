@@ -19,7 +19,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PantryScaffoldContentComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -31,26 +30,27 @@ class PantryScaffoldContentComposeTest {
         composeTestRule.setContent {
             val snackbarHostState = remember { SnackbarHostState() }
             val scope = rememberCoroutineScope()
-            val props = PantryScaffoldProps(
-                selectedSortOrder = PantrySortOrder.NAME_ASC,
-                onSortSelected = { sortSelected = it },
-                onAddClick = { addClicked = true },
-                items = emptyList(),
-                selectedLocation = PantryLocationFilter.ALL,
-                searchQuery = "",
-                onSearchQueryChange = {},
-                onLocationSelected = {},
-                onDecrement = {},
-                onIncrement = {},
-                onUse = {},
-                onEdit = {},
-                onMarkOpened = {},
-                onAddToGrocery = {},
-                onDelete = {},
-                onRestore = {},
-                snackbarHostState = snackbarHostState,
-                scope = scope,
-            )
+            val props =
+                PantryScaffoldProps(
+                    selectedSortOrder = PantrySortOrder.NAME_ASC,
+                    onSortSelected = { sortSelected = it },
+                    onAddClick = { addClicked = true },
+                    items = emptyList(),
+                    selectedLocation = PantryLocationFilter.ALL,
+                    searchQuery = "",
+                    onSearchQueryChange = {},
+                    onLocationSelected = {},
+                    onDecrement = {},
+                    onIncrement = {},
+                    onUse = {},
+                    onEdit = {},
+                    onMarkOpened = {},
+                    onAddToGrocery = {},
+                    onDelete = {},
+                    onRestore = {},
+                    snackbarHostState = snackbarHostState,
+                    scope = scope,
+                )
             PantryCraftTheme {
                 PantryScaffoldContent(props = props)
             }
@@ -74,38 +74,40 @@ class PantryScaffoldContentComposeTest {
         var incrementItem: PantryItem? = null
         var decrementItem: PantryItem? = null
 
-        val sampleItem = PantryItem(
-            id = 42L,
-            name = "Greek Yogurt",
-            quantity = 3f,
-            unit = "COUNT",
-            storageLocation = "FRIDGE",
-            category = "DAIRY",
-        )
+        val sampleItem =
+            PantryItem(
+                id = 42L,
+                name = "Greek Yogurt",
+                quantity = 3f,
+                unit = "COUNT",
+                storageLocation = "FRIDGE",
+                category = "DAIRY",
+            )
 
         composeTestRule.setContent {
             val snackbarHostState = remember { SnackbarHostState() }
             val scope = rememberCoroutineScope()
-            val props = PantryScaffoldProps(
-                selectedSortOrder = PantrySortOrder.NAME_ASC,
-                onSortSelected = {},
-                onAddClick = {},
-                items = listOf(sampleItem),
-                selectedLocation = PantryLocationFilter.ALL,
-                searchQuery = "",
-                onSearchQueryChange = {},
-                onLocationSelected = {},
-                onDecrement = { decrementItem = it },
-                onIncrement = { incrementItem = it },
-                onUse = {},
-                onEdit = {},
-                onMarkOpened = {},
-                onAddToGrocery = {},
-                onDelete = {},
-                onRestore = {},
-                snackbarHostState = snackbarHostState,
-                scope = scope,
-            )
+            val props =
+                PantryScaffoldProps(
+                    selectedSortOrder = PantrySortOrder.NAME_ASC,
+                    onSortSelected = {},
+                    onAddClick = {},
+                    items = listOf(sampleItem),
+                    selectedLocation = PantryLocationFilter.ALL,
+                    searchQuery = "",
+                    onSearchQueryChange = {},
+                    onLocationSelected = {},
+                    onDecrement = { decrementItem = it },
+                    onIncrement = { incrementItem = it },
+                    onUse = {},
+                    onEdit = {},
+                    onMarkOpened = {},
+                    onAddToGrocery = {},
+                    onDelete = {},
+                    onRestore = {},
+                    snackbarHostState = snackbarHostState,
+                    scope = scope,
+                )
             PantryCraftTheme {
                 PantryScaffoldContent(props = props)
             }

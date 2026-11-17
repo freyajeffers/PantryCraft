@@ -34,7 +34,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CameraScreenComposeTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
@@ -58,12 +57,13 @@ class CameraScreenComposeTest {
 
     @Test
     fun cameraStatusHudRendersObjectAndBarcodeDetails() {
-        val result = LiveVisionResult(
-            barcodes = listOf("123456"),
-            objectBoxes = listOf(NormalizedVisionBox(0f, 0f, 0.5f, 0.5f, "Can", 0.92f)),
-            imageWidth = 640,
-            imageHeight = 480,
-        )
+        val result =
+            LiveVisionResult(
+                barcodes = listOf("123456"),
+                objectBoxes = listOf(NormalizedVisionBox(0f, 0f, 0.5f, 0.5f, "Can", 0.92f)),
+                imageWidth = 640,
+                imageHeight = 480,
+            )
         composeTestRule.setContent {
             PantryCraftTheme {
                 CameraStatusHud(
@@ -83,13 +83,14 @@ class CameraScreenComposeTest {
 
     @Test
     fun cameraStatusHudRendersBarcodeMatchAndSnapshotStatus() {
-        val match = BarcodeMatch(
-            barcode = "999",
-            name = "Almond Milk",
-            category = "DAIRY",
-            unit = "BOTTLE",
-            estimatedShelfLifeDays = 14,
-        )
+        val match =
+            BarcodeMatch(
+                barcode = "999",
+                name = "Almond Milk",
+                category = "DAIRY",
+                unit = "BOTTLE",
+                estimatedShelfLifeDays = 14,
+            )
         composeTestRule.setContent {
             PantryCraftTheme {
                 CameraStatusHud(
@@ -182,12 +183,13 @@ class CameraScreenComposeTest {
 
     @Test
     fun cameraPreviewOverlayRendersBoxesAndFocusPoint() {
-        val result = LiveVisionResult(
-            barcodes = emptyList(),
-            objectBoxes = listOf(NormalizedVisionBox(0.1f, 0.1f, 0.4f, 0.4f, "Jar", 0.88f)),
-            imageWidth = 1080,
-            imageHeight = 1920,
-        )
+        val result =
+            LiveVisionResult(
+                barcodes = emptyList(),
+                objectBoxes = listOf(NormalizedVisionBox(0.1f, 0.1f, 0.4f, 0.4f, "Jar", 0.88f)),
+                imageWidth = 1080,
+                imageHeight = 1920,
+            )
         composeTestRule.setContent {
             PantryCraftTheme {
                 val labelPaint = rememberLabelPaint()
@@ -257,18 +259,19 @@ class CameraScreenComposeTest {
         val repository = Repository.getInstance(context)
         val view = View(context)
         var dismissed = false
-        val item = ParsedVisionItem(
-            name = "Organic Apples",
-            category = "PRODUCE",
-            storageLocation = "FRIDGE",
-            quantity = 2f,
-            unit = "COUNT",
-            confidence = 0.95f,
-            estimatedShelfLifeDays = 7,
-            isAromaticOrSeasoning = false,
-            boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
-            conditionNotes = null,
-        )
+        val item =
+            ParsedVisionItem(
+                name = "Organic Apples",
+                category = "PRODUCE",
+                storageLocation = "FRIDGE",
+                quantity = 2f,
+                unit = "COUNT",
+                confidence = 0.95f,
+                estimatedShelfLifeDays = 7,
+                isAromaticOrSeasoning = false,
+                boundingBox = NormalizedBox(0f, 0f, 1f, 1f),
+                conditionNotes = null,
+            )
         composeTestRule.setContent {
             PantryCraftTheme {
                 Box {
@@ -294,41 +297,49 @@ class CameraScreenComposeTest {
     @Test
     fun rememberCameraRuntimeForScreenInstantiatesRuntime() {
         val context: Context = ApplicationProvider.getApplicationContext()
-        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val executor =
+            java.util.concurrent.Executors
+                .newSingleThreadExecutor()
         try {
             var state: CameraScreenState? = null
             androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().runOnMainSync {
                 val repository = Repository.getInstance(context)
                 val resolver = repository.offlineBarcodeResolver()
-                val snapshotService = com.jeffers.pantrycraft.feature.camera.vision.SnapshotVisionService(
-                    com.jeffers.pantrycraft.feature.camera.vision.LocalVisionModel { _, _ -> "{}" },
-                )
-                val frameTimingStats = com.jeffers.pantrycraft.feature.camera.analyzer.FrameTimingStats()
+                val snapshotService =
+                    com.jeffers.pantrycraft.feature.camera.vision.SnapshotVisionService(
+                        com.jeffers.pantrycraft.feature.camera.vision
+                            .LocalVisionModel { _, _ -> "{}" },
+                    )
+                val frameTimingStats =
+                    com.jeffers.pantrycraft.feature.camera.analyzer
+                        .FrameTimingStats()
                 val previewView = androidx.camera.view.PreviewView(context)
                 val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate)
 
-                val deps = CameraDeps(
-                    context = context,
-                    repository = repository,
-                    analysisExecutor = executor,
-                    scope = scope,
-                    previewView = previewView,
-                    barcodeResolver = resolver,
-                    snapshotVisionService = snapshotService,
-                    frameTimingStats = frameTimingStats,
-                )
+                val deps =
+                    CameraDeps(
+                        context = context,
+                        repository = repository,
+                        analysisExecutor = executor,
+                        scope = scope,
+                        previewView = previewView,
+                        barcodeResolver = resolver,
+                        snapshotVisionService = snapshotService,
+                        frameTimingStats = frameTimingStats,
+                    )
                 state = CameraScreenState(deps)
             }
             var runtime: CameraRuntime? = null
 
             composeTestRule.setContent {
-                runtime = rememberCameraRuntimeForScreen(
-                    state = state!!,
-                    onResult = {},
-                    onFrameTime = {},
-                    onBarcodeResolved = {},
-                    onBarcodeUnresolved = {},
-                )
+                runtime =
+                    rememberCameraRuntimeForScreen(
+                        state = state!!,
+                        onResult = {},
+                        onFrameTime = {},
+                        onBarcodeResolved = {},
+                        onBarcodeUnresolved = {},
+                    )
             }
             assertNotNull(runtime)
         } finally {
