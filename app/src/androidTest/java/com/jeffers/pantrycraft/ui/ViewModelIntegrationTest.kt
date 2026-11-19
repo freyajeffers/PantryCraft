@@ -10,6 +10,7 @@ import com.jeffers.pantrycraft.data.GroceryItem
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.markOpened
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -297,13 +298,13 @@ class ViewModelIntegrationTest {
         runBlocking {
             val pantryVm = PantryViewModel(repository)
             val invalidItem = PantryItem(name = "   ")
+            val errorMessage = async { pantryVm.operationErrors.first() }
 
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
                 pantryVm.add(invalidItem)
             }
 
-            val errorMessage = pantryVm.operationErrors.first()
-            assertEquals("Unable to add pantry item", errorMessage)
+            assertEquals("Unable to add pantry item", errorMessage.await())
         }
 
     @Test
