@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Corrected MobSF CI to scan only production Android sources with the checked-in `.mobsf` policy, fail on warnings, upload SARIF results, and preserve the report as a workflow artifact.
-- Fixed the instrumentation error-event test to subscribe before triggering the asynchronous ViewModel operation, preventing a lost `SharedFlow` event from hanging the suite.
+- Fixed the instrumentation error-event test by collecting with `CoroutineStart.UNDISPATCHED` before triggering the asynchronous ViewModel operation; moved it to a database-free fake-repository test so setup cannot deadlock on Room state.
 - Added a dedicated bold pantry-basket/leaf monochrome notification icon so expiration alerts remain recognizable at status-bar size.
 - Updated compile SDK/CodeQL SDK setup to Android 37 for the patched OkHttp 5.5.1 dependency requirement.
 - Added an explicit post-mutation failure hook for transaction rollback tests and removed the test's nested Room transaction, preventing instrumentation deadlocks while preserving production dispatcher behavior.

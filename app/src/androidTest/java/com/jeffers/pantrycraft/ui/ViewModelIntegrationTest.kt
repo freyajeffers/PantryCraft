@@ -8,11 +8,15 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.jeffers.pantrycraft.data.AppDatabase
 import com.jeffers.pantrycraft.data.GroceryItem
 import com.jeffers.pantrycraft.data.PantryItem
+import com.jeffers.pantrycraft.data.PantryRepository
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.markOpened
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -294,20 +298,6 @@ class ViewModelIntegrationTest {
         }
 
     @Test
-    fun pantryViewModelEmitsErrorOnInvalidInsert() =
-        runBlocking {
-            val pantryVm = PantryViewModel(repository)
-            val invalidItem = PantryItem(name = "   ")
-            val errorMessage = async { pantryVm.operationErrors.first() }
-
-            InstrumentationRegistry.getInstrumentation().runOnMainSync {
-                pantryVm.add(invalidItem)
-            }
-
-            assertEquals("Unable to add pantry item", errorMessage.await())
-        }
-
-    @Test
     fun pantryViewModelIncrementAndMarkOpened() =
         runBlocking {
             val pantryVm = PantryViewModel(repository)
@@ -363,4 +353,55 @@ class ViewModelIntegrationTest {
             assertTrue(nonNullOpened.isOpened)
             assertNotNull(nonNullOpened.openedTimestamp)
         }
+}
+
+@RunWith(AndroidJUnit4::class)
+class PantryViewModelErrorDeliveryTest {
+    private val repository = ErrorOnlyPantryRepository()
+
+    @Test
+    fun pantryViewModelEmitsErrorOnInvalidInsert() =
+        runBlocking {
+            val pantryVm = PantryViewModel(repository)
+            val errorMessage = async(start = CoroutineStart.UNDISPATCHED) { pantryVm.operationErrors.first() }
+
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                pantryVm.add(PantryItem(name = "   "))
+            }
+
+            assertEquals("Unable to add pantry item", errorMessage.await())
+        }
+}
+
+private class ErrorOnlyPantryRepository : PantryRepository {
+    override fun observePantryItems(): Flow<List<PantryItem>> = flowOf(emptyList())
+
+    override fun searchPantryItems(query: String): Flow<List<PantryItem>> = flowOf(emptyList())
+
+    override suspend fun insertPantry(item: PantryItem): Long = error("invalid item")
+
+    override suspend fun updatePantry(item: PantryItem) = error("unsupported")
+
+    override suspend fun decrementQuantity(
+        item: PantryItem,
+        delta: Float,
+    ) = error("unsupported")
+
+    override suspend fun deletePantry(item: PantryItem) = error("unsupported")
+
+    override suspend fun restorePantry(item: PantryItem) = error("unsupported")
+
+    override fun observeGroceryItems(): Flow<List<GroceryItem>> = flowOf(emptyList())
+
+    override suspend fun insertGrocery(item: GroceryItem): Long = error("unsupported")
+
+    override suspend fun updateGrocery(item: GroceryItem) = error("unsupported")
+
+    override suspend fun deleteGrocery(item: GroceryItem) = error("unsupported")
+
+    override suspend fun clearCheckedGrocery() = error("unsupported")
+
+    override suspend fun restockCheckedGroceryToPantry(): Int = error("unsupported")
+
+    override fun reclaimTemporaryMedia(): Int = 0
 }
