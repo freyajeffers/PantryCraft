@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         val obscuredFlags = MotionEvent.FLAG_WINDOW_IS_OBSCURED or MotionEvent.FLAG_WINDOW_IS_PARTIALLY_OBSCURED
-        if (event.flags and obscuredFlags != 0) return false
+        if ((event.flags and obscuredFlags) != 0) return false
         return super.dispatchTouchEvent(event)
     }
 
