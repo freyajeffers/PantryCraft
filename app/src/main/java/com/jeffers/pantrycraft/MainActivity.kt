@@ -15,8 +15,8 @@ import com.jeffers.pantrycraft.ui.PantryCraftApp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        window.decorView.filterTouchesWhenObscured = true
+        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        window.decorView.setFilterTouchesWhenObscured(true)
         super.onCreate(savedInstanceState)
         setContent {
             PantryCraftApp()
