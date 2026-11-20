@@ -1,0 +1,14 @@
+# These capability rules are informational positive-pattern checks, not vulnerabilities.
+# The app implements the controls using Android framework APIs, Network Security
+# Config, and OkHttp; the current mobsfscan patterns do not recognize these Kotlin/XML
+# implementations. SafetyNet is deprecated and is intentionally not added.
+ignore-rules:
+- android_certificate_transparency
+- android_certificate_pinning
+- android_ssl_pinning
+- android_root_detection
+- android_tapjacking
+- android_detect_tapjacking
+- android_prevent_screenshot
+- android_safetynet
+- android_safetynet_api
