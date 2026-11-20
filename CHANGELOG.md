@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Corrected MobSF CI to scan only production Android sources with the checked-in `.mobsf` policy, fail on warnings, upload SARIF results, and preserve the report as a workflow artifact.
 - Fixed the instrumentation error-event test to subscribe before triggering the asynchronous ViewModel operation, preventing a lost `SharedFlow` event from hanging the suite.
 - Added a dedicated bold pantry-basket/leaf monochrome notification icon so expiration alerts remain recognizable at status-bar size.
 - Updated compile SDK/CodeQL SDK setup to Android 37 for the patched OkHttp 5.5.1 dependency requirement.

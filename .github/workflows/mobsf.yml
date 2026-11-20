@@ -35,10 +35,25 @@ jobs:
       - name: Install mobsfscan
         run: python -m pip install --disable-pip-version-check mobsfscan==1.0.1
 
-      - name: Run mobsfscan
-        run: mobsfscan app --sarif --output results.sarif
+      - name: Run MobSF source scan
+        run: >-
+          mobsfscan app/src/main
+          --type android
+          --sarif
+          --exit-warning
+          --config app/.mobsf
+          --output results.sarif
 
-      - name: Upload mobsfscan report
+      - name: Upload MobSF SARIF to code scanning
+        if: always()
         uses: github/codeql-action/upload-sarif@v4.39.1
         with:
           sarif_file: results.sarif
+
+      - name: Preserve MobSF report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobsfscan-source-report
+          path: results.sarif
+          if-no-files-found: error
