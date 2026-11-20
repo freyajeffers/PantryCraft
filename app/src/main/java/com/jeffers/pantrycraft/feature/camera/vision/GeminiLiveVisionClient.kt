@@ -5,6 +5,7 @@ import android.util.Base64
 import com.jeffers.pantrycraft.DefaultDispatcherProvider
 import com.jeffers.pantrycraft.DispatcherProvider
 import com.jeffers.pantrycraft.data.ByokPreferences
+import com.jeffers.pantrycraft.security.DeviceIntegrity
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -50,6 +51,9 @@ class GeminiLiveVisionClient(
         prompt: String,
     ): String =
         withContext(dispatchers.io) {
+            check(!DeviceIntegrity.isCompromised()) {
+                "Live Vision is disabled on compromised devices"
+            }
             val apiKey =
                 ByokPreferences.loadApiKey(context)
                     ?: error("Gemini API Key is required for Live Vision API")

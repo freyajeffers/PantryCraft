@@ -8,6 +8,8 @@
 - Added an explicit post-mutation failure hook for transaction rollback tests and removed the test's nested Room transaction, preventing instrumentation deadlocks while preserving production dispatcher behavior.
 - Formatted the complete Android instrumentation test source set and removed stale imports; Android-test KtLint and debug Android-test compilation now pass.
 - Completed an extensive repository/security inventory and fixed Detekt findings: injected dispatcher boundaries, corrected JSON/control-flow analysis issues, removed an unused barcode helper, and verified Detekt, production/test KtLint, unit tests, debug Android-test compilation, and debug assembly under JDK 17.
+- Added Android security hardening for screenshots, recent-task previews, tapjacking, cleartext traffic, certificate transparency, certificate pinning, and local root-compromise detection.
+- Disabled Gemini Live Vision when local compromise indicators are present to avoid exposing BYOK credentials.
 - Resolved CodeQL findings by reusing one `SecureRandom`, removing unread Compose locals, removing deprecated system-bar color calls, and pinning Gemini Live Vision WebSocket certificates.
 - Configured GitHub Actions CodeQL analysis for Android (Java/Kotlin) with weekly scheduled scanning and dynamic matrix language mapping.
 - Updated Kapt plugin to match Kotlin 2.4.21 and forced `kotlin-metadata-jvm:2.4.21` resolution to resolve Room annotation processor metadata version incompatibility during CodeQL build.

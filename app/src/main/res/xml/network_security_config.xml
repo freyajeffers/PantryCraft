@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+        <certificateTransparency enabled="true" />
+    </base-config>
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">generativelanguage.googleapis.com</domain>
+        <certificateTransparency enabled="true" />
+        <pin-set>
+            <pin digest="SHA-256">pKUswmsFFcpKtaeEnEPUymNTYIK8T8lCmCrm5mwK1N8=</pin>
+        </pin-set>
+    </domain-config>
+</network-security-config>
