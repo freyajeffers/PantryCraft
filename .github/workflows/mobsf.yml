@@ -52,7 +52,7 @@ jobs:
 
       - name: Preserve MobSF report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: mobsfscan-source-report
           path: results.sarif
