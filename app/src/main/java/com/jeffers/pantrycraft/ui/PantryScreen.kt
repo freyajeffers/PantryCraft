@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
@@ -51,7 +52,7 @@ import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
 
 private const val EXPIRED_COLOR_VALUE = 0xFFB3261E
-private const val EXPIRING_SOON_COLOR_VALUE = 0xFFFFB300
+private const val EXPIRING_SOON_COLOR_VALUE = 0xFF8A5A00
 private const val FRESH_COLOR_VALUE = 0xFF2E7D32
 private val ExpiredColor = Color(EXPIRED_COLOR_VALUE)
 private val ExpiringSoonColor = Color(EXPIRING_SOON_COLOR_VALUE)
@@ -264,17 +265,23 @@ private fun PantryItemActions(
     if (!item.isOpened) {
         TextButton(
             onClick = actions.onMarkOpened,
-            modifier = Modifier.semantics { contentDescription = "Open ${item.name}" },
+            modifier =
+                Modifier.clearAndSetSemantics {
+                    contentDescription = "Open ${item.name}, item ${item.id}"
+                },
         ) { Text("Open") }
     }
     if (isLowStock) {
         IconButton(
             onClick = actions.onAddToGrocery,
-            modifier = Modifier.semantics { contentDescription = "Add ${item.name} to grocery list" },
+            modifier =
+                Modifier.clearAndSetSemantics {
+                    contentDescription = "Add ${item.name}, item ${item.id} to grocery list"
+                },
         ) {
             Icon(
                 Icons.Filled.AddShoppingCart,
-                contentDescription = "Add to grocery list",
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
             )
         }
@@ -283,31 +290,46 @@ private fun PantryItemActions(
         IconButton(
             onClick = actions.onDecrement,
             enabled = item.quantity > 0f,
-            modifier = Modifier.semantics { contentDescription = "Decrease ${item.name} quantity" },
+            modifier =
+                Modifier.clearAndSetSemantics {
+                    contentDescription = "Decrease ${item.name}, item ${item.id} quantity"
+                },
         ) {
-            Icon(Icons.Filled.Remove, contentDescription = "Decrease quantity")
+            Icon(Icons.Filled.Remove, contentDescription = null)
         }
         Text(formatPantryQuantity(item.quantity))
         IconButton(
             onClick = actions.onIncrement,
-            modifier = Modifier.semantics { contentDescription = "Increase ${item.name} quantity" },
+            modifier =
+                Modifier.clearAndSetSemantics {
+                    contentDescription = "Increase ${item.name}, item ${item.id} quantity"
+                },
         ) {
-            Icon(Icons.Filled.Add, contentDescription = "Increase quantity")
+            Icon(Icons.Filled.Add, contentDescription = null)
         }
     } else {
         TextButton(
             onClick = actions.onUse,
             enabled = item.quantity > 0f,
-            modifier = Modifier.semantics { contentDescription = "Use ${item.name}" },
+            modifier =
+                Modifier.clearAndSetSemantics {
+                    contentDescription = "Use ${item.name}, item ${item.id}"
+                },
         ) { Text("Use") }
     }
     TextButton(
         onClick = actions.onEdit,
-        modifier = Modifier.semantics { contentDescription = "Edit ${item.name}" },
+        modifier =
+            Modifier.clearAndSetSemantics {
+                contentDescription = "Edit ${item.name}, item ${item.id}"
+            },
     ) { Text("Edit") }
     TextButton(
         onClick = actions.onDelete,
-        modifier = Modifier.semantics { contentDescription = "Delete ${item.name}" },
+        modifier =
+            Modifier.clearAndSetSemantics {
+                contentDescription = "Delete ${item.name}, item ${item.id}"
+            },
     ) { Text("Delete") }
 }
 

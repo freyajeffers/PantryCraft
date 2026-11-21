@@ -31,6 +31,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.observeLowStock
@@ -161,14 +162,7 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                     modifier =
                         Modifier
                             .weight(1f)
-                            .clearAndSetSemantics {
-                                contentDescription = "Scan shelf"
-                                role = Role.Button
-                                onClick(label = "Scan shelf") {
-                                    onNavigate("camera")
-                                    true
-                                }
-                            },
+                            .semantics { role = Role.Button },
                 ) {
                     Icon(
                         Icons.Filled.QrCodeScanner,
@@ -182,14 +176,7 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                     modifier =
                         Modifier
                             .weight(1f)
-                            .clearAndSetSemantics {
-                                contentDescription = "Add item"
-                                role = Role.Button
-                                onClick(label = "Add item") {
-                                    onNavigate("pantry")
-                                    true
-                                }
-                            },
+                            .semantics { role = Role.Button },
                 ) {
                     Icon(
                         Icons.Filled.Inventory2,
@@ -228,15 +215,7 @@ private fun GroceryChecklistCard(
             }
             OutlinedButton(
                 onClick = { onNavigate("grocery") },
-                modifier =
-                    Modifier.clearAndSetSemantics {
-                        contentDescription = "View grocery list"
-                        role = Role.Button
-                        onClick(label = "View grocery list") {
-                            onNavigate("grocery")
-                            true
-                        }
-                    },
+                modifier = Modifier.semantics { role = Role.Button },
             ) {
                 Icon(
                     Icons.Filled.ShoppingCart,
@@ -323,14 +302,7 @@ private fun MetricCard(
         modifier =
             modifier
                 .clickable(onClickLabel = onClickLabel, onClick = onClick)
-                .clearAndSetSemantics {
-                    contentDescription = title
-                    role = Role.Button
-                    onClick(label = onClickLabel) {
-                        onClick()
-                        true
-                    }
-                },
+                .semantics { role = Role.Button },
         colors =
             if (isWarning) {
                 CardDefaults.cardColors(
@@ -346,14 +318,19 @@ private fun MetricCard(
             Text(
                 title,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color =
+                    if (isWarning) {
+                        MaterialTheme.colorScheme.onErrorContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
             )
             Text(
                 value,
                 style = MaterialTheme.typography.headlineMedium,
                 color =
                     if (isWarning) {
-                        MaterialTheme.colorScheme.error
+                        MaterialTheme.colorScheme.onErrorContainer
                     } else {
                         MaterialTheme.colorScheme.onSurface
                     },

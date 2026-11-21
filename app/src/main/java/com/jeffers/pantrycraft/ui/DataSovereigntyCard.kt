@@ -16,6 +16,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.DefaultDispatcherProvider
 import com.jeffers.pantrycraft.DispatcherProvider
@@ -50,10 +52,16 @@ private fun DataSovereigntyActions(props: DataSovereigntyProps) {
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        OutlinedButton(onClick = props.onExportJson, modifier = Modifier.weight(1f)) {
+        OutlinedButton(
+            onClick = props.onExportJson,
+            modifier = Modifier.weight(1f).clearAndSetSemantics { contentDescription = "Export JSON" },
+        ) {
             Text("Export JSON")
         }
-        OutlinedButton(onClick = props.onExportCsv, modifier = Modifier.weight(1f)) {
+        OutlinedButton(
+            onClick = props.onExportCsv,
+            modifier = Modifier.weight(1f).clearAndSetSemantics { contentDescription = "Export CSV" },
+        ) {
             Text("Export CSV")
         }
     }
@@ -61,10 +69,16 @@ private fun DataSovereigntyActions(props: DataSovereigntyProps) {
         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        OutlinedButton(onClick = props.onImportJson, modifier = Modifier.weight(1f)) {
+        OutlinedButton(
+            onClick = props.onImportJson,
+            modifier = Modifier.weight(1f).clearAndSetSemantics { contentDescription = "Import JSON" },
+        ) {
             Text("Import JSON")
         }
-        OutlinedButton(onClick = props.onImportCsv, modifier = Modifier.weight(1f)) {
+        OutlinedButton(
+            onClick = props.onImportCsv,
+            modifier = Modifier.weight(1f).clearAndSetSemantics { contentDescription = "Import CSV" },
+        ) {
             Text("Import CSV")
         }
     }

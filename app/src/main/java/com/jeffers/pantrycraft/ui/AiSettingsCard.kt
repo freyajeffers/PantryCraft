@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -23,6 +24,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.AiProvider
@@ -174,11 +178,17 @@ private fun AiSettingsActions(
         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Button(onClick = onSave, modifier = Modifier.weight(1f)) {
+        Button(
+            onClick = onSave,
+            modifier = Modifier.weight(1f).semantics { contentDescription = "Save AI Settings" },
+        ) {
             Text("Save AI Settings")
         }
         if (hasStoredApiKey) {
-            OutlinedButton(onClick = onClearKey) {
+            OutlinedButton(
+                onClick = onClearKey,
+                modifier = Modifier.semantics { contentDescription = "Clear stored API key" },
+            ) {
                 Text("Clear Key")
             }
         }
@@ -192,11 +202,21 @@ private fun GeminiLiveToggleRow(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .toggleable(
+                    value = isGeminiLiveEnabled,
+                    onValueChange = onToggle,
+                    role = Role.Checkbox,
+                ).semantics(mergeDescendants = true) {
+                    contentDescription = "Enable Gemini Live Vision, $isGeminiLiveEnabled"
+                },
     ) {
         Checkbox(
             checked = isGeminiLiveEnabled,
-            onCheckedChange = onToggle,
+            onCheckedChange = null,
         )
         Text(
             text = "Enable Gemini Live Vision (WebSocket streaming)",

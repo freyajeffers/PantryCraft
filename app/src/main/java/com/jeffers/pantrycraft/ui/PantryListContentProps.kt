@@ -2,6 +2,7 @@ package com.jeffers.pantrycraft.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -46,9 +47,11 @@ fun PantryListContent(props: PantryListContentProps) {
                     selected = props.selectedLocation == filter,
                     onClick = { props.onLocationSelected(filter) },
                     modifier =
-                        Modifier.semantics(mergeDescendants = true) {
-                            contentDescription = filter.label
-                        },
+                        Modifier
+                            .height(48.dp)
+                            .semantics(mergeDescendants = true) {
+                                contentDescription = "Filter pantry by ${filter.label}"
+                            },
                     label = { Text(filter.label) },
                 )
             }

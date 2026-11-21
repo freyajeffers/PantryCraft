@@ -41,6 +41,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.GroceryItem
@@ -184,7 +186,19 @@ fun GroceryItemRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Checkbox(checked = item.checked, onCheckedChange = onChecked)
+        Checkbox(
+            checked = item.checked,
+            onCheckedChange = onChecked,
+            modifier =
+                Modifier.semantics {
+                    contentDescription =
+                        if (item.checked) {
+                            "Mark ${item.name} not checked"
+                        } else {
+                            "Mark ${item.name} checked"
+                        }
+                },
+        )
         Column(
             modifier =
                 Modifier
@@ -196,7 +210,7 @@ fun GroceryItemRow(
                 style =
                     if (item.checked) {
                         MaterialTheme.typography.titleMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     } else {
                         MaterialTheme.typography.titleMedium
