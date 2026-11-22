@@ -138,7 +138,7 @@ internal fun AppBottomBar(
                             .height(64.dp)
                             .clickable(onClickLabel = item.label) { onDestinationSelected(item.route) }
                             .semantics(mergeDescendants = true) {
-                                contentDescription = item.label
+                                contentDescription = "${item.label} tab"
                                 role = Role.Button
                             },
                     contentAlignment = Alignment.Center,
