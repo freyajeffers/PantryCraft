@@ -11,14 +11,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
@@ -40,14 +37,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jeffers.pantrycraft.data.PantryItem
-import com.jeffers.pantrycraft.data.PantryTaxonomy
 import java.math.BigDecimal
 import java.util.concurrent.TimeUnit
 
@@ -233,7 +228,16 @@ private fun PantryItemContent(
             ) {
                 Text(
                     "${item.storageLocation} • ${expiration.label}",
-                    color = expiration.color,
+                    color =
+                        when (expiration) {
+                            ExpirationStatus.EXPIRED -> MaterialTheme.colorScheme.error
+
+                            ExpirationStatus.EXPIRING_SOON -> MaterialTheme.colorScheme.onSecondaryContainer
+
+                            ExpirationStatus.FRESH,
+                            ExpirationStatus.NONE,
+                            -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                     style = MaterialTheme.typography.bodySmall,
                 )
                 if (item.isOpened) {
@@ -254,83 +258,6 @@ private fun PantryItemContent(
         }
         PantryItemActions(item, isLowStock, actions)
     }
-}
-
-@Composable
-private fun PantryItemActions(
-    item: PantryItem,
-    isLowStock: Boolean,
-    actions: PantryItemRowActions,
-) {
-    if (!item.isOpened) {
-        TextButton(
-            onClick = actions.onMarkOpened,
-            modifier =
-                Modifier.clearAndSetSemantics {
-                    contentDescription = "Open ${item.name}, item ${item.id}"
-                },
-        ) { Text("Open") }
-    }
-    if (isLowStock) {
-        IconButton(
-            onClick = actions.onAddToGrocery,
-            modifier =
-                Modifier.clearAndSetSemantics {
-                    contentDescription = "Add ${item.name}, item ${item.id} to grocery list"
-                },
-        ) {
-            Icon(
-                Icons.Filled.AddShoppingCart,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        }
-    }
-    if (item.unit.orEmpty() in PantryTaxonomy.integerQuantityUnits) {
-        IconButton(
-            onClick = actions.onDecrement,
-            enabled = item.quantity > 0f,
-            modifier =
-                Modifier.clearAndSetSemantics {
-                    contentDescription = "Decrease ${item.name}, item ${item.id} quantity"
-                },
-        ) {
-            Icon(Icons.Filled.Remove, contentDescription = null)
-        }
-        Text(formatPantryQuantity(item.quantity))
-        IconButton(
-            onClick = actions.onIncrement,
-            modifier =
-                Modifier.clearAndSetSemantics {
-                    contentDescription = "Increase ${item.name}, item ${item.id} quantity"
-                },
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = null)
-        }
-    } else {
-        TextButton(
-            onClick = actions.onUse,
-            enabled = item.quantity > 0f,
-            modifier =
-                Modifier.clearAndSetSemantics {
-                    contentDescription = "Use ${item.name}, item ${item.id}"
-                },
-        ) { Text("Use") }
-    }
-    TextButton(
-        onClick = actions.onEdit,
-        modifier =
-            Modifier.clearAndSetSemantics {
-                contentDescription = "Edit ${item.name}, item ${item.id}"
-            },
-    ) { Text("Edit") }
-    TextButton(
-        onClick = actions.onDelete,
-        modifier =
-            Modifier.clearAndSetSemantics {
-                contentDescription = "Delete ${item.name}, item ${item.id}"
-            },
-    ) { Text("Delete") }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

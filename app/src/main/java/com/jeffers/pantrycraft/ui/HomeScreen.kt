@@ -162,7 +162,10 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                     modifier =
                         Modifier
                             .weight(1f)
-                            .semantics { role = Role.Button },
+                            .semantics(mergeDescendants = true) {
+                                contentDescription = "Scan Shelf"
+                                role = Role.Button
+                            },
                 ) {
                     Icon(
                         Icons.Filled.QrCodeScanner,
@@ -176,7 +179,10 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                     modifier =
                         Modifier
                             .weight(1f)
-                            .semantics { role = Role.Button },
+                            .semantics(mergeDescendants = true) {
+                                contentDescription = "Add Item"
+                                role = Role.Button
+                            },
                 ) {
                     Icon(
                         Icons.Filled.Inventory2,
@@ -215,7 +221,11 @@ private fun GroceryChecklistCard(
             }
             OutlinedButton(
                 onClick = { onNavigate("grocery") },
-                modifier = Modifier.semantics { role = Role.Button },
+                modifier =
+                    Modifier.semantics(mergeDescendants = true) {
+                        contentDescription = "View List"
+                        role = Role.Button
+                    },
             ) {
                 Icon(
                     Icons.Filled.ShoppingCart,
@@ -263,7 +273,7 @@ private fun MealSynthesisCard(
             Text(
                 "Ready to scaffold with $pantryCount ingredients currently in stock.",
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
             Button(
                 onClick = { onNavigate("meals") },
@@ -272,7 +282,7 @@ private fun MealSynthesisCard(
                         .fillMaxWidth()
                         .padding(top = 4.dp)
                         .clearAndSetSemantics {
-                            contentDescription = "Synthesize meals"
+                            contentDescription = "Synthesize Meals"
                             role = Role.Button
                             onClick(label = "Synthesize meals") {
                                 onNavigate("meals")
@@ -302,11 +312,14 @@ private fun MetricCard(
         modifier =
             modifier
                 .clickable(onClickLabel = onClickLabel, onClick = onClick)
-                .semantics { role = Role.Button },
+                .semantics(mergeDescendants = true) {
+                    contentDescription = "$title, $value, $subtitle"
+                    role = Role.Button
+                },
         colors =
             if (isWarning) {
                 CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
                 )
             } else {
                 CardDefaults.cardColors(

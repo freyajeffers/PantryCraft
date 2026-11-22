@@ -211,7 +211,9 @@ private fun GeminiLiveToggleRow(
                     onValueChange = onToggle,
                     role = Role.Checkbox,
                 ).semantics(mergeDescendants = true) {
-                    contentDescription = "Enable Gemini Live Vision, $isGeminiLiveEnabled"
+                    contentDescription =
+                        "Enable Gemini Live Vision (WebSocket streaming), " +
+                        if (isGeminiLiveEnabled) "enabled" else "disabled"
                 },
     ) {
         Checkbox(
