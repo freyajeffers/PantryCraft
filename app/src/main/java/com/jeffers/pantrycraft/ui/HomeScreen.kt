@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -162,6 +163,7 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                     modifier =
                         Modifier
                             .weight(1f)
+                            .heightIn(min = 48.dp)
                             .semantics(mergeDescendants = true) {
                                 contentDescription = "Scan Shelf"
                                 role = Role.Button
@@ -179,6 +181,7 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                     modifier =
                         Modifier
                             .weight(1f)
+                            .heightIn(min = 48.dp)
                             .semantics(mergeDescendants = true) {
                                 contentDescription = "Add Item"
                                 role = Role.Button
@@ -222,10 +225,12 @@ private fun GroceryChecklistCard(
             OutlinedButton(
                 onClick = { onNavigate("grocery") },
                 modifier =
-                    Modifier.semantics(mergeDescendants = true) {
-                        contentDescription = "View List"
-                        role = Role.Button
-                    },
+                    Modifier
+                        .heightIn(min = 48.dp)
+                        .semantics(mergeDescendants = true) {
+                            contentDescription = "View List"
+                            role = Role.Button
+                        },
             ) {
                 Icon(
                     Icons.Filled.ShoppingCart,

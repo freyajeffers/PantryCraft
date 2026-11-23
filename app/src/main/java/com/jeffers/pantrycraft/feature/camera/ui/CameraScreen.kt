@@ -47,7 +47,7 @@ import com.jeffers.pantrycraft.feature.camera.barcode.BarcodeMatch
 
 internal const val FOCUS_CLEAR_DELAY_MILLIS = 1_200L
 internal const val LABEL_TEXT_SIZE = 34f
-internal const val BADGE_ALPHA = 200
+internal const val BADGE_ALPHA = 255
 internal const val BADGE_COLOR_RED = 20
 internal const val BADGE_COLOR_GREEN = 30
 internal const val BADGE_COLOR_BLUE = 45
@@ -135,17 +135,21 @@ internal fun CameraStatusHud(state: CameraStatusHudState) {
             modifier =
                 Modifier
                     .weight(1f)
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f), RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(12.dp))
                     .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            Text(statusText, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                statusText,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
         }
         IconButton(
             onClick = state.onToggleTorch,
             modifier =
                 Modifier
                     .padding(start = 8.dp)
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f), RoundedCornerShape(12.dp)),
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(12.dp)),
         ) {
             Icon(
                 imageVector = if (state.isTorchOn) Icons.Filled.FlashOn else Icons.Filled.FlashOff,

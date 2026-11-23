@@ -11,6 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -28,7 +30,11 @@ fun EncryptedBackupCard(props: EncryptedBackupCardProps) {
 
 @Composable
 private fun EncryptedBackupHeader() {
-    Text("Encrypted backup", style = MaterialTheme.typography.titleLarge)
+    Text(
+        "Encrypted backup",
+        style = MaterialTheme.typography.titleLarge,
+        modifier = Modifier.semantics { contentDescription = "Encrypted backup settings" },
+    )
     Text(
         "Save an encrypted copy of your pantry and grocery data on this device. " +
             "Choose a PIN that you can remember; you will need it to restore the backup. " +

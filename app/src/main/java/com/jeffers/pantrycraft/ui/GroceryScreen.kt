@@ -41,8 +41,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.GroceryItem
@@ -190,13 +190,10 @@ fun GroceryItemRow(
             checked = item.checked,
             onCheckedChange = onChecked,
             modifier =
-                Modifier.semantics {
+                Modifier.clearAndSetSemantics {
                     contentDescription =
-                        if (item.checked) {
-                            "Mark ${item.name} not checked"
-                        } else {
-                            "Mark ${item.name} checked"
-                        }
+                        "${item.name}, item ${item.id}, " +
+                        if (item.checked) "mark not checked" else "mark checked"
                 },
         )
         Column(

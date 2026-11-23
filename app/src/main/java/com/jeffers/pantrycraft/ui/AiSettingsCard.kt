@@ -25,7 +25,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -180,14 +182,24 @@ private fun AiSettingsActions(
     ) {
         Button(
             onClick = onSave,
-            modifier = Modifier.weight(1f).semantics { contentDescription = "Save AI Settings" },
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .clearAndSetSemantics {
+                        contentDescription = "Save AI Settings"
+                        role = Role.Button
+                    },
         ) {
             Text("Save AI Settings")
         }
         if (hasStoredApiKey) {
             OutlinedButton(
                 onClick = onClearKey,
-                modifier = Modifier.semantics { contentDescription = "Clear stored API key" },
+                modifier =
+                    Modifier.clearAndSetSemantics {
+                        contentDescription = "Clear stored API key"
+                        role = Role.Button
+                    },
             ) {
                 Text("Clear Key")
             }
