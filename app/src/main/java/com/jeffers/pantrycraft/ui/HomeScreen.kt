@@ -317,6 +317,7 @@ private fun MetricCard(
         modifier =
             modifier
                 .clickable(onClickLabel = onClickLabel, onClick = onClick)
+                .heightIn(min = 48.dp)
                 .semantics(mergeDescendants = true) {
                     contentDescription = "$title, $value, $subtitle"
                     role = Role.Button
