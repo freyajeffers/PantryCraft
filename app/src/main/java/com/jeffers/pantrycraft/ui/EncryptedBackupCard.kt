@@ -29,7 +29,7 @@ fun EncryptedBackupCard(props: EncryptedBackupCardProps) {
 @Composable
 private fun EncryptedBackupHeader() {
     Text(
-        "Encrypted backup",
+        "Encrypted backup and recovery",
         style = MaterialTheme.typography.titleLarge,
     )
     Text(

@@ -43,6 +43,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jeffers.pantrycraft.DefaultDispatcherProvider
@@ -139,6 +140,7 @@ internal fun AppBottomBar(
                             .clickable(onClickLabel = item.label) { onDestinationSelected(item.route) }
                             .semantics(mergeDescendants = true) {
                                 contentDescription = "${item.label} tab"
+                                stateDescription = if (selected) "selected" else "not selected"
                                 role = Role.Button
                             },
                     contentAlignment = Alignment.Center,

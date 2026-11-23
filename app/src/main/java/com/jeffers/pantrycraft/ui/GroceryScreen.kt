@@ -193,41 +193,38 @@ fun GroceryItemRow(
         Row(
             modifier =
                 Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp)
                     .toggleable(
                         value = item.checked,
                         onValueChange = onChecked,
                         role = Role.Checkbox,
                     ).semantics(mergeDescendants = true) {
                         contentDescription =
-                            "${item.name}, item ${item.id}, " +
-                            if (item.checked) "mark not checked" else "mark checked"
+                            "${item.name}, ${item.quantity} ${item.unit.orEmpty()}, " +
+                            if (item.checked) "checked, activate to mark not checked" else "not checked, activate to mark checked"
                     },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(checked = item.checked, onCheckedChange = null)
-        }
-        Column(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .padding(horizontal = 8.dp),
-        ) {
-            Text(
-                item.name,
-                style =
-                    if (item.checked) {
-                        MaterialTheme.typography.titleMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    } else {
-                        MaterialTheme.typography.titleMedium
-                    },
-            )
-            Text(
-                "${item.quantity} ${item.unit.orEmpty()}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Column(modifier = Modifier.padding(horizontal = 8.dp)) {
+                Text(
+                    item.name,
+                    style =
+                        if (item.checked) {
+                            MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        } else {
+                            MaterialTheme.typography.titleMedium
+                        },
+                )
+                Text(
+                    "${item.quantity} ${item.unit.orEmpty()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         IconButton(onClick = onDelete) {
             Icon(

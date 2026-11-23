@@ -25,7 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -182,24 +181,14 @@ private fun AiSettingsActions(
     ) {
         Button(
             onClick = onSave,
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .clearAndSetSemantics {
-                        contentDescription = "Save AI Settings"
-                        role = Role.Button
-                    },
+            modifier = Modifier.weight(1f),
         ) {
             Text("Save AI Settings")
         }
         if (hasStoredApiKey) {
             OutlinedButton(
                 onClick = onClearKey,
-                modifier =
-                    Modifier.clearAndSetSemantics {
-                        contentDescription = "Clear stored API key"
-                        role = Role.Button
-                    },
+                modifier = Modifier,
             ) {
                 Text("Clear Key")
             }

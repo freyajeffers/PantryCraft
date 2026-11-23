@@ -163,11 +163,7 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                     modifier =
                         Modifier
                             .weight(1f)
-                            .heightIn(min = 48.dp)
-                            .semantics(mergeDescendants = true) {
-                                contentDescription = "Scan Shelf"
-                                role = Role.Button
-                            },
+                            .heightIn(min = 56.dp),
                 ) {
                     Icon(
                         Icons.Filled.QrCodeScanner,
@@ -181,11 +177,7 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                     modifier =
                         Modifier
                             .weight(1f)
-                            .heightIn(min = 48.dp)
-                            .semantics(mergeDescendants = true) {
-                                contentDescription = "Add Item"
-                                role = Role.Button
-                            },
+                            .heightIn(min = 56.dp),
                 ) {
                     Icon(
                         Icons.Filled.Inventory2,
@@ -226,11 +218,7 @@ private fun GroceryChecklistCard(
                 onClick = { onNavigate("grocery") },
                 modifier =
                     Modifier
-                        .heightIn(min = 48.dp)
-                        .semantics(mergeDescendants = true) {
-                            contentDescription = "View List"
-                            role = Role.Button
-                        },
+                        .heightIn(min = 56.dp),
             ) {
                 Icon(
                     Icons.Filled.ShoppingCart,
@@ -317,9 +305,8 @@ private fun MetricCard(
         modifier =
             modifier
                 .clickable(onClickLabel = onClickLabel, onClick = onClick)
-                .heightIn(min = 48.dp)
+                .heightIn(min = 56.dp)
                 .semantics(mergeDescendants = true) {
-                    contentDescription = "$title, $value, $subtitle"
                     role = Role.Button
                 },
         colors =
