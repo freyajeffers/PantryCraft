@@ -236,9 +236,9 @@ private fun GroceryChecklistCard(
                     Modifier
                         .heightIn(min = 64.dp)
                         .clearAndSetSemantics {
-                            contentDescription = "View List"
+                            contentDescription = "View grocery list"
                             role = Role.Button
-                            onClick(label = "View List") {
+                            onClick(label = "View grocery list") {
                                 onNavigate("grocery")
                                 true
                             }
