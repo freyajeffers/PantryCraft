@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.PantryTaxonomy
 
@@ -41,9 +42,8 @@ private fun PantryItemOpenAction(
         onClick = onClick,
         modifier =
             Modifier.semantics {
-                contentDescription =
-                    "Open ${item.name}, ${item.storageLocation}, " +
-                    "quantity ${formatPantryQuantity(item.quantity)}"
+                contentDescription = "Open"
+                stateDescription = item.actionStateDescription()
             },
     ) { Text("Open") }
 }
@@ -57,7 +57,8 @@ private fun PantryItemGroceryAction(
         onClick = onClick,
         modifier =
             Modifier.semantics {
-                contentDescription = "Add ${item.name}, ${item.storageLocation}, to grocery list"
+                contentDescription = "Add to grocery list"
+                stateDescription = "${item.name}, ${item.storageLocation}"
             },
     ) {
         Icon(
@@ -78,9 +79,8 @@ private fun PantryItemQuantityActions(
         enabled = item.quantity > 0f,
         modifier =
             Modifier.semantics {
-                contentDescription =
-                    "Decrease ${item.name}, ${item.storageLocation}, " +
-                    "quantity ${formatPantryQuantity(item.quantity)}"
+                contentDescription = "Decrease quantity"
+                stateDescription = item.actionStateDescription()
             },
     ) { Icon(Icons.Filled.Remove, contentDescription = null) }
     Text(formatPantryQuantity(item.quantity))
@@ -88,9 +88,8 @@ private fun PantryItemQuantityActions(
         onClick = actions.onIncrement,
         modifier =
             Modifier.semantics {
-                contentDescription =
-                    "Increase ${item.name}, ${item.storageLocation}, " +
-                    "quantity ${formatPantryQuantity(item.quantity)}"
+                contentDescription = "Increase quantity"
+                stateDescription = item.actionStateDescription()
             },
     ) { Icon(Icons.Filled.Add, contentDescription = null) }
 }
@@ -105,9 +104,8 @@ private fun PantryItemUseAction(
         enabled = item.quantity > 0f,
         modifier =
             Modifier.semantics {
-                contentDescription =
-                    "Use ${item.name}, ${item.storageLocation}, " +
-                    "quantity ${formatPantryQuantity(item.quantity)}"
+                contentDescription = "Use"
+                stateDescription = item.actionStateDescription()
             },
     ) { Text("Use") }
 }
@@ -121,18 +119,25 @@ private fun PantryItemEditDeleteActions(
         onClick = actions.onEdit,
         modifier =
             Modifier.semantics {
-                contentDescription =
-                    "Edit ${item.name}, ${item.storageLocation}, " +
-                    "quantity ${formatPantryQuantity(item.quantity)}"
+                contentDescription = "Edit"
+                stateDescription = item.actionStateDescription()
             },
     ) { Text("Edit") }
     TextButton(
         onClick = actions.onDelete,
         modifier =
             Modifier.semantics {
-                contentDescription =
-                    "Delete ${item.name}, ${item.storageLocation}, " +
-                    "quantity ${formatPantryQuantity(item.quantity)}"
+                contentDescription = "Delete"
+                stateDescription = item.actionStateDescription()
             },
     ) { Text("Delete") }
 }
+
+private fun PantryItem.actionStateDescription(): String =
+    buildString {
+        append(name)
+        append(", ")
+        append(storageLocation)
+        append(", quantity ")
+        append(formatPantryQuantity(quantity))
+    }

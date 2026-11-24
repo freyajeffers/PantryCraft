@@ -165,9 +165,9 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                             .weight(1f)
                             .heightIn(min = 64.dp)
                             .clearAndSetSemantics {
-                                contentDescription = "Scan Shelf"
+                                contentDescription = "Scan shelf"
                                 role = Role.Button
-                                onClick(label = "Scan Shelf") {
+                                onClick(label = "Scan shelf") {
                                     onNavigate("camera")
                                     true
                                 }
@@ -187,9 +187,9 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                             .weight(1f)
                             .heightIn(min = 64.dp)
                             .clearAndSetSemantics {
-                                contentDescription = "Add Item"
+                                contentDescription = "Add item"
                                 role = Role.Button
-                                onClick(label = "Add Item") {
+                                onClick(label = "Add item") {
                                     onNavigate("pantry")
                                     true
                                 }
