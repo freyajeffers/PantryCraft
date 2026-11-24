@@ -101,7 +101,7 @@ class CameraScreenHostComposeTest {
         var requested = false
         composeTestRule.setContent {
             PantryCraftTheme {
-                CameraPermissionPrompt { requested = true }
+                CameraPermissionPrompt(onRequestPermission = { requested = true })
             }
         }
         composeTestRule.waitForIdle()
