@@ -136,36 +136,39 @@ internal fun AppBottomBar(
                     modifier =
                         Modifier
                             .weight(1f)
-                            .height(64.dp)
+                            .height(80.dp)
                             .clickable(onClickLabel = item.label) { onDestinationSelected(item.route) }
                             .semantics(mergeDescendants = true) {
                                 contentDescription = "${item.label} tab"
                                 stateDescription = if (selected) "selected" else "not selected"
-                                role = Role.Button
+                                role = Role.Tab
                             },
                     contentAlignment = Alignment.Center,
                 ) {
                     val bubbleWidth = minOf(54.dp, maxWidth - 8.dp)
-                    Box(
-                        modifier =
-                            Modifier
-                                .width(bubbleWidth)
-                                .height(32.dp)
-                                .background(
-                                    if (selected) {
-                                        MaterialTheme.colorScheme.secondaryContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.surface
-                                    },
-                                    RoundedCornerShape(16.dp),
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        androidx.compose.material3.Icon(
-                            imageVector = if (selected) item.selectedIcon else item.icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(28.dp),
-                        )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .width(bubbleWidth)
+                                    .height(32.dp)
+                                    .background(
+                                        if (selected) {
+                                            MaterialTheme.colorScheme.secondaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.surface
+                                        },
+                                        RoundedCornerShape(16.dp),
+                                    ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            androidx.compose.material3.Icon(
+                                imageVector = if (selected) item.selectedIcon else item.icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+                        Text(item.label, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }

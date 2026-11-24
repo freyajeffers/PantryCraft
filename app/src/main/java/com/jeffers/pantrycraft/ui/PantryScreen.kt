@@ -189,31 +189,27 @@ private fun PantryItemContent(
     isLowStock: Boolean,
     actions: PantryItemRowActions,
 ) {
+    val summaryDescription =
+        listOfNotNull(
+            item.name.takeIf { it.isNotBlank() },
+            "${formatPantryQuantity(item.quantity)} ${item.unit.orEmpty()}",
+            expiration.label.takeIf { it != ExpirationStatus.NONE.label },
+            if (isLowStock) "Low stock" else null,
+        ).joinToString(", ")
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .semantics(mergeDescendants = true) {
-                    val unitDisplay =
-                        if (item.unit == "CUSTOM" && !item.customUnitName.isNullOrBlank()) {
-                            item.customUnitName
-                        } else {
-                            item.unit.orEmpty()
-                        }
-                    val descParts =
-                        listOfNotNull(
-                            item.name.takeIf { it.isNotBlank() },
-                            "${formatPantryQuantity(item.quantity)} $unitDisplay",
-                            expiration.label.takeIf { it != ExpirationStatus.NONE.label },
-                            if (isLowStock) "Low stock" else null,
-                        )
-                    contentDescription = descParts.joinToString(", ")
-                },
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        Column(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .semantics { contentDescription = summaryDescription },
+        ) {
             Text(item.name, style = MaterialTheme.typography.titleMedium)
             val unitDisplay =
                 if (item.unit == "CUSTOM" && !item.customUnitName.isNullOrBlank()) {

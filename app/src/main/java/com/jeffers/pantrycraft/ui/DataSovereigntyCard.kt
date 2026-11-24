@@ -16,6 +16,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.DefaultDispatcherProvider
 import com.jeffers.pantrycraft.DispatcherProvider
@@ -52,13 +54,13 @@ private fun DataSovereigntyActions(props: DataSovereigntyProps) {
     ) {
         OutlinedButton(
             onClick = props.onExportJson,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).semantics { contentDescription = "Export JSON inventory" },
         ) {
             Text("Export JSON")
         }
         OutlinedButton(
             onClick = props.onExportCsv,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).semantics { contentDescription = "Export CSV pantry" },
         ) {
             Text("Export CSV")
         }
@@ -69,13 +71,13 @@ private fun DataSovereigntyActions(props: DataSovereigntyProps) {
     ) {
         OutlinedButton(
             onClick = props.onImportJson,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).semantics { contentDescription = "Import JSON inventory" },
         ) {
             Text("Import JSON")
         }
         OutlinedButton(
             onClick = props.onImportCsv,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).semantics { contentDescription = "Import CSV pantry" },
         ) {
             Text("Import CSV")
         }
