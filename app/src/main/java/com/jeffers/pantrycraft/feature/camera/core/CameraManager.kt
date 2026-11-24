@@ -33,30 +33,35 @@ class CameraManager(
         val providerFuture = ProcessCameraProvider.getInstance(appContext)
         providerFuture.addListener(
             {
-                val provider = providerFuture.get()
-                cameraProvider = provider
-                val preview =
-                    Preview.Builder().build().apply {
-                        setSurfaceProvider(previewView.surfaceProvider)
-                    }
-                val analysis =
-                    ImageAnalysis
-                        .Builder()
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
-                        .build()
-                        .apply { setAnalyzer(analysisExecutor, analyzer) }
-                val imageCapture = ImageCapture.Builder().build()
-                this@CameraManager.imageCapture = imageCapture
-                provider.unbindAll()
-                camera =
-                    provider.bindToLifecycle(
-                        owner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview,
-                        analysis,
-                        imageCapture,
-                    )
+                runCatching {
+                    val provider = providerFuture.get()
+                    cameraProvider = provider
+                    val preview =
+                        Preview.Builder().build().apply {
+                            setSurfaceProvider(previewView.surfaceProvider)
+                        }
+                    val analysis =
+                        ImageAnalysis
+                            .Builder()
+                            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                            .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
+                            .build()
+                            .apply { setAnalyzer(analysisExecutor, analyzer) }
+                    val imageCapture = ImageCapture.Builder().build()
+                    this@CameraManager.imageCapture = imageCapture
+                    provider.unbindAll()
+                    camera =
+                        provider.bindToLifecycle(
+                            owner,
+                            CameraSelector.DEFAULT_BACK_CAMERA,
+                            preview,
+                            analysis,
+                            imageCapture,
+                        )
+                }.onFailure {
+                    // Camera-less emulators and temporarily unavailable cameras must not crash the UI.
+                    unbind()
+                }
             },
             ContextCompat.getMainExecutor(appContext),
         )

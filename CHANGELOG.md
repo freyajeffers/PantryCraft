@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Lowered the minimum supported Android version to API 33 so PantryCraft can run on Android 13 / API 33 test environments.
 - Completed the full adversarial UX remediation pass: dashboard/navigation semantics, grocery/pantry confirmation flows, camera permission recovery, meal synthesis failure states, saved AI settings, contrast-safe error roles, and explicit portability actions.
 - Remediated adversarial accessibility/UX issues: explicit dashboard and grocery semantics, contrast-safe dark error colors, camera permission recovery through app settings, meal synthesis failure/loading announcements, AI form state preservation, and confirmation-protected destructive pantry/grocery actions.
 - Addressed remaining Accessibility Scanner findings in current Compose sources: enforced 48dp metric/grocery targets, converted grocery checkboxes to labeled row toggles, and removed the duplicate encrypted-backup header announcement.

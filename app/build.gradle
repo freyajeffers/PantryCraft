@@ -85,7 +85,7 @@ android {
 
     defaultConfig {
         applicationId = 'com.jeffers.pantrycraft'
-        minSdk = 34
+        minSdk = 33
         targetSdk = 36
         versionCode = fdroidDebugBuildRequested ? fdroidDebugVersionCode : 1
         versionName = pantryVersionName

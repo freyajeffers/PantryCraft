@@ -139,7 +139,7 @@ internal fun AppBottomBar(
                             .height(80.dp)
                             .clickable(onClickLabel = item.label) { onDestinationSelected(item.route) }
                             .semantics(mergeDescendants = true) {
-                                contentDescription = "${item.label} tab"
+                                contentDescription = item.label
                                 stateDescription = if (selected) "selected" else "not selected"
                                 role = Role.Tab
                             },

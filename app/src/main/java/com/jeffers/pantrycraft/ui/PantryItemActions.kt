@@ -11,8 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.jeffers.pantrycraft.data.PantryItem
 import com.jeffers.pantrycraft.data.PantryTaxonomy
 
@@ -40,7 +40,7 @@ private fun PantryItemOpenAction(
     TextButton(
         onClick = onClick,
         modifier =
-            Modifier.clearAndSetSemantics {
+            Modifier.semantics {
                 contentDescription =
                     "Open ${item.name}, ${item.storageLocation}, " +
                     "quantity ${formatPantryQuantity(item.quantity)}"
@@ -56,7 +56,7 @@ private fun PantryItemGroceryAction(
     IconButton(
         onClick = onClick,
         modifier =
-            Modifier.clearAndSetSemantics {
+            Modifier.semantics {
                 contentDescription = "Add ${item.name}, ${item.storageLocation}, to grocery list"
             },
     ) {
@@ -77,7 +77,7 @@ private fun PantryItemQuantityActions(
         onClick = actions.onDecrement,
         enabled = item.quantity > 0f,
         modifier =
-            Modifier.clearAndSetSemantics {
+            Modifier.semantics {
                 contentDescription =
                     "Decrease ${item.name}, ${item.storageLocation}, " +
                     "quantity ${formatPantryQuantity(item.quantity)}"
@@ -87,7 +87,7 @@ private fun PantryItemQuantityActions(
     IconButton(
         onClick = actions.onIncrement,
         modifier =
-            Modifier.clearAndSetSemantics {
+            Modifier.semantics {
                 contentDescription =
                     "Increase ${item.name}, ${item.storageLocation}, " +
                     "quantity ${formatPantryQuantity(item.quantity)}"
@@ -104,7 +104,7 @@ private fun PantryItemUseAction(
         onClick = onClick,
         enabled = item.quantity > 0f,
         modifier =
-            Modifier.clearAndSetSemantics {
+            Modifier.semantics {
                 contentDescription =
                     "Use ${item.name}, ${item.storageLocation}, " +
                     "quantity ${formatPantryQuantity(item.quantity)}"
@@ -120,7 +120,7 @@ private fun PantryItemEditDeleteActions(
     TextButton(
         onClick = actions.onEdit,
         modifier =
-            Modifier.clearAndSetSemantics {
+            Modifier.semantics {
                 contentDescription =
                     "Edit ${item.name}, ${item.storageLocation}, " +
                     "quantity ${formatPantryQuantity(item.quantity)}"
@@ -129,7 +129,7 @@ private fun PantryItemEditDeleteActions(
     TextButton(
         onClick = actions.onDelete,
         modifier =
-            Modifier.clearAndSetSemantics {
+            Modifier.semantics {
                 contentDescription =
                     "Delete ${item.name}, ${item.storageLocation}, " +
                     "quantity ${formatPantryQuantity(item.quantity)}"

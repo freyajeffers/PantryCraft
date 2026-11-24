@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.observeLowStock
@@ -164,9 +165,9 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                             .weight(1f)
                             .heightIn(min = 64.dp)
                             .clearAndSetSemantics {
-                                contentDescription = "Scan shelf"
+                                contentDescription = "Scan Shelf"
                                 role = Role.Button
-                                onClick(label = "Scan shelf") {
+                                onClick(label = "Scan Shelf") {
                                     onNavigate("camera")
                                     true
                                 }
@@ -186,9 +187,9 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                             .weight(1f)
                             .heightIn(min = 64.dp)
                             .clearAndSetSemantics {
-                                contentDescription = "Add pantry item"
+                                contentDescription = "Add Item"
                                 role = Role.Button
-                                onClick(label = "Add pantry item") {
+                                onClick(label = "Add Item") {
                                     onNavigate("pantry")
                                     true
                                 }
@@ -235,9 +236,9 @@ private fun GroceryChecklistCard(
                     Modifier
                         .heightIn(min = 64.dp)
                         .clearAndSetSemantics {
-                            contentDescription = "View grocery list"
+                            contentDescription = "View List"
                             role = Role.Button
-                            onClick(label = "View grocery list") {
+                            onClick(label = "View List") {
                                 onNavigate("grocery")
                                 true
                             }
@@ -330,7 +331,8 @@ private fun MetricCard(
                 .clickable(onClickLabel = onClickLabel, onClick = onClick)
                 .heightIn(min = 64.dp)
                 .clearAndSetSemantics {
-                    contentDescription = "$title, $value, $subtitle"
+                    contentDescription = title
+                    stateDescription = "$value, $subtitle"
                     role = Role.Button
                     onClick(label = onClickLabel) {
                         onClick()

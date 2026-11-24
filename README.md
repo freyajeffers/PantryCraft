@@ -1,6 +1,6 @@
 # PantryCraft
 
-**Android 14+ (SDK 34–36)** | **Kotlin 2.0+ / Jetpack Compose** | **100% Local-First & Zero Telemetry** | **Autonomous Agentic Architecture**
+**Android 13+ (SDK 33–37)** | **Kotlin 2.0+ / Jetpack Compose** | **100% Local-First & Zero Telemetry** | **Autonomous Agentic Architecture**
 
 > A minimalist, privacy-centric Android application that recognizes pantry/fridge ingredients via camera and speech, manages inventory locally with zero telemetry, and autonomously synthesizes portion-accurate, waste-eliminating recipes using on-device models or user-provided API keys.
 
@@ -58,7 +58,7 @@ All planning and architectural reconciliation artifacts reside in Google Drive:
 
 ## Build & Run
 
-Prerequisites: JDK 17+ and Android SDK 35/36.
+Prerequisites: JDK 17+ and Android SDK 35–37.
 
 ```bash
 # 1. Run unit test suite
