@@ -44,19 +44,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.GroceryItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("LongMethod")
 fun GroceryScreen(viewModel: GroceryViewModel) {
     val items by viewModel.items.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var storageError by rememberSaveable { mutableStateOf<String?>(null) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf<GroceryItem?>(null) }
+    var showClearConfirmation by rememberSaveable { mutableStateOf(false) }
 
     val checkedCount = items.count { it.checked }
 
@@ -69,6 +75,38 @@ fun GroceryScreen(viewModel: GroceryViewModel) {
 
     storageError?.let { message ->
         StorageDiagnosticDialog(message = message, onDismiss = { storageError = null })
+    }
+    pendingDelete?.let { item ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("Delete ${item.name}?") },
+            text = { Text("This removes the item from your local grocery list.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.delete(item)
+                        pendingDelete = null
+                    },
+                ) { Text("Delete") }
+            },
+            dismissButton = { TextButton(onClick = { pendingDelete = null }) { Text("Cancel") } },
+        )
+    }
+    if (showClearConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showClearConfirmation = false },
+            title = { Text("Clear checked items?") },
+            text = { Text("This permanently removes $checkedCount checked items from the local grocery list.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.clearChecked()
+                        showClearConfirmation = false
+                    },
+                ) { Text("Clear checked") }
+            },
+            dismissButton = { TextButton(onClick = { showClearConfirmation = false }) { Text("Cancel") } },
+        )
     }
 
     if (showAddDialog) {
@@ -93,7 +131,7 @@ fun GroceryScreen(viewModel: GroceryViewModel) {
             GroceryTopBar(
                 checkedCount = checkedCount,
                 onRestock = viewModel::restockChecked,
-                onClear = viewModel::clearChecked,
+                onClear = { showClearConfirmation = true },
             )
         },
         floatingActionButton = {
@@ -104,7 +142,7 @@ fun GroceryScreen(viewModel: GroceryViewModel) {
             items = items,
             padding = padding,
             onChecked = { item, checked -> viewModel.update(item.copy(checked = checked)) },
-            onDelete = viewModel::delete,
+            onDelete = { pendingDelete = it },
         )
     }
 }
@@ -176,6 +214,7 @@ internal fun GroceryListContent(
 }
 
 @Composable
+@Suppress("LongMethod")
 fun GroceryItemRow(
     item: GroceryItem,
     onChecked: (Boolean) -> Unit,
@@ -199,10 +238,20 @@ fun GroceryItemRow(
                         value = item.checked,
                         onValueChange = onChecked,
                         role = Role.Checkbox,
-                    ).semantics(mergeDescendants = true) {
+                    ).clearAndSetSemantics {
                         contentDescription =
                             "${item.name}, ${item.quantity} ${item.unit.orEmpty()}, " +
-                            if (item.checked) "checked, activate to mark not checked" else "not checked, activate to mark checked"
+                            if (item.checked) {
+                                "checked, activate to mark not checked"
+                            } else {
+                                "not checked, activate to mark checked"
+                            }
+                        stateDescription = if (item.checked) "checked" else "not checked"
+                        role = Role.Checkbox
+                        onClick(label = if (item.checked) "Mark not checked" else "Mark checked") {
+                            onChecked(!item.checked)
+                            true
+                        }
                     },
             verticalAlignment = Alignment.CenterVertically,
         ) {

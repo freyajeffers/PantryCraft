@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,12 +37,12 @@ import com.jeffers.pantrycraft.feature.camera.vision.LiveVisionPreferences
 
 @Composable
 fun AiSettingsCard(context: Context) {
-    var selectedAiProvider by remember { mutableStateOf(ByokPreferences.selectedProvider(context)) }
-    var aiModelName by remember { mutableStateOf(ByokPreferences.selectedModel(context)) }
-    var aiEndpointUrl by remember { mutableStateOf(ByokPreferences.selectedEndpoint(context)) }
+    var selectedAiProvider by rememberSaveable { mutableStateOf(ByokPreferences.selectedProvider(context)) }
+    var aiModelName by rememberSaveable { mutableStateOf(ByokPreferences.selectedModel(context)) }
+    var aiEndpointUrl by rememberSaveable { mutableStateOf(ByokPreferences.selectedEndpoint(context)) }
     var aiApiKeyInput by remember { mutableStateOf("") }
-    var hasStoredApiKey by remember { mutableStateOf(ByokPreferences.hasApiKey(context)) }
-    var isGeminiLive by remember { mutableStateOf(LiveVisionPreferences.isGeminiLiveEnabled(context)) }
+    var hasStoredApiKey by rememberSaveable { mutableStateOf(ByokPreferences.hasApiKey(context)) }
+    var isGeminiLive by rememberSaveable { mutableStateOf(LiveVisionPreferences.isGeminiLiveEnabled(context)) }
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

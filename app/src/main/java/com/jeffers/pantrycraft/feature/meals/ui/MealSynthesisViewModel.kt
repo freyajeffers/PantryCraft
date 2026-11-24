@@ -15,6 +15,7 @@ import com.jeffers.pantrycraft.feature.meals.model.MealMatchMode
 import com.jeffers.pantrycraft.feature.meals.model.MealRecipe
 import com.jeffers.pantrycraft.feature.meals.swap.SmartSwapEngine
 import com.jeffers.pantrycraft.feature.meals.swap.SmartSwapSuggestion
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -65,23 +66,31 @@ class MealSynthesisViewModel(
         _recipes.value = _recipes.value.map { it.scaleToPortions(clamped) }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     fun generateMeals() {
         viewModelScope.launch {
             _isLoading.value = true
             val items = inventory.value
             val mode = _selectedMode.value
             val portions = _portionCount.value
-            val generated =
-                runCatching {
-                    synthesisEngine.synthesizeMeals(items, mode, portions)
-                }.getOrDefault(emptyList())
-
-            _recipes.value = generated
-            val missingNames = generated.flatMap { r -> r.missingItemsForGrocery.map { it.name } }
-            _smartSwaps.value = SmartSwapEngine.enrichMissingItemsWithSwaps(missingNames, items)
-            _isLoading.value = false
-            if (generated.isEmpty()) {
-                _statusMessage.emit("No recipes found with current inventory.")
+            try {
+                val generated = synthesisEngine.synthesizeMeals(items, mode, portions)
+                _recipes.value = generated
+                val missingNames = generated.flatMap { r -> r.missingItemsForGrocery.map { it.name } }
+                _smartSwaps.value = SmartSwapEngine.enrichMissingItemsWithSwaps(missingNames, items)
+                if (generated.isEmpty()) {
+                    _statusMessage.emit("No recipes found with current inventory.")
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: RuntimeException) {
+                _recipes.value = emptyList()
+                _smartSwaps.value = emptyMap()
+                _statusMessage.emit(
+                    "Meal synthesis failed: ${error.message ?: "model unavailable"}. Retry synthesis.",
+                )
+            } finally {
+                _isLoading.value = false
             }
         }
     }

@@ -340,7 +340,11 @@ internal fun AssociateBarcodeDialog(
 }
 
 @Composable
-internal fun CameraPermissionPrompt(onRequestPermission: () -> Unit) {
+internal fun CameraPermissionPrompt(
+    permanentlyDenied: Boolean = false,
+    onRequestPermission: () -> Unit,
+    onOpenSettings: () -> Unit = {},
+) {
     Column(
         modifier =
             Modifier
@@ -350,8 +354,19 @@ internal fun CameraPermissionPrompt(onRequestPermission: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("Camera access is required to scan pantry items.")
-        Button(onClick = onRequestPermission, modifier = Modifier.padding(top = 16.dp)) {
-            Text("Allow camera")
+        if (permanentlyDenied) {
+            Text(
+                "Camera access is disabled. Enable it in PantryCraft's app settings, " +
+                    "or add items manually from the pantry.",
+                modifier = Modifier.padding(top = 8.dp),
+            )
+            Button(onClick = onOpenSettings, modifier = Modifier.padding(top = 16.dp)) {
+                Text("Open camera settings")
+            }
+        } else {
+            Button(onClick = onRequestPermission, modifier = Modifier.padding(top = 16.dp)) {
+                Text("Allow camera")
+            }
         }
     }
 }

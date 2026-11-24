@@ -41,7 +41,9 @@ private fun PantryItemOpenAction(
         onClick = onClick,
         modifier =
             Modifier.clearAndSetSemantics {
-                contentDescription = "Open ${item.name}, ${item.storageLocation}, quantity ${formatPantryQuantity(item.quantity)}"
+                contentDescription =
+                    "Open ${item.name}, ${item.storageLocation}, " +
+                    "quantity ${formatPantryQuantity(item.quantity)}"
             },
     ) { Text("Open") }
 }
@@ -76,7 +78,9 @@ private fun PantryItemQuantityActions(
         enabled = item.quantity > 0f,
         modifier =
             Modifier.clearAndSetSemantics {
-                contentDescription = "Decrease ${item.name}, ${item.storageLocation}, quantity ${formatPantryQuantity(item.quantity)}"
+                contentDescription =
+                    "Decrease ${item.name}, ${item.storageLocation}, " +
+                    "quantity ${formatPantryQuantity(item.quantity)}"
             },
     ) { Icon(Icons.Filled.Remove, contentDescription = null) }
     Text(formatPantryQuantity(item.quantity))
@@ -84,7 +88,9 @@ private fun PantryItemQuantityActions(
         onClick = actions.onIncrement,
         modifier =
             Modifier.clearAndSetSemantics {
-                contentDescription = "Increase ${item.name}, ${item.storageLocation}, quantity ${formatPantryQuantity(item.quantity)}"
+                contentDescription =
+                    "Increase ${item.name}, ${item.storageLocation}, " +
+                    "quantity ${formatPantryQuantity(item.quantity)}"
             },
     ) { Icon(Icons.Filled.Add, contentDescription = null) }
 }
@@ -99,7 +105,9 @@ private fun PantryItemUseAction(
         enabled = item.quantity > 0f,
         modifier =
             Modifier.clearAndSetSemantics {
-                contentDescription = "Use ${item.name}, ${item.storageLocation}, quantity ${formatPantryQuantity(item.quantity)}"
+                contentDescription =
+                    "Use ${item.name}, ${item.storageLocation}, " +
+                    "quantity ${formatPantryQuantity(item.quantity)}"
             },
     ) { Text("Use") }
 }
@@ -113,14 +121,18 @@ private fun PantryItemEditDeleteActions(
         onClick = actions.onEdit,
         modifier =
             Modifier.clearAndSetSemantics {
-                contentDescription = "Edit ${item.name}, ${item.storageLocation}, quantity ${formatPantryQuantity(item.quantity)}"
+                contentDescription =
+                    "Edit ${item.name}, ${item.storageLocation}, " +
+                    "quantity ${formatPantryQuantity(item.quantity)}"
             },
     ) { Text("Edit") }
     TextButton(
         onClick = actions.onDelete,
         modifier =
             Modifier.clearAndSetSemantics {
-                contentDescription = "Delete ${item.name}, ${item.storageLocation}, quantity ${formatPantryQuantity(item.quantity)}"
+                contentDescription =
+                    "Delete ${item.name}, ${item.storageLocation}, " +
+                    "quantity ${formatPantryQuantity(item.quantity)}"
             },
     ) { Text("Delete") }
 }

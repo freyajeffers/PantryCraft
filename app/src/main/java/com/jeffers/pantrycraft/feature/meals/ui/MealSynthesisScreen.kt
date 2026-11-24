@@ -37,6 +37,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.feature.meals.model.MAX_PORTIONS
 import com.jeffers.pantrycraft.feature.meals.model.MIN_PORTIONS
@@ -77,7 +81,15 @@ fun MealSynthesisScreen(viewModel: MealSynthesisViewModel) {
             }
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(modifier = Modifier.testTag("meal_synthesis_loading"))
+                    CircularProgressIndicator(
+                        modifier =
+                            Modifier
+                                .testTag("meal_synthesis_loading")
+                                .semantics {
+                                    liveRegion = LiveRegionMode.Polite
+                                    contentDescription = "Synthesizing meals"
+                                },
+                    )
                 }
             } else {
                 RecipeListView(recipes = recipes, swaps = smartSwaps, onCook = viewModel::cookMeal)

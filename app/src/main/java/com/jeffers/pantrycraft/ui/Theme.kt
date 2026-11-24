@@ -46,6 +46,7 @@ private const val DARK_OUTLINE_VARIANT = 0xFF46464A
 private const val DARK_ERROR = 0xFFFFB4AB
 private const val DARK_ON_ERROR = 0xFF690005
 private const val DARK_ERROR_CONTAINER = 0xFF93000A
+private const val DARK_ON_ERROR_CONTAINER = 0xFFFFDAD6
 
 private val PantryCraftLightColorScheme =
     lightColorScheme(
@@ -96,7 +97,7 @@ private val OledDarkColorScheme =
         error = Color(DARK_ERROR),
         onError = Color(DARK_ON_ERROR),
         errorContainer = Color(DARK_ERROR_CONTAINER),
-        onErrorContainer = Color(LIGHT_ERROR_CONTAINER),
+        onErrorContainer = Color(DARK_ON_ERROR_CONTAINER),
     )
 
 @Composable

@@ -32,7 +32,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.Repository
 import com.jeffers.pantrycraft.data.observeLowStock
@@ -163,7 +162,15 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                     modifier =
                         Modifier
                             .weight(1f)
-                            .heightIn(min = 56.dp),
+                            .heightIn(min = 64.dp)
+                            .clearAndSetSemantics {
+                                contentDescription = "Scan shelf"
+                                role = Role.Button
+                                onClick(label = "Scan shelf") {
+                                    onNavigate("camera")
+                                    true
+                                }
+                            },
                 ) {
                     Icon(
                         Icons.Filled.QrCodeScanner,
@@ -177,7 +184,15 @@ private fun QuickIngestionCard(onNavigate: (String) -> Unit) {
                     modifier =
                         Modifier
                             .weight(1f)
-                            .heightIn(min = 56.dp),
+                            .heightIn(min = 64.dp)
+                            .clearAndSetSemantics {
+                                contentDescription = "Add pantry item"
+                                role = Role.Button
+                                onClick(label = "Add pantry item") {
+                                    onNavigate("pantry")
+                                    true
+                                }
+                            },
                 ) {
                     Icon(
                         Icons.Filled.Inventory2,
@@ -218,7 +233,15 @@ private fun GroceryChecklistCard(
                 onClick = { onNavigate("grocery") },
                 modifier =
                     Modifier
-                        .heightIn(min = 56.dp),
+                        .heightIn(min = 64.dp)
+                        .clearAndSetSemantics {
+                            contentDescription = "View grocery list"
+                            role = Role.Button
+                            onClick(label = "View grocery list") {
+                                onNavigate("grocery")
+                                true
+                            }
+                        },
             ) {
                 Icon(
                     Icons.Filled.ShoppingCart,
@@ -305,9 +328,14 @@ private fun MetricCard(
         modifier =
             modifier
                 .clickable(onClickLabel = onClickLabel, onClick = onClick)
-                .heightIn(min = 56.dp)
-                .semantics(mergeDescendants = true) {
+                .heightIn(min = 64.dp)
+                .clearAndSetSemantics {
+                    contentDescription = "$title, $value, $subtitle"
                     role = Role.Button
+                    onClick(label = onClickLabel) {
+                        onClick()
+                        true
+                    }
                 },
         colors =
             if (isWarning) {

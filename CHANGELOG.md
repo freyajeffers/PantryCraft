@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Remediated adversarial accessibility/UX issues: explicit dashboard and grocery semantics, contrast-safe dark error colors, camera permission recovery through app settings, meal synthesis failure/loading announcements, AI form state preservation, and confirmation-protected destructive pantry/grocery actions.
 - Addressed remaining Accessibility Scanner findings in current Compose sources: enforced 48dp metric/grocery targets, converted grocery checkboxes to labeled row toggles, and removed the duplicate encrypted-backup header announcement.
 - Addressed remaining Accessibility Scanner findings across touch targets, duplicate/hidden labels, checkbox item context, AI/backup actions, and camera HUD contrast.
 - Remediated Accessibility Scanner findings across Home, Pantry, Grocery, AI settings, and portability screens: explicit merged labels, contextual bottom-navigation labels, distinct repeated-item descriptions, 48dp filter targets, stronger warning/checked-state contrast, and unique checkbox actions.
