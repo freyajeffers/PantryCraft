@@ -299,7 +299,7 @@ private fun MealSynthesisCard(
                         .fillMaxWidth()
                         .padding(top = 4.dp)
                         .clearAndSetSemantics {
-                            contentDescription = "Synthesize Meals"
+                            contentDescription = "Synthesize meals"
                             role = Role.Button
                             onClick(label = "Synthesize meals") {
                                 onNavigate("meals")

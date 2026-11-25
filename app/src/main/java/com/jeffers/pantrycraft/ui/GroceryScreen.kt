@@ -49,6 +49,8 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.jeffers.pantrycraft.data.GroceryItem
@@ -247,6 +249,7 @@ fun GroceryItemRow(
                                 "not checked, activate to mark checked"
                             }
                         stateDescription = if (item.checked) "checked" else "not checked"
+                        toggleableState = if (item.checked) ToggleableState.On else ToggleableState.Off
                         role = Role.Checkbox
                         onClick(label = if (item.checked) "Mark not checked" else "Mark checked") {
                             onChecked(!item.checked)
