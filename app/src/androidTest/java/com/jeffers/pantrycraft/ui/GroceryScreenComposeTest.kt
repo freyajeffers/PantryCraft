@@ -102,6 +102,9 @@ class GroceryScreenComposeTest {
             .assertIsDisplayed()
             .performClick()
         composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Clear checked items?").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Clear checked").performClick()
+        composeTestRule.waitForIdle()
 
         // 7. Verify item is removed
         composeTestRule.waitUntil(timeoutMillis = 5_000) {

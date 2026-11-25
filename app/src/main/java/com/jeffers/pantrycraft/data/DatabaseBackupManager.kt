@@ -260,6 +260,10 @@ object DatabaseBackupManager {
                 val dbPass = requirePassphrase(passphrase)
                 DatabaseKeyProvider.restorePassphrase(context, dbPass)
                 val dbFile = context.getDatabasePath(DB_NAME)
+                // Discard sidecar state from the pre-restore database. Reusing its WAL/SHM
+                // would make SQLite reopen a logically newer empty database after replacement.
+                File("${dbFile.path}-wal").delete()
+                File("${dbFile.path}-shm").delete()
                 if (!temp.renameTo(dbFile)) {
                     replaceDatabaseFile(temp, dbFile)
                 }
