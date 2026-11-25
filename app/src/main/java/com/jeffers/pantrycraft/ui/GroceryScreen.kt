@@ -173,13 +173,11 @@ internal fun GroceryTopBar(
     TopAppBar(
         title = { Text("Grocery list") },
         actions = {
-            if (checkedCount > 0) {
-                IconButton(onClick = onRestock) {
-                    Icon(Icons.Filled.Inventory2, contentDescription = "Restock checked items to pantry")
-                }
-                IconButton(onClick = onClear) {
-                    Icon(Icons.Filled.ClearAll, contentDescription = "Clear checked items")
-                }
+            IconButton(onClick = onRestock, enabled = checkedCount > 0) {
+                Icon(Icons.Filled.Inventory2, contentDescription = "Restock checked items to pantry")
+            }
+            IconButton(onClick = onClear, enabled = checkedCount > 0) {
+                Icon(Icons.Filled.ClearAll, contentDescription = "Clear checked items")
             }
         },
     )
