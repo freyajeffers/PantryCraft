@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -83,7 +84,7 @@ class SettingsScreenComposeTest {
         composeTestRule.waitForIdle()
 
         // 2. Verify Settings headers and primary cards
-        composeTestRule.onNodeWithText("Settings").assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("Settings").onFirst().assertIsDisplayed()
         composeTestRule.onNodeWithText("FoodFacts barcode catalog").assertIsDisplayed()
         composeTestRule.onNodeWithText("Notifications & Alerts").assertIsDisplayed()
         composeTestRule.onNodeWithText("Daily expiration alerts").assertIsDisplayed()

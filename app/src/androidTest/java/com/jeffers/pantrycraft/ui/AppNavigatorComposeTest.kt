@@ -63,7 +63,7 @@ class AppNavigatorComposeTest {
 
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("Settings").assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("Settings").onFirst().assertIsDisplayed()
 
         composeTestRule.onNodeWithContentDescription("Scan").performClick()
         composeTestRule.waitForIdle()
