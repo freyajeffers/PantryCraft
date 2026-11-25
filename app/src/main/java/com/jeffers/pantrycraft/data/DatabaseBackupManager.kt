@@ -64,6 +64,7 @@ object DatabaseBackupManager {
         val exportedUri: String?,
     )
 
+    @Suppress("ThrowsCount")
     fun exportBackup(
         context: Context,
         backupName: String,
@@ -72,8 +73,12 @@ object DatabaseBackupManager {
         val source = backupFile(context, backupName)
         if (!source.isFile) throw IOException("Backup not found: $backupName")
         val output =
-            context.contentResolver.openOutputStream(destination)
-                ?: throw IOException("Unable to open selected backup location")
+            if (destination.scheme == "file") {
+                FileOutputStream(destination.path ?: throw IOException("Backup path is missing"))
+            } else {
+                context.contentResolver.openOutputStream(destination)
+                    ?: throw IOException("Unable to open selected backup location")
+            }
         source.inputStream().use { input -> output.use { input.copyTo(it) } }
         persistBackupUri(context, destination)
         val record = backupRecords(context).firstOrNull { it.backupName == backupName }
@@ -99,8 +104,12 @@ object DatabaseBackupManager {
         val imported = File.createTempFile(".pantry_import_", ".pcbk", backupDir)
         try {
             val input =
-                context.contentResolver.openInputStream(uri)
-                    ?: throw IOException("Unable to open selected backup")
+                if (uri.scheme == "file") {
+                    FileInputStream(uri.path ?: throw IOException("Backup path is missing"))
+                } else {
+                    context.contentResolver.openInputStream(uri)
+                        ?: throw IOException("Unable to open selected backup")
+                }
             input.use { source -> imported.outputStream().use { source.copyTo(it) } }
             restoreEncryptedBackup(context, imported.name, pin)
         } finally {
